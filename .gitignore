@@ -1,0 +1,14 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+.idea
+*.sqlite
+ui_*.py
+*_rc.py
+setup.pcl

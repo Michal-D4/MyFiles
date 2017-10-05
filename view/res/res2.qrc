@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="image">
+    <file>fileopen.png</file>
+    <file>filenew.png</file>
+    <file>plus.png</file>
+    <file>minus.png</file>
+    <file>loaddata.png</file>
+  </qresource>
+</RCC>
