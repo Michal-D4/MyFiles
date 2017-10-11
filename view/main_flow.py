@@ -8,7 +8,8 @@ from view.ui_new_view import Ui_MainWindow
 class MainFlow(QtWidgets.QMainWindow):
     populate_view_signal = pyqtSignal(str)        # str - name of Widget
     change_data_signal = pyqtSignal(str, tuple)   # str - name of Widget, tuple - data
-    scan_files_signal = pyqtSignal(str, list)    # str - root path, list - ext.list
+    scan_files_signal = pyqtSignal()
+    ext_list_change_signal = pyqtSignal(str)      # str = 'add' or 'remove'
 
     def __init__(self, parent=None, open_dialog=MyDBChoice):
         QtWidgets.QWidget.__init__(self, parent)
@@ -65,19 +66,20 @@ class MainFlow(QtWidgets.QMainWindow):
             self.ui_main.splitter_files.setStretchFactor(1, 2)
 
     def scan_files(self):
-        root = r'd:\Users\Books\Docs\Python\TDD'
-        extensions = self.ui_main.extList.selectedIndexes()
-        model = self.ui_main.extList.model()
-        print(model.data(extensions[0], Qt.DisplayRole))
-        self.scan_files_signal.emit(root, extensions)
+        # root = r'd:\Users\Books\Docs\Python\TDD'
+        # extensions = self.ui_main.extList.selectedIndexes()
+        # model = self.ui_main.extList.model()
+        # print(model.data(extensions[0], Qt.DisplayRole))
+        self.scan_files_signal.emit()
 
     def add_extension(self):
         print('|---> MainFlow.add_extension')
-        # self.ui_main.extList.model().append_row(('doc', '3'))
+        self.ext_list_change_signal.emit('add')
 
     def remove_extension(self):
         # removing is possible only if there is no files with this extension
         print('|---> MainFlow.remove_extension')
+        self.ext_list_change_signal.emit('remove')
 
     def go(self):
         print('go ====>')

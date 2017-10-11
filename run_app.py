@@ -29,16 +29,17 @@ def main():
     my_app.populate_view_signal.connect(_controller.on_populate_view)
     my_app.scan_files_signal.connect(_controller.on_scan_files)
 
+    # change extList
+    my_app.ext_list_change_signal.connect(_controller.on_ext_list_change)
+
     # when data changed on any widget
     my_app.change_data_signal.connect(_controller.on_change_data)
 
     # signal from open_dialog=dlg
     my_app.open_dialog.open_DB_signal.connect(_controller.on_open_db)
 
-    print('|----> main - before my_app.first_open_data_base()')
     my_app.first_open_data_base()
 
-    print('|----> main - before show()')
     my_app.show()
     sys.exit(app.exec_())
 

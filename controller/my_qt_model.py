@@ -1,6 +1,6 @@
 from PyQt5.QtGui import QStandardItem
 
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListModel
+from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListModel, QVariant
 
 # import sys
 # sys._excepthook = sys.excepthook
@@ -124,7 +124,7 @@ class TreeModel(QAbstractItemModel):
 
         return self.createIndex(parentItem.row(), 0, parentItem)
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=QModelIndex()):
         if parent.column() > 0:
             return 0
 
@@ -154,20 +154,32 @@ class MyListModel(QAbstractListModel):
         """ datain: a list where each item is a row
         """
         QAbstractListModel.__init__(self, parent, *args)
-        self.listdata = []
-        self.userdata = []
+        self.__data = []
 
     def rowCount(self, parent=QModelIndex()):
-        return len(self.listdata)
+        return len(self.__data)
 
-    def data(self, index, role):
+    def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
-                return self.listdata[index.row()]
+                return self.__data[index.row()][0]
             elif role == self.MyDataRole:
-                return self.userdata[index.row()]
+                return self.__data[index.row()][1]
         return None
 
     def append_row(self, row):
-        self.listdata.append(row[0])
-        self.userdata.append(row[1])
+        self.__data.append(row)
+
+    def appendData(self, value, role=Qt.EditRole):
+        in_row = self.rowCount()
+        self.__data.append(value)
+        index = self.createIndex(in_row, 0, 0)
+        self.dataChanged.emit(index, index)
+        return True
+
+    def removeRows(self, row, count=1, parent=QModelIndex()):
+        print('|--> removeRows', row)
+        self.beginRemoveRows(QModelIndex(), row, row + count - 1)
+        del self.__data[row:row + count]
+        self.endRemoveRows()
+        return True
