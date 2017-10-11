@@ -12,29 +12,17 @@ Selects = {'TREE': ('''WITH x(DirID, Path, ParentID, level) AS
             ') SELECT * FROM x;'
                     ),
         'PLACES': 'select * from myPlaces;',
-           'EXT': 'select * from Extensions'
-           }
+        'EXT': 'select * from Extensions',
+        'HAS_EXT': 'select count(*) from Extensions where Extension = ?;'
+    }
 
 Insert = {'PLACES': '''insert into myPlaces (myPlaceId, myPlace, Title)
- values(?, ?, ?);'''}
+ values(?, ?, ?);''', 'EXT': '''insert into Extensions (Extension, GroupID) 
+ values (:ext, 0);'''}
 
 Update = {'PLACES': 'update myPlaces set Title = ? where myPlaceId = ?;',
           }
 
-
-TREE_SQL = ('''WITH x(DirID, Path, ParentID, level) AS
- (SELECT DirID, Path, ParentID, 0 as level''',
-            'FROM Dirs WHERE DirID = {}',
-            'FROM Dirs WHERE ParentID = {}',
-            '''UNION ALL
- SELECT t.DirID, t.Path, t.ParentID, x.level + 1 as lvl
- FROM x INNER JOIN Dirs AS t
- ON t.ParentID = x.DirID''',
-            'and lvl <= {} ) SELECT * FROM x;',
-            ') SELECT * FROM x;'
-            )
-
-PLACES = 'select * from myPlaces;'
 
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
@@ -60,8 +48,9 @@ class DBUtils:
         return self.curs
 
     def generate_sql(self, dir_id, level):
-        tmp = (TREE_SQL[0], TREE_SQL[1].format(dir_id), TREE_SQL[2].format(dir_id),
-               TREE_SQL[3], TREE_SQL[4].format(level), TREE_SQL[5])
+        tree_sql = Selects['TREE']
+        tmp = (tree_sql[0], tree_sql[1].format(dir_id), tree_sql[2].format(dir_id),
+               tree_sql[3], tree_sql[4].format(level), tree_sql[5])
         cc = [(0, 2, 3, 5),
               (0, 1, 3, 5),
               (0, 2, 3, 4),
@@ -70,16 +59,15 @@ class DBUtils:
         sql = ' '.join([tmp[j] for j in cc[i]])
         return sql
 
-    def select_other(self, sql):
-        print(Selects[sql])
-        self.curs.execute(Selects[sql])
+    def select_other(self, sql, params=()):
+        self.curs.execute(Selects[sql], params)
         return self.curs
 
     def insert_other(self, sql, data):
-        print(Insert[sql])
-        print(data)
         self.curs.execute(Insert[sql], data)
+        jj = self.curs.lastrowid
         self.conn.commit()
+        return jj
 
     def update_other(self, sql, data):
         print(Update[sql])
