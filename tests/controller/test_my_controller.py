@@ -1,13 +1,10 @@
 import unittest
-import sqlite3
+from unittest.mock import Mock
+from unittest.mock import patch
 
-from model.db_utils import *
-from unittest.mock import MagicMock, Mock
-from unittest.mock import patch, call
-from model.utils import create_db
-from model.utils import load_db_data
-from controller.my_qt_model import TreeModel, MyListModel
 from controller import my_controller
+from controller.my_qt_model import MyListModel
+from model.db_utils import *
 
 
 class TestMyController(unittest.TestCase):
@@ -56,67 +53,78 @@ class TestMyController(unittest.TestCase):
         mock_remove.assert_called_once()
         mock_add.assert_not_called()
 
-    def test_add_extension(self):
-        '''
-        check called_with for
-        1) dbu.select_other
-        2) dbu.insert_other
-        3) model.appendData
-        4) model.createIndex
-        5) extList.setCurrentIndex
-        '''
-        self.controller.dbu = Mock()
+    def test_on_open_db ( self ):
+        mock_populate = Mock()
+        self.controller.populate_all_widgets = mock_populate
+        mock_sqlite3 = Mock(spec_set=sqlite3)
+        my_controller.sqlite3 = mock_sqlite3
+        mock_create_db = Mock()
+        my_controller.create_db = mock_create_db
 
-        mock_select_other = Mock()
-        self.controller.dbu.select_other.return_value = mock_select_other
-        mock_select_other.fetchone.return_value = (0,)
+        self.controller.on_open_db('my file', True)
 
-        self.controller.dbu.insert_other.return_value = 1
+        mock_sqlite3.connect.assert_called_with('my file', detect_types=3)
+        mock_create_db.create_all_objects.assert_called_once()
+        mock_populate.assert_called_once()
 
-        mock_view_extList = Mock()
-        self.controller.view.extList = mock_view_extList
-        mock_model = Mock()
-        mock_view_extList.model.return_value = mock_model
-        mock_model.rowCount.return_value = 1
-        mock_model.createIndex.return_value = 'created index'
-
-        self.controller.add_extension('pdf')
-
-        self.controller.dbu.select_other.assert_called_with('HAS_EXT', ('pdf',))
-        self.controller.dbu.insert_other.assert_called_with('EXT', {'ext': 'pdf'})
-        mock_model.appendData.assert_called_with(('pdf', 1))
-        mock_model.createIndex.assert_called_with(0, 0, 0)
-        mock_view_extList.setCurrentIndex.assert_called_with('created index')
-
-    def test_allowed_removal(self):
-        pass
-
-    def test_remove_extension(self):
-        pass
-
-    def test_on_open_db(self):
-        pass
+        self.controller.on_open_db('my file', False)
+        mock_create_db.create_all_objects.assert_called_once()
 
     def test_on_populate_view(self):
-        pass
+        mock_populate_all_widgets = Mock()
+        self.controller.populate_all_widgets = mock_populate_all_widgets
+        mock_populate_directory_tree = Mock()
+        self.controller.populate_directory_tree = mock_populate_directory_tree
+        mock_populate_ext_list = Mock()
+        self.controller.populate_ext_list = mock_populate_ext_list
+        mock_populate_tag_list = Mock()
+        self.controller.populate_tag_list = mock_populate_tag_list
+        mock_populate_author_list = Mock()
+        self.controller.populate_author_list = mock_populate_author_list
+        mock_populate_file_list = Mock()
+        self.controller.populate_file_list = mock_populate_file_list
+        mock_populate_comment_field = Mock()
+        self.controller.populate_comment_field = mock_populate_comment_field
+        mock_populate_cb_places = Mock()
+        self.controller.populate_cb_places = mock_populate_cb_places
 
-    def test_populate_cb_places(self):
-        pass
+        self.controller.on_populate_view('nothing')
+        mock_populate_all_widgets.assert_not_called()
+        mock_populate_directory_tree.assert_not_called()
+        mock_populate_ext_list.assert_not_called()
+        mock_populate_tag_list.assert_not_called()
+        mock_populate_author_list.assert_not_called()
+        mock_populate_file_list.assert_not_called()
+        mock_populate_comment_field.assert_not_called()
+        mock_populate_cb_places.assert_not_called()
 
-    def test_on_change_data(self):
-        pass
+        self.controller.on_populate_view('all')
+        mock_populate_all_widgets.assert_called_once()
 
-    def test_add_place(self):
-        pass
+        self.controller.on_populate_view('dirTree')
+        mock_populate_directory_tree.assert_called_once()
 
-    def test_rename_place(self):
-        pass
+        self.controller.on_populate_view('extList')
+        mock_populate_ext_list.assert_called_once()
 
-    def test_ask_rename_or_new(self):
-        pass
+        self.controller.on_populate_view('tagsList')
+        mock_populate_tag_list.assert_called_once()
 
-    def test_populate_ext_list(self):
-        pass
+        self.controller.on_populate_view('authorsList')
+        mock_populate_author_list.assert_called_once()
+
+        self.controller.on_populate_view('filesList')
+        mock_populate_file_list.assert_called_once()
+
+        self.controller.on_populate_view('commentField')
+        mock_populate_comment_field.assert_called_once()
+
+        self.controller.on_populate_view('cb_places')
+        mock_populate_cb_places.assert_called_once()
+
+    # ask_rename_or_new - contains QMessageBox() only - nothing to test
+    # def test_ask_rename_or_new(self):
+    #     pass
 
     def test_populate_tag_list(self):
         pass

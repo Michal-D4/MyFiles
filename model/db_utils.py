@@ -24,6 +24,7 @@ Insert = {'PLACES': '''insert into myPlaces (myPlaceId, myPlace, Title)
 Update = {'PLACES': 'update myPlaces set Title = ? where myPlaceId = ?;',
           }
 
+Delete = {'EXT': 'delete from Extensions where ExtID = ?;'}
 
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
@@ -75,3 +76,10 @@ class DBUtils:
         print('DBUtils.update_other data:', data)
         self.curs.execute(Update[sql], data)
         self.conn.commit()
+
+    def delete_other(self, sql, data):
+        print(Delete[sql])
+        print('DBUtils.delete_other data:', data)
+        self.curs.execute(Delete[sql], data)
+        self.conn.commit()
+

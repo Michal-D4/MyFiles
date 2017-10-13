@@ -55,13 +55,15 @@ class MyController():
     def remove_extension(self):
         mod = self.view.extList.model()
         index = self.view.extList.currentIndex()
-        if self.allowed_removal(mod.data(index, role=mod.MyDataRole)):
+        ext_id = mod.data(index, mod.MyDataRole)
+        if self.allowed_removal(ext_id):
+            self.dbu.delete_other('EXT', (ext_id,))
             mod.removeRows(index.row())
             self.view.extList.setCurrentIndex(self.view.extList.currentIndex())
 
     def allowed_removal(self, ext_item):
-        print('|--> allowed_removal', ext_item)
-        return True
+        res = self.dbu.select_other('EXT_IN_FILES', (ext_item,)).fetchone()
+        return not res
 
     def on_open_db(self, file_name, create):
         if create:
@@ -73,7 +75,6 @@ class MyController():
         self.dbu = DBUtils(self._connection)
         self.populate_all_widgets()
 
-    # @pyqtSlot(str)
     def on_populate_view(self, widget_name):
         if widget_name == 'all':
             self.populate_all_widgets()
@@ -115,8 +116,6 @@ class MyController():
         '''
         print('|--> MyController.on_change_data', sender, data)
         if sender == 'cb_places':
-            cb = self.view.cb_places
-            print(cb.currentText(), cb.currentIndex())
             self.add_place(data)
 
     def add_place(self, data):
@@ -158,6 +157,7 @@ class MyController():
 
     def populate_ext_list(self):
         ext_list = self.dbu.select_other('EXT')
+        print('type of MyListModel', type(MyListModel))
         model = MyListModel()
         for ext in ext_list:
             model.append_row(ext[1::-1])       # = (ext[1], ext[0]) = (Extension, ExtID)
@@ -205,7 +205,7 @@ class MyController():
                 ld.load_data(_data)
                 self.populate_directory_tree()
 
-    def get_selected_extensions ( self ):
+    def get_selected_extensions(self):
         extensions = self.view.extList.selectedIndexes()
         if extensions:
             model = self.view.extList.model()
