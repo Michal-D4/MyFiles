@@ -1,6 +1,8 @@
 import unittest
 import sqlite3
 
+from unittest.mock import Mock
+
 from model.utils import create_db
 from model.utils import load_db_data
 
@@ -9,6 +11,9 @@ class TestCheckPlace(unittest.TestCase):
     def setUp(self):
         self.connection = sqlite3.connect(':memory:')
 
+        mock_socket = Mock()
+        create_db.socket = mock_socket
+        mock_socket.gethostname.return_value = 'My place'
         create_db.create_all_objects(self.connection)
 
     def tearDown(self):
@@ -21,10 +26,8 @@ class TestCheckPlace(unittest.TestCase):
 
         self.assertEqual(load_db.place_id, 1)
 
-        import socket
-        null_place = socket.gethostname()
         tt = conn.execute('select * from myPlaces').fetchall()
         pp = tuple(tt)
-        self.assertEqual(pp, ((0, null_place, null_place), curr_place))
+        self.assertEqual(pp, ((0, 'My place', 'My place'), curr_place))
         conn.close()
 

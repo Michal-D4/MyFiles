@@ -1,7 +1,7 @@
 import unittest
 
 from model.db_utils import *
-# from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 from model.utils import create_db
 from model.utils import load_db_data
 
@@ -17,6 +17,10 @@ LOAD_DATA_IN_DIFFERENT_ORDER = (r'f:\Docs\A.Блок.txt',
 class TestDDBUtils(unittest.TestCase):
     def setUp(self):
         self.connection = sqlite3.connect(':memory:')
+
+        mock_socket = Mock()
+        create_db.socket = mock_socket
+        mock_socket.gethostname.return_value = 'My place'
         create_db.create_all_objects(self.connection)
         self.load_db = load_db_data.LoadDBData(self.connection, (0, '', ''))
 

@@ -1,7 +1,7 @@
 import unittest
 
 from model.db_utils import *
-# from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 from model.utils import create_db
 from model.utils import load_db_data
 
@@ -16,6 +16,10 @@ LOAD_DATA = (r'f:\Docs\Box\Блок.docx',
 class TestDDBUtils(unittest.TestCase):
     def setUp(self):
         self.connection = sqlite3.connect(':memory:')
+
+        mock_socket = Mock()
+        create_db.socket = mock_socket
+        mock_socket.gethostname.return_value = 'My place'
         create_db.create_all_objects(self.connection)
 
         load_db = load_db_data.LoadDBData(self.connection, (0, 'place', 'title'))
@@ -100,6 +104,26 @@ class TestDDBUtils(unittest.TestCase):
                               (5, 'd:\\Doc2\\Java', 0, 0),
                               (1, 'f:\\Docs\\Box', 2, 1),
                               (4, 'f:\\Docs\\Python', 2, 1)))
+
+    def test_select_other_PLACES(self):
+        cursor = self.dbu.select_other('PLACES')
+        aa = tuple(cursor)
+        self.assertEqual(aa, ((0, 'My place', 'My place'),))
+
+    def test_select_other_EXT(self):
+        cursor = self.dbu.select_other('EXT')
+        aa = tuple(cursor)
+        self.assertEqual(aa, ((1, 'docx', 0), (2, 'txt', 0)))
+
+    def test_select_other_HAS_EXT(self):
+        cursor = self.dbu.select_other('HAS_EXT', ('docx', ))
+        aa = tuple(cursor)
+        self.assertEqual(aa, ((1,),))
+
+    def test_select_other_EXT_IN_FILES(self):
+        cursor = self.dbu.select_other('EXT_IN_FILES', (1, ))
+        aa = tuple(cursor)
+        self.assertEqual(aa, ((1,), (3,), (4,), (6,)))
 
 
 if __name__ == '__main__':
