@@ -97,7 +97,7 @@ class TreeModel(QAbstractItemModel):
 
         return None
 
-    def index(self, row, column, parent):
+    def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
@@ -178,7 +178,6 @@ class MyListModel(QAbstractListModel):
         return True
 
     def removeRows(self, row, count=1, parent=QModelIndex()):
-        print('|--> removeRows', row)
         self.beginRemoveRows(QModelIndex(), row, row + count - 1)
         del self.__data[row:row + count]
         self.endRemoveRows()

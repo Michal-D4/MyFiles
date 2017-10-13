@@ -12,13 +12,8 @@ from controller import my_controller
 
 class TestMyController(unittest.TestCase):
     def setUp(self):
-        # members: _connection, curr_place, dbu, places, view
-        # self.connection = sqlite3.connect(':memory:')
-        # create_db.create_all_objects(self.connection)
         app = Mock()
         self.controller = my_controller.MyController(app)
-        # self.controller.on_open_db(':memory:', True)
-        pass
 
     def tearDown(self):
         # self.connection.close()
@@ -62,9 +57,17 @@ class TestMyController(unittest.TestCase):
         mock_add.assert_not_called()
 
     def test_add_extension(self):
-        mock_select_other = Mock()
+        '''
+        check called_with for
+        1) dbu.select_other
+        2) dbu.insert_other
+        3) model.appendData
+        4) model.createIndex
+        5) extList.setCurrentIndex
+        '''
         self.controller.dbu = Mock()
 
+        mock_select_other = Mock()
         self.controller.dbu.select_other.return_value = mock_select_other
         mock_select_other.fetchone.return_value = (0,)
 
@@ -85,10 +88,10 @@ class TestMyController(unittest.TestCase):
         mock_model.createIndex.assert_called_with(0, 0, 0)
         mock_view_extList.setCurrentIndex.assert_called_with('created index')
 
-    def test_remove_extension(self):
+    def test_allowed_removal(self):
         pass
 
-    def test_allowed_removal(self):
+    def test_remove_extension(self):
         pass
 
     def test_on_open_db(self):

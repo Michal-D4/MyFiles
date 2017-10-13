@@ -1,5 +1,4 @@
 import os
-import socket
 
 SQL_FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and myPlaceId = :place;'''

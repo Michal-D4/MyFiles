@@ -13,7 +13,8 @@ Selects = {'TREE': ('''WITH x(DirID, Path, ParentID, level) AS
                     ),
         'PLACES': 'select * from myPlaces;',
         'EXT': 'select * from Extensions',
-        'HAS_EXT': 'select count(*) from Extensions where Extension = ?;'
+        'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
+        'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;'
     }
 
 Insert = {'PLACES': '''insert into myPlaces (myPlaceId, myPlace, Title)

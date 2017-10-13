@@ -28,7 +28,7 @@ class MyController():
     def __init__(self, view):
         self._connection = None
         self.dbu = None
-        self.view = view
+        self.view = view.ui_main
         self.places = []
         self.curr_place = ()
 
@@ -45,24 +45,22 @@ class MyController():
 
     def add_extension(self, ext_):
         cnt = self.dbu.select_other('HAS_EXT', (ext_,)).fetchone()
-        print('add_extension cnt=', cnt)
         if cnt[0] == 0:
             idx = self.dbu.insert_other('EXT', {'ext': ext_})
             if idx > 0:
                 mod = self.view.extList.model()
                 mod.appendData((ext_, idx))
-                print(type(self.view.extList))
-                print(type(mod), mod.rowCount())
                 self.view.extList.setCurrentIndex(mod.createIndex(mod.rowCount() - 1, 0, 0))
 
     def remove_extension(self):
         mod = self.view.extList.model()
         index = self.view.extList.currentIndex()
-        if self.allowed_removal(mod.data(index)):
+        if self.allowed_removal(mod.data(index, role=mod.MyDataRole)):
             mod.removeRows(index.row())
             self.view.extList.setCurrentIndex(self.view.extList.currentIndex())
 
     def allowed_removal(self, ext_item):
+        print('|--> allowed_removal', ext_item)
         return True
 
     def on_open_db(self, file_name, create):
@@ -194,6 +192,20 @@ class MyController():
         self.view.dirTree.setModel(model)
 
     def on_scan_files(self):
+        ext_ = self.get_selected_extensions()
+
+        ext_item, okPressed = QInputDialog.getText(self.view.extList, "Input extensions",
+                                                   '', QLineEdit.Normal, ext_)
+        if okPressed:
+            root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
+            if root:
+                _data = yield_files(root, ext_item)
+
+                ld = LoadDBData(self._connection, self.curr_place)
+                ld.load_data(_data)
+                self.populate_directory_tree()
+
+    def get_selected_extensions ( self ):
         extensions = self.view.extList.selectedIndexes()
         if extensions:
             model = self.view.extList.model()
@@ -201,16 +213,4 @@ class MyController():
             ext_ = ', '.join(model.data(i, Qt.DisplayRole) for i in extensions)
         else:
             ext_ = ''
-
-        print('|--> on_scan_files ext1', ext_)
-        ext_item, okPressed = QInputDialog.getText(self.view.extList, "Input extensions",
-                                                   '', QLineEdit.Normal, ext_)
-        if okPressed:
-            print('|--> on_scan_files ext2', ext_item)
-            root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder', r'd:\Users\mihal')
-            print('|--> on_scan_files', root)
-            _data = yield_files(root, ext_item)
-
-            ld = LoadDBData(self._connection, self.curr_place)
-            ld.load_data(_data)
-            self.populate_directory_tree()
+        return ext_
