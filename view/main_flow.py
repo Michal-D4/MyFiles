@@ -16,11 +16,14 @@ class MainFlow(QtWidgets.QMainWindow):
         self.ui_main = Ui_MainWindow()
         self.ui_main.setupUi(self)
 
+        self.ui_main.cb_places = QtWidgets.QComboBox()
+        self.ui_main.toolBar.addWidget(self.ui_main.cb_places)
+
         self.restore_setting()
 
-        self.ui_main.goButton.clicked.connect(self.go)
-        self.ui_main.buttonAdd.clicked.connect(self.add_extension)
-        self.ui_main.buttonRemove.clicked.connect(self.remove_extension)
+        # self.ui_main.goButton.clicked.connect(self.go)
+        # self.ui_main.buttonAdd.clicked.connect(self.add_extension)
+        # self.ui_main.buttonRemove.clicked.connect(self.remove_extension)
         self.ui_main.actionOpenDB.triggered.connect(self.open_data_base)
         self.ui_main.actionScanFiles.triggered.connect(self.scan_files)
 
@@ -35,7 +38,6 @@ class MainFlow(QtWidgets.QMainWindow):
         pass
 
     def change_place(self, idx):
-        # print(idx, self.ui_main.cb_places.currentText())
         self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))
 
     def restore_setting(self):
@@ -45,19 +47,12 @@ class MainFlow(QtWidgets.QMainWindow):
             self.resize(size)
             position = settings.value("MainFlow/Position")
             self.move(position)
-            self.restoreState(
-                settings.value("MainFlow/State"))
             self.restoreState(settings.value("MainFlow/State"))
-            self.ui_main.splitter_files.restoreState(
-                settings.value("FilesSplitter"))
-            self.ui_main.opt_splitter.restoreState(
-                settings.value("OptSplitter"))
-            self.ui_main.main_splitter.restoreState(
-                settings.value("MainSplitter"))
+            self.restoreState(settings.value("MainFlow/State"))
+            self.ui_main.splitter_files.restoreState(settings.value("FilesSplitter"))
+            self.ui_main.opt_splitter.restoreState(settings.value("OptSplitter"))
+            self.ui_main.main_splitter.restoreState(settings.value("MainSplitter"))
         else:
-            self.ui_main.ext_layout.setContentsMargins(0, 0, 0, 0)
-            self.ui_main.ext_layout.setSpacing(0)
-
             self.ui_main.main_splitter.setStretchFactor(0, 2)
             self.ui_main.main_splitter.setStretchFactor(1, 5)
             self.ui_main.main_splitter.setStretchFactor(2, 1)
@@ -66,10 +61,6 @@ class MainFlow(QtWidgets.QMainWindow):
             self.ui_main.splitter_files.setStretchFactor(1, 2)
 
     def scan_files(self):
-        # root = r'd:\Users\Books\Docs\Python\TDD'
-        # extensions = self.ui_main.extList.selectedIndexes()
-        # model = self.ui_main.extList.model()
-        # print(model.data(extensions[0], Qt.DisplayRole))
         self.scan_files_signal.emit()
 
     def add_extension(self):

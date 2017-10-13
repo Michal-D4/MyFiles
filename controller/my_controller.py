@@ -116,25 +116,48 @@ class MyController():
         '''
         print('|--> MyController.on_change_data', sender, data)
         if sender == 'cb_places':
+            self.about_change_place(data)
+
+    def about_change_place(self, data):
+        if data[0] >= len(self.places):
             self.add_place(data)
+        else:
+            self.change_place(data)
+
+    def change_place(self, data):
+        if self.is_place_available():
+            self.curr_place = self.places[data[0]]
+        else:
+            res = self.ask_switch_to_unavailable_storage(data)
+            if res == 0:  # Ok button
+                self.curr_place = self.places[data[0]]
+            else:  # Cancel - return to prev.place
+                self.view.cb_places.blockSignals(True)
+                self.view.cb_places.setCurrentIndex(self.curr_place[0])
+                self.view.cb_places.blockSignals(False)
+
+    def ask_switch_to_unavailable_storage(self, data):
+        box = QMessageBox()
+        box.setIcon(QMessageBox.Question)
+        box.setText('The storage {} is not available'.format(data[1]))
+        box.addButton('Ok', QMessageBox.ActionRole)
+        box.addButton('Cancel', QMessageBox.RejectRole)
+        res = box.exec_()
+        return res
 
     def add_place(self, data):
-        idx = data[0]
-        if idx >= len(self.places):
-            res = self.ask_rename_or_new()
-            if res == 0:                # add new
-                self.curr_place = (idx, data[1], data[1])
-                self.places.append(self.curr_place)
-                self.dbu.insert_other('PLACES', self.curr_place)
-            elif res == 1:              # rename
-                self.rename_place((self.curr_place[0], data[1]))
-            else:                       # cancel
-                cb = self.view.cb_places
-                cb.clear()
-                cb.addItems((x[2] for x in self.places))
-                cb.setCurrentIndex(self.curr_place[0])
-        else:
-            self.curr_place = self.places[idx]
+        res = self.ask_rename_or_new()
+        if res == 0:                # add new
+            self.curr_place = (data[0], data[1], data[1])
+            self.places.append(self.curr_place)
+            self.dbu.insert_other('PLACES', self.curr_place)
+        elif res == 1:              # rename
+            self.rename_place((self.curr_place[0], data[1]))
+        else:                       # cancel
+            cb = self.view.cb_places
+            cb.clear()
+            cb.addItems((x[2] for x in self.places))
+            cb.setCurrentIndex(self.curr_place[0])
 
     def rename_place(self, data):
         idx = [x[2] for x in self.places].index(self.curr_place[2])
@@ -157,7 +180,6 @@ class MyController():
 
     def populate_ext_list(self):
         ext_list = self.dbu.select_other('EXT')
-        print('type of MyListModel', type(MyListModel))
         model = MyListModel()
         for ext in ext_list:
             model.append_row(ext[1::-1])       # = (ext[1], ext[0]) = (Extension, ExtID)
@@ -191,19 +213,35 @@ class MyController():
 
         self.view.dirTree.setModel(model)
 
-    def on_scan_files(self):
-        ext_ = self.get_selected_extensions()
+    def is_place_available(self):
+        return True
 
+    def on_scan_files(self):
+        if self.is_place_available():
+            _data = self.scan_file_system()
+        else:
+            _data = self.read_from_file()
+
+        if _data:
+            ld = LoadDBData(self._connection, self.curr_place)
+            ld.load_data(_data)
+            self.populate_directory_tree()
+
+    def scan_file_system(self):
+        ext_ = self.get_selected_extensions()
         ext_item, okPressed = QInputDialog.getText(self.view.extList, "Input extensions",
                                                    '', QLineEdit.Normal, ext_)
         if okPressed:
             root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
             if root:
-                _data = yield_files(root, ext_item)
+                return yield_files(root, ext_item)
+            else:
+                return ()
+        else:
+            return ()
 
-                ld = LoadDBData(self._connection, self.curr_place)
-                ld.load_data(_data)
-                self.populate_directory_tree()
+    def read_from_file(self):
+        return ()
 
     def get_selected_extensions(self):
         extensions = self.view.extList.selectedIndexes()

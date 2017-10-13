@@ -2,6 +2,7 @@
   <qresource prefix="image">
     <file>fileopen.png</file>
     <file>filenew.png</file>
+    <file>ic_action_play.png</file>
     <file>plus.png</file>
     <file>minus.png</file>
     <file>loaddata.png</file>
