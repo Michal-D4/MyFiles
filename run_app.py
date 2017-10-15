@@ -29,9 +29,6 @@ def main():
     my_app.populate_view_signal.connect(_controller.on_populate_view)
     my_app.scan_files_signal.connect(_controller.on_scan_files)
 
-    # change extList
-    my_app.ext_list_change_signal.connect(_controller.on_ext_list_change)
-
     # when data changed on any widget
     my_app.change_data_signal.connect(_controller.on_change_data)
 

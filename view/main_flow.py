@@ -9,7 +9,6 @@ class MainFlow(QtWidgets.QMainWindow):
     populate_view_signal = pyqtSignal(str)        # str - name of Widget
     change_data_signal = pyqtSignal(str, tuple)   # str - name of Widget, tuple - data
     scan_files_signal = pyqtSignal()
-    ext_list_change_signal = pyqtSignal(str)      # str = 'add' or 'remove'
 
     def __init__(self, parent=None, open_dialog=MyDBChoice):
         QtWidgets.QWidget.__init__(self, parent)
@@ -17,15 +16,15 @@ class MainFlow(QtWidgets.QMainWindow):
         self.ui_main.setupUi(self)
 
         self.ui_main.cb_places = QtWidgets.QComboBox()
+        self.ui_main.cb_places.setEditable(True)
+        # self.ui_main.cb_places.setObjectName("cb_places")
         self.ui_main.toolBar.addWidget(self.ui_main.cb_places)
 
         self.restore_setting()
 
-        # self.ui_main.goButton.clicked.connect(self.go)
-        # self.ui_main.buttonAdd.clicked.connect(self.add_extension)
-        # self.ui_main.buttonRemove.clicked.connect(self.remove_extension)
         self.ui_main.actionOpenDB.triggered.connect(self.open_data_base)
         self.ui_main.actionScanFiles.triggered.connect(self.scan_files)
+        self.ui_main.actionGetFiles.triggered.connect(self.go)
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.dirTree.doubleClicked.connect(self.dir_changed)
@@ -62,15 +61,6 @@ class MainFlow(QtWidgets.QMainWindow):
 
     def scan_files(self):
         self.scan_files_signal.emit()
-
-    def add_extension(self):
-        print('|---> MainFlow.add_extension')
-        self.ext_list_change_signal.emit('add')
-
-    def remove_extension(self):
-        # removing is possible only if there is no files with this extension
-        print('|---> MainFlow.remove_extension')
-        self.ext_list_change_signal.emit('remove')
 
     def go(self):
         print('go ====>')

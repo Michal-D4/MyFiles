@@ -32,39 +32,6 @@ class MyController():
         self.places = []
         self.curr_place = ()
 
-    def on_ext_list_change(self, action):
-        if action == 'add':
-            ext_item, okPressed = QInputDialog.getText(self.view.extList, "Input extension",
-                                                       "", QLineEdit.Normal)
-            if okPressed:
-                self.add_extension(ext_item)
-        elif action == 'remove':
-            self.remove_extension()
-        else:
-            pass
-
-    def add_extension(self, ext_):
-        cnt = self.dbu.select_other('HAS_EXT', (ext_,)).fetchone()
-        if cnt[0] == 0:
-            idx = self.dbu.insert_other('EXT', {'ext': ext_})
-            if idx > 0:
-                mod = self.view.extList.model()
-                mod.appendData((ext_, idx))
-                self.view.extList.setCurrentIndex(mod.createIndex(mod.rowCount() - 1, 0, 0))
-
-    def remove_extension(self):
-        mod = self.view.extList.model()
-        index = self.view.extList.currentIndex()
-        ext_id = mod.data(index, mod.MyDataRole)
-        if self.allowed_removal(ext_id):
-            self.dbu.delete_other('EXT', (ext_id,))
-            mod.removeRows(index.row())
-            self.view.extList.setCurrentIndex(self.view.extList.currentIndex())
-
-    def allowed_removal(self, ext_item):
-        res = self.dbu.select_other('EXT_IN_FILES', (ext_item,)).fetchone()
-        return not res
-
     def on_open_db(self, file_name, create):
         if create:
             self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
@@ -96,16 +63,15 @@ class MyController():
             pass
 
     def populate_cb_places(self):
-        cb = self.view.cb_places
-        cb.blockSignals(True)
-        cb.clear()
+        self.view.cb_places.blockSignals(True)
+        self.view.cb_places.clear()
         plc = self.dbu.select_other('PLACES')
         if plc:
             self.places = list(plc)
-            cb.addItems((x[2] for x in self.places))
-        cb.setCurrentIndex(0)
+            self.view.cb_places.addItems((x[2] for x in self.places))
+            self.view.cb_places.setCurrentIndex(0)
         self.curr_place = self.places[0]
-        cb.blockSignals(False)
+        self.view.cb_places.blockSignals(False)
 
     def on_change_data(self, sender, data):
         '''
@@ -129,9 +95,9 @@ class MyController():
             self.curr_place = self.places[data[0]]
         else:
             res = self.ask_switch_to_unavailable_storage(data)
-            if res == 0:  # Ok button
+            if res == 0:                # Ok button
                 self.curr_place = self.places[data[0]]
-            else:  # Cancel - return to prev.place
+            else:                       # Cancel - return to prev.place
                 self.view.cb_places.blockSignals(True)
                 self.view.cb_places.setCurrentIndex(self.curr_place[0])
                 self.view.cb_places.blockSignals(False)
@@ -154,19 +120,19 @@ class MyController():
         elif res == 1:              # rename
             self.rename_place((self.curr_place[0], data[1]))
         else:                       # cancel
-            cb = self.view.cb_places
-            cb.clear()
-            cb.addItems((x[2] for x in self.places))
-            cb.setCurrentIndex(self.curr_place[0])
+            self.view.cb_places.blockSignals(True)
+            self.view.cb_places.clear()
+            self.view.cb_places.addItems((x[2] for x in self.places))
+            self.view.cb_places.blockSignals(False)
+            self.view.cb_places.setCurrentIndex(self.curr_place[0])
 
     def rename_place(self, data):
         idx = [x[2] for x in self.places].index(self.curr_place[2])
         dd = (idx, self.places[idx][2], data[1])
         self.places[idx] = dd
-        cb = self.view.cb_places
-        cb.clear()
-        cb.addItems((x[2] for x in self.places))
-        cb.setCurrentIndex(idx)
+        self.view.cb_places.clear()
+        self.view.cb_places.addItems((x[2] for x in self.places))
+        self.view.cb_places.setCurrentIndex(idx)
         self.dbu.update_other('PLACES', (dd[2], dd[0]))
 
     def ask_rename_or_new(self):
