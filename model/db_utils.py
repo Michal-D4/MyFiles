@@ -1,37 +1,28 @@
-import sqlite3
-
 Selects = {'TREE': ('''WITH x(DirID, Path, ParentID, level) AS
  (SELECT DirID, Path, ParentID, 0 as level''',
-            'FROM Dirs WHERE DirID = {}',
-            'FROM Dirs WHERE ParentID = {}',
-            '''UNION ALL
+                    'FROM Dirs WHERE DirID = {}',
+                    'FROM Dirs WHERE ParentID = {}',
+                    '''UNION ALL
  SELECT t.DirID, t.Path, t.ParentID, x.level + 1 as lvl
  FROM x INNER JOIN Dirs AS t
  ON t.ParentID = x.DirID''',
-            'and lvl <= {} ) SELECT * FROM x;',
-            ') SELECT * FROM x;'
-                    ),
-        'PLACES': 'select * from myPlaces;',
-        'EXT': 'select * from Extensions',
-        'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
-        'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;'
-    }
+                    'and lvl <= {} ) SELECT * FROM x;',
+                    ') SELECT * FROM x;'),
+           'PLACES': 'select * from myPlaces;',
+           'EXT': 'select * from Extensions',
+           'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
+           'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;'}
 
-Insert = {'PLACES': '''insert into myPlaces (myPlaceId, myPlace, Title)
- values(?, ?, ?);''', 'EXT': '''insert into Extensions (Extension, GroupID) 
- values (:ext, 0);'''}
+Insert = {'PLACES': '''insert into myPlaces (myPlaceId, myPlace, Title) values(?, ?, ?);''',
+          'EXT': '''insert into Extensions (Extension, GroupID) values (:ext, 0);''', }
 
-Update = {'PLACES': 'update myPlaces set Title = ? where myPlaceId = ?;',
-          }
+Update = {'PLACES': 'update myPlaces set Title = ? where myPlaceId = ?;', }
 
-Delete = {'EXT': 'delete from Extensions where ExtID = ?;'}
+Delete = {'EXT': 'delete from Extensions where ExtID = ?;', }
 
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
 
-    # def __init__(self, connection_string='test_database.sqlite'):
-    #     self.connect = sqlite3.connect(connection_string,
-    #                                 detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
     def __init__(self, connection):
         self.conn = connection
         self.curs = connection.cursor()
@@ -82,4 +73,3 @@ class DBUtils:
         print('DBUtils.delete_other data:', data)
         self.curs.execute(Delete[sql], data)
         self.conn.commit()
-

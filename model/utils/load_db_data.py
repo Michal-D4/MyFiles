@@ -6,8 +6,8 @@ SQL_FIND_PART_PATH = '''select ParentID
 SQL_FIND_EXACT_PATH = '''select DirID, Path
     from Dirs where Path = :newPath and myPlaceId = :place;'''
 
-SQL_CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId 
-where ParentID = :currId and Path like :newPath and DirID != :newId;'''
+SQL_CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
+ where ParentID = :currId and Path like :newPath and DirID != :newId;'''
 
 SQL_FIND_FILE = '''select *
     from Files where DirID = :dir_id and FileName = :file;'''
@@ -48,7 +48,7 @@ class LoadDBData:
         :return:  None
         '''
         count = self.cursor.execute('select count(*) from myPlaces where myPlaceId = :locID;',
-                                   (self.place_id,)).fetchone()
+                                    (self.place_id,)).fetchone()
         if count[0] == 0:
             self.cursor.execute('''insert into myPlaces (myPlaceId, myPlace, Title)
             values (:id, :place, :title)''', current_place)
@@ -62,26 +62,26 @@ class LoadDBData:
         """
         for line in data:
             # print(line)
-            ii = self.insert_dir(line)
-            self.insert_file(ii, line)
+            idx = self.insert_dir(line)
+            self.insert_file(idx, line)
         self.conn.commit()
 
-    def insert_file(self, ii, line):
+    def insert_file(self, idx, line):
         """
         Insert file into Files table
-        :param ii:
+        :param idx:
         :param line:
         :return: None
         """
         # TODO add additional data: creation date, size, page number.
         file = line.rpartition(os.sep)[2]
 
-        rr = self.cursor.execute(SQL_FIND_FILE, {'dir_id': ii, 'file': file}).fetchone()
-        if not rr:
-            jj = self.insert_extension(file)
-            self.cursor.execute(SQL_INSERT_FILE, {'dir_id': ii,
+        item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': idx, 'file': file}).fetchone()
+        if not item:
+            new_id = self.insert_extension(file)
+            self.cursor.execute(SQL_INSERT_FILE, {'dir_id': idx,
                                                   'file': file,
-                                                  'ext_id': jj})
+                                                  'ext_id': new_id})
 
     def insert_extension(self, file):
         if file.rfind('.') > 0:
@@ -89,56 +89,56 @@ class LoadDBData:
         else:
             ext = ''
         if ext:
-            rr = self.cursor.execute(SQL_FIND_EXT, (ext,)).fetchone()
-            if rr:
-                jj = rr[0]
+            item = self.cursor.execute(SQL_FIND_EXT, (ext,)).fetchone()
+            if item:
+                idx = item[0]
             else:
                 self.cursor.execute(SQL_INSERT_EXT, {'ext': ext})
-                jj = self.cursor.lastrowid
+                idx = self.cursor.lastrowid
         else:
-            jj = 0
-        return jj
+            idx = 0
+        return idx
 
-    def insert_dir( self, full_file_name):
+    def insert_dir(self, full_file_name):
         '''
         Insert directory into Dirs table
         :param full_file_name:
         :return: row ID of file dir
         '''
         path = full_file_name.rpartition(os.sep)[0]
-        rr = self.search_closest_parent(path)
-        ii, pp = rr
-        if pp == path:
-            return ii
+        closest_parent_path = self.search_closest_parent(path)
+        idx, parent_path = closest_parent_path
+        if parent_path == path:
+            return idx
 
-        self.cursor.execute(SQL_INSERT_DIR, {'path': path, 'id': ii, 'placeId': self.place_id})
-        kk = self.cursor.lastrowid
+        self.cursor.execute(SQL_INSERT_DIR, {'path': path, 'id': idx, 'placeId': self.place_id})
+        idx = self.cursor.lastrowid
 
-        self.change_parent(kk, path)
-        return kk
+        self.change_parent(idx, path)
+        return idx
 
-    def change_parent(self, new_parent_ID, path):
-        old_parent_ID = self.parent_id_for_child(path)
-        if old_parent_ID != -1:
-            self.cursor.execute(SQL_CHANGE_PARENT_ID, {'currId': old_parent_ID,
-                                                       'newId': new_parent_ID,
+    def change_parent(self, new_parent_id, path):
+        old_parent_id = self.parent_id_for_child(path)
+        if old_parent_id != -1:
+            self.cursor.execute(SQL_CHANGE_PARENT_ID, {'currId': old_parent_id,
+                                                       'newId': new_parent_id,
                                                        'newPath': path + '%'})
 
-    def parent_id_for_child( self, path ):
+    def parent_id_for_child(self, path):
         '''
         Check new file path:
           if it can be parent for other directories
         :param path:
         :return: parent Id of first found child, -1 if not children
         '''
-        gg = self.cursor.execute(SQL_FIND_PART_PATH, {'newPath': path + '%',
-                                                      'place': self.place_id}).fetchone()
-        if gg:
-            jj = gg[0]
+        item = self.cursor.execute(SQL_FIND_PART_PATH, {'newPath': path + '%',
+                                                        'place': self.place_id}).fetchone()
+        if item:
+            idx = item[0]
         else:
-            jj = -1
+            idx = -1
 
-        return jj
+        return idx
 
     def search_closest_parent(self, path):
         '''
@@ -148,9 +148,9 @@ class LoadDBData:
         '''
         res = (0, '')
         while path:
-            ff = self.cursor.execute(SQL_FIND_EXACT_PATH, (path, self.place_id)).fetchone()
-            if ff:
-                res = tuple(ff)
+            item = self.cursor.execute(SQL_FIND_EXACT_PATH, (path, self.place_id)).fetchone()
+            if item:
+                res = tuple(item)
                 break
             path = path.rpartition(os.sep)[0]
         return res

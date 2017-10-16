@@ -51,5 +51,5 @@ class TestControler(TestCase):
         #                 2) model = TreeModel(dir_tree)
         #                 3) self.view.ui_main.dirTree.setModel(model)
         #    only check that all them are called once
-         self._controller.populate_directory_tree()
+         self._controller._populate_directory_tree()
 
