@@ -91,6 +91,13 @@ class MyController():
             self.change_place(data)
 
     def change_place(self, data):
+        """
+        Check if selected place is available
+        Ask for confirmation for switch to unavailable place/storage
+        Save current item in self.curr_place if confirmed or available
+        :param data: only first item is used, it contains current index
+        :return: None
+        """
         if self.is_place_available():
             self.curr_place = self.places[data[0]]
         else:
@@ -113,6 +120,7 @@ class MyController():
 
     def add_place(self, data):
         res = self.ask_rename_or_new()
+        print(res)
         if res == 0:                # add new
             self.curr_place = (data[0], data[1], data[1])
             self.places.append(self.curr_place)
@@ -121,19 +129,24 @@ class MyController():
             self.rename_place((self.curr_place[0], data[1]))
         else:                       # cancel
             self.view.cb_places.blockSignals(True)
-            self.view.cb_places.clear()
-            self.view.cb_places.addItems((x[2] for x in self.places))
-            self.view.cb_places.blockSignals(False)
+            self.view.cb_places.removeItem(self.view.cb_places.currentIndex())
             self.view.cb_places.setCurrentIndex(self.curr_place[0])
+            self.view.cb_places.blockSignals(False)
 
     def rename_place(self, data):
-        idx = [x[2] for x in self.places].index(self.curr_place[2])
-        dd = (idx, self.places[idx][2], data[1])
-        self.places[idx] = dd
-        self.view.cb_places.clear()
-        self.view.cb_places.addItems((x[2] for x in self.places))
-        self.view.cb_places.setCurrentIndex(idx)
-        self.dbu.update_other('PLACES', (dd[2], dd[0]))
+        # idx = [x[2] for x in self.places].index(self.curr_place[2])
+        # print('|-> rename_place', idx, self.curr_place)     # idx == self.curr_place[0]
+        # dd = (idx, self.places[idx][2], data[1])            # dd = (self.curr_place[0:1], data[1])
+        # self.places[idx] = dd
+        # self.view.cb_places.clear()
+        # self.view.cb_places.addItems((x[2] for x in self.places))
+        # self.view.cb_places.setCurrentIndex(idx)
+        self.view.cb_places.blockSignals(True)
+        self.view.cb_places.removeItem(self.view.cb_places.currentIndex())
+        self.places[self.curr_place[0]] = (self.curr_place[0:1], data[1])
+        self.view.cb_places.setCurrentIndex(self.curr_place[0])
+        self.view.cb_places.blockSignals(False)
+        self.dbu.update_other('PLACES', (data[1], self.curr_place[0]))
 
     def ask_rename_or_new(self):
         box = QMessageBox()

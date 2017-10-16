@@ -1,6 +1,5 @@
 import unittest
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch, call
 
 from controller import my_controller
 from controller.my_qt_model import MyListModel
@@ -133,18 +132,6 @@ class TestMyController(unittest.TestCase):
     # def test_ask_rename_or_new(self):
     #     pass
 
-    def test_populate_tag_list(self):
-        pass
-
-    def test_populate_author_list(self):
-        pass
-
-    def test_populate_file_list(self):
-        pass
-
-    def test_populate_comment_field(self):
-        pass
-
     @patch.object(my_controller.MyController, 'populate_cb_places')
     @patch.object(my_controller.MyController, 'populate_comment_field')
     @patch.object(my_controller.MyController, 'populate_file_list')
@@ -169,9 +156,6 @@ class TestMyController(unittest.TestCase):
         mock_populate_tag_list.assert_called_once()
         mock_populate_author_list.assert_called_once()
         mock_populate_cb_places.assert_called_once()
-
-    def test_populate_directory_tree(self):
-        pass
 
     @patch.object(my_controller.MyController, 'read_from_file')
     @patch.object(my_controller.MyController, 'scan_file_system')
@@ -210,18 +194,19 @@ class TestMyController(unittest.TestCase):
     #     res = self.controller.is_place_available()
     #     self.assertFalse(res)
 
+    @patch.object(my_controller.MyController, 'get_selected_extensions')
     @patch('controller.my_controller.QFileDialog')
     @patch('controller.my_controller.QInputDialog')
     @patch('controller.my_controller.yield_files')
-    def test_scan_file_system(self, mock_yield_files, mock_QInputDialog, mock_QFileDialog):
+    def test_scan_file_system(self, mock_yield_files, mock_QInputDialog, mock_QFileDialog,
+                              mock_get_selected_extensions):
 
         mock_QInputDialog.getText.side_effect = (('pdf', False), ('pdf', True), ('pdf', True))
         mock_QFileDialog().getExistingDirectory.side_effect = ('', 'root')
         mock_yield_files.return_value = ('file_list',)
 
-        self.controller.get_selected_extensions = Mock()
-
         res = self.controller.scan_file_system()  # QInputDialog => Cancel
+        mock_get_selected_extensions.assert_has_calls([call.get_selected_extensions(), ])
         mock_QFileDialog.getExistingDirectory.assert_not_called()
         self.assertEqual(res, ())
 
@@ -232,3 +217,6 @@ class TestMyController(unittest.TestCase):
         res = self.controller.scan_file_system()  # QInputDialog => Ok, root = 'root'
         mock_yield_files.assert_called_once_with('root', 'pdf')
         self.assertEqual(res, ('file_list',))
+
+    def test_read_from_file(self):
+        pass
