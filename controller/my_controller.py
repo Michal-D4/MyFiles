@@ -115,7 +115,8 @@ class MyController():
                 self.view.cb_places.setCurrentIndex(self.curr_place[0])
                 self.view.cb_places.blockSignals(False)
 
-    def _ask_switch_to_unavailable_storage(self, data):
+    @staticmethod
+    def _ask_switch_to_unavailable_storage(data):
         box = QMessageBox()
         box.setIcon(QMessageBox.Question)
         box.setText('The storage {} is not available'.format(data[1]))
@@ -141,12 +142,15 @@ class MyController():
     def _rename_place(self, data):
         self.view.cb_places.blockSignals(True)
         self.view.cb_places.removeItem(self.view.cb_places.currentIndex())
-        self.places[self.curr_place[0]] = (self.curr_place[0:1], data[1])
+        self.curr_place = (self.curr_place[0], self.curr_place[1], data[1])
+        self.places[self.curr_place[0]] = self.curr_place
         self.view.cb_places.setCurrentIndex(self.curr_place[0])
+        self.view.cb_places.setCurrentText(data[1])
         self.view.cb_places.blockSignals(False)
         self.dbu.update_other('PLACES', (data[1], self.curr_place[0]))
 
-    def _ask_rename_or_new(self):
+    @staticmethod
+    def _ask_rename_or_new():
         box = QMessageBox()
         box.setIcon(QMessageBox.Question)
         box.addButton('Add new', QMessageBox.ActionRole)
@@ -200,20 +204,20 @@ class MyController():
             _data = self._read_from_file()
 
         if _data:
-            ld = LoadDBData(self._connection, self.curr_place)
-            ld.load_data(_data)
+            files = LoadDBData(self._connection, self.curr_place)
+            files.load_data(_data)
             self._populate_directory_tree()
 
     def _scan_file_system(self):
         ext_ = self._get_selected_extensions()
-        ext_item, okPressed = QInputDialog.getText(self.view.extList, "Input extensions",
+        ext_item, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
                                                    '', QLineEdit.Normal, ext_)
-        if okPressed:
+        if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
             if root:
                 return yield_files(root, ext_item)
 
-        return ()       # not okPressed or root is empty
+        return ()       # not ok_pressed or root is empty
 
     def _read_from_file(self):
         return ()
