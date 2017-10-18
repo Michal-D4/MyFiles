@@ -3,8 +3,9 @@ import unittest
 from unittest.mock import Mock, patch, call
 
 from controller import my_controller
-from controller.my_qt_model import MyListModel
-from model.db_utils import *
+from controller.places import Places
+# from controller.my_qt_model import MyListModel
+# from model.db_utils import *
 
 
 class TestMyController(unittest.TestCase):
@@ -33,27 +34,14 @@ class TestMyController(unittest.TestCase):
         test_data = ('1\\4.txt', '1\\5.chm', '1\\7.doc', '2\\10.txt', '2\\6.com')
         self.assertTupleEqual(bb, test_data)
 
-    @patch.object(my_controller.MyController, '_about_change_place')
-    def test_on_change_data_cb_places(self, mock_about_change_place):
+    def test_on_change_data_cb_places(self):
         data = (1, 'data')
 
+        mock_cb_places = Mock(spec_set=Places)
+        self.controller.cb_places = mock_cb_places
+
         self.controller.on_change_data('cb_places', data)
-        mock_about_change_place.assert_called_once_with(data)
-
-    @patch.object(my_controller.MyController, '_add_place')
-    def test_about_change_place_call_add_place(self, mock_add_place):
-        data = (0, 'place 1')
-
-        self.controller._about_change_place(data)
-        mock_add_place.assert_called_once_with(data)
-
-    @patch.object(my_controller.MyController, '_change_place')
-    def test_about_change_place_call_change_place(self, mock_change_place):
-        data = (0, 'place 1')
-        self.controller.places.append(data)
-
-        self.controller._about_change_place(data)
-        mock_change_place.assert_called_once_with(data)
+        mock_cb_places.about_change_place.assert_called_once_with(data)
 
     @patch('controller.my_controller.create_db', autospec=True)
     @patch('controller.my_controller.sqlite3', spec_set=sqlite3)
@@ -77,7 +65,6 @@ class TestMyController(unittest.TestCase):
         mock_create_db.create_all_objects.assert_not_called()
         mock_populate.assert_called_once()
 
-    @patch.object(my_controller.MyController, '_populate_cb_places')
     @patch.object(my_controller.MyController, '_populate_comment_field')
     @patch.object(my_controller.MyController, '_populate_file_list')
     @patch.object(my_controller.MyController, '_populate_author_list')
@@ -91,8 +78,10 @@ class TestMyController(unittest.TestCase):
                               mock_populate_tag_list,
                               mock_populate_author_list,
                               mock_populate_file_list,
-                              mock_populate_comment_field,
-                              mock_populate_cb_places):
+                              mock_populate_comment_field):
+
+        mock_cb_places = Mock(spec_set=Places)
+        self.controller.cb_places = mock_cb_places
 
         self.controller.on_populate_view('nothing')
 
@@ -103,7 +92,7 @@ class TestMyController(unittest.TestCase):
         mock_populate_author_list.assert_not_called()
         mock_populate_file_list.assert_not_called()
         mock_populate_comment_field.assert_not_called()
-        mock_populate_cb_places.assert_not_called()
+        mock_cb_places.populate_cb_places.assert_not_called()
 
         self.controller.on_populate_view('all')
         mock_populate_all_widgets.assert_called_once()
@@ -127,13 +116,13 @@ class TestMyController(unittest.TestCase):
         mock_populate_comment_field.assert_called_once()
 
         self.controller.on_populate_view('cb_places')
-        mock_populate_cb_places.assert_called_once()
+        mock_cb_places.populate_cb_places.assert_called_once()
 
     # _ask_rename_or_new - contains QMessageBox() only - nothing to test
     # def test_ask_rename_or_new(self):
     #     pass
 
-    @patch.object(my_controller.MyController, '_populate_cb_places')
+    @patch('controller.my_controller.Places')
     @patch.object(my_controller.MyController, '_populate_comment_field')
     @patch.object(my_controller.MyController, '_populate_file_list')
     @patch.object(my_controller.MyController, '_populate_author_list')
@@ -141,12 +130,14 @@ class TestMyController(unittest.TestCase):
     @patch.object(my_controller.MyController, '_populate_ext_list')
     @patch.object(my_controller.MyController, '_populate_directory_tree')
     def test_populate_all_widgets(self, mock_populate_directory_tree,
-                              mock_populate_ext_list,
-                              mock_populate_tag_list,
-                              mock_populate_author_list,
-                              mock_populate_file_list,
-                              mock_populate_comment_field,
-                              mock_populate_cb_places):
+                                  mock_populate_ext_list,
+                                  mock_populate_tag_list,
+                                  mock_populate_author_list,
+                                  mock_populate_file_list,
+                                  mock_populate_comment_field,
+                                  mock_places):
+        mock_cb_places = Mock(spec_set=Places)
+        mock_places.return_value = mock_cb_places
 
         self.controller._populate_all_widgets()
 
@@ -156,16 +147,18 @@ class TestMyController(unittest.TestCase):
         mock_populate_ext_list.assert_called_once()
         mock_populate_tag_list.assert_called_once()
         mock_populate_author_list.assert_called_once()
-        mock_populate_cb_places.assert_called_once()
+        mock_cb_places.populate_cb_places.assert_called_once()
 
     @patch.object(my_controller.MyController, '_read_from_file')
     @patch.object(my_controller.MyController, '_scan_file_system')
-    @patch.object(my_controller.MyController, '_is_place_available')
     @patch('controller.my_controller.LoadDBData', autospec=True)
-    def test_on_scan_files(self, mock_LoadDBData, mock_is_place_available,
-                           mock_scan_file_system, mock_read_from_file):
+    def test_on_scan_files(self, mock_LoadDBData, mock_scan_file_system,
+                           mock_read_from_file):
 
-        mock_is_place_available.side_effect = (True, False)
+        mock_cb_places = Mock(spec_set=Places)
+        self.controller.cb_places = mock_cb_places
+
+        mock_cb_places.is_place_available.side_effect = (True, False)
 
         mock_scan_file_system.return_value = '_scan_file_system'
 
@@ -186,14 +179,6 @@ class TestMyController(unittest.TestCase):
         mock_ld.load_data.assert_called_with('_read_from_file')
 
         pass
-
-    def test_is_place_available_yes(self):
-        res = self.controller._is_place_available()
-        self.assertTrue(res)
-
-    # def test_is_place_available_no(self):
-    #     res = self.controller._is_place_available()
-    #     self.assertFalse(res)
 
     @patch.object(my_controller.MyController, '_get_selected_extensions')
     @patch('controller.my_controller.QFileDialog')
