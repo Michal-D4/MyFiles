@@ -13,22 +13,6 @@ from model.utils.load_db_data import LoadDBData
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
 
-def yield_files(root, extensions):
-    """
-    generator of file list
-    :param root: root directory
-    :param extensions: list of extensions
-    :return: generator
-    """
-    for dir_name, dir_names, file_names in os.walk(root):
-        if extensions:
-            ext_ = tuple(x.strip('. ') for x in extensions.split(','))
-            for filename in file_names:
-                if filename.rpartition('.')[2] in ext_:
-                    yield os.path.join(dir_name, filename)
-        else:
-            for filename in file_names:
-                yield os.path.join(dir_name, filename)
 
 
 class MyController():
@@ -37,6 +21,24 @@ class MyController():
         self.dbu = None
         self.cb_places = None
         self.view = view.ui_main
+
+    @staticmethod
+    def yield_files(root, extensions):
+        """
+        generator of file list
+        :param root: root directory
+        :param extensions: list of extensions
+        :return: generator
+        """
+        for dir_name, dir_names, file_names in os.walk(root):
+            if extensions:
+                ext_ = tuple(x.strip('. ') for x in extensions.split(','))
+                for filename in file_names:
+                    if filename.rpartition('.')[2] in ext_:
+                        yield os.path.join(dir_name, filename)
+            else:
+                for filename in file_names:
+                    yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
         if create:
@@ -133,11 +135,12 @@ class MyController():
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
             if root:
-                return yield_files(root, ext_item)
+                return MyController.yield_files(root, ext_item)
 
         return ()       # not ok_pressed or root is empty
 
     def _read_from_file(self):
+        print('|---> _read_from_file')
         return ()
 
     def _get_selected_extensions(self):

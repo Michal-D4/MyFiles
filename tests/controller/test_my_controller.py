@@ -20,7 +20,7 @@ class TestMyController(unittest.TestCase):
     def test_yield_files(self, mock_os_walk):
         mock_os_walk.return_value = [('1', ('2', '3'), ('4.txt', '5.chm', '7.doc')),
                                      ('2', ('8', '9'), ('10.txt', '6.com'))]
-        aa = my_controller.yield_files('root', 'txt, .chm,  jpg')
+        aa = self.controller.yield_files('root', 'txt, .chm,  jpg')
         bb = tuple(aa)
         test_data = ('1\\4.txt', '1\\5.chm', '2\\10.txt')
         self.assertTupleEqual(bb, test_data)
@@ -29,7 +29,7 @@ class TestMyController(unittest.TestCase):
     def test_yield_files_no_extensions(self, mock_os_walk):
         mock_os_walk.return_value = [('1', ('2', '3'), ('4.txt', '5.chm', '7.doc')),
                                      ('2', ('8', '9'), ('10.txt', '6.com'))]
-        aa = my_controller.yield_files('root', '')
+        aa = self.controller.yield_files('root', '')
         bb = tuple(aa)
         test_data = ('1\\4.txt', '1\\5.chm', '1\\7.doc', '2\\10.txt', '2\\6.com')
         self.assertTupleEqual(bb, test_data)
@@ -183,7 +183,7 @@ class TestMyController(unittest.TestCase):
     @patch.object(my_controller.MyController, '_get_selected_extensions')
     @patch('controller.my_controller.QFileDialog')
     @patch('controller.my_controller.QInputDialog')
-    @patch('controller.my_controller.yield_files')
+    @patch.object(my_controller.MyController, 'yield_files')
     def test_scan_file_system(self, mock_yield_files, mock_QInputDialog, mock_QFileDialog,
                               mock_get_selected_extensions):
 
