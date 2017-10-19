@@ -17,7 +17,6 @@ class MainFlow(QtWidgets.QMainWindow):
 
         self.ui_main.cb_places = QtWidgets.QComboBox()
         self.ui_main.cb_places.setEditable(True)
-        # self.ui_main.cb_places.setObjectName("cb_places")
         self.ui_main.toolBar.addWidget(self.ui_main.cb_places)
 
         self.restore_setting()
@@ -33,7 +32,7 @@ class MainFlow(QtWidgets.QMainWindow):
 
     def dir_changed(self, signal):
         print('|---> MainFlow.dir_changed')
-        print(type(signal))
+        print(signal)
         pass
 
     def change_place(self, idx):

@@ -15,6 +15,33 @@ class Places:
     def get_curr_place(self):
         return self._curr_place
 
+    def get_mount_point(self):
+        return self._mount_point
+
+    def is_place_available(self):
+        """
+        Has side effect - set mount point for removable device
+        :return: True / False
+        """
+        idx = self._view.currentIndex()
+        place_info = self._places[idx][1]
+        loc = socket.gethostname()
+        if place_info == loc:
+            return True
+
+        self._mount_point = Places._get_mount_point(place_info)
+        if self._mount_point:
+            return True
+
+        return False
+
+    @staticmethod
+    def is_removable(device):
+        import psutil
+        parts = psutil.disk_partitions()
+        removable = (x.opts for x in parts if x.device == device)
+        return removable == 'rw,removable'
+
     def populate_cb_places(self):
         self._view.blockSignals(True)
         self._view.clear()
@@ -100,23 +127,6 @@ class Places:
         res = box.exec_()
         return res
 
-    def is_place_available(self):
-        """
-        Has side effect - set mount point for removable device
-        :return: True / False
-        """
-        idx = self._view.currentIndex()
-        place_info = self._places[idx][1]
-        loc = socket.gethostname()
-        if place_info == loc:
-            return True
-
-        self._mount_point = Places._get_mount_point(place_info)
-        if self._mount_point:
-            return True
-
-        return False
-
     @staticmethod
     def _get_mount_point(place_info):
         import psutil
@@ -155,7 +165,3 @@ class Places:
         )
         print('|-> _get_vol_name', volume_name_buffer.value)
         return volume_name_buffer.value
-
-    @staticmethod
-    def is_removable(device):
-        return True
