@@ -23,7 +23,7 @@ class TestMyControllerViewDbu(unittest.TestCase):
         # self.connection.close()
         pass
 
-    def test_populate_ext_list(self):
+    def test__populate_ext_list(self):
         self.mock_dbu.select_other.return_value = [('e1', 1), ('e2', 2)]
 
         mock_model_class = Mock()
@@ -37,20 +37,20 @@ class TestMyControllerViewDbu(unittest.TestCase):
         mock_model_obj.append_row.assert_called_with((2, 'e2'))
         self.mock_view.extList.setModel.assert_called_once()
 
-    def test_populate_tag_list(self):
+    def test__populate_tag_list(self):
         pass
 
-    def test_populate_author_list(self):
+    def test__populate_author_list(self):
         pass
 
-    def test_populate_file_list(self):
+    def test__populate_file_list(self):
         pass
 
-    def test_populate_comment_field(self):
+    def test__populate_comment_field(self):
         pass
 
     @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
-    def test_populate_directory_tree(self, mock_model):
+    def test__populate_directory_tree(self, mock_model):
         mock_model.return_value = 'model'
 
         self.controller._populate_directory_tree()
@@ -58,5 +58,15 @@ class TestMyControllerViewDbu(unittest.TestCase):
         mock_model.assert_called_once()
         self.mock_view.dirTree.setModel.assert_called_once_with('model')
 
+    def test__get_selected_extensions(self):
+        self.mock_view.extList.selectedIndexes.side_effect = ((1, 2), ())
 
+        mock_model = Mock(spec_set=MyListModel)
+        self.mock_view.extList.model.return_value = mock_model
+        mock_model.data.side_effect = ('item1', 'item2')
 
+        res = self.controller._get_selected_extensions()
+        self.assertEqual(res, 'item1, item2', msg='Selected item1 and item2')
+
+        res = self.controller._get_selected_extensions()
+        self.assertEqual(res, '', msg='No selection. But returns!!!')
