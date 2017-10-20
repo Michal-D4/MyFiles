@@ -19,15 +19,14 @@ class TestCheckPlace(unittest.TestCase):
     def tearDown(self):
         self.connection.close()
 
+
     def test_check_place(self):
-        conn = self.connection
         curr_place = (1, 'test_place', 'test_place')
-        load_db = load_db_data.LoadDBData(conn, curr_place)
+        load_db = load_db_data.LoadDBData(self.connection, curr_place)
 
         self.assertEqual(load_db.place_id, 1)
 
-        tt = conn.execute('select * from myPlaces').fetchall()
+        tt = self.connection.execute('select * from myPlaces').fetchall()
         pp = tuple(tt)
         self.assertEqual(pp, ((0, 'My place', 'My place'), curr_place))
-        conn.close()
 

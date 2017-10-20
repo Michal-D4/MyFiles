@@ -1,4 +1,7 @@
 import socket
+import psutil
+import ctypes
+import os
 
 from PyQt5.QtWidgets import QMessageBox
 
@@ -37,9 +40,8 @@ class Places:
 
     @staticmethod
     def is_removable(device):
-        import psutil
         parts = psutil.disk_partitions()
-        removable = (x.opts for x in parts if x.device == device)
+        removable = next(x.opts for x in parts if x.device == device)
         return removable == 'rw,removable'
 
     def populate_cb_places(self):
@@ -129,39 +131,29 @@ class Places:
 
     @staticmethod
     def _get_mount_point(place_info):
-        import psutil
         parts = psutil.disk_partitions()
         removables = (x.mountpoint for x in parts if x.opts == 'rw,removable')
 
-        for mountpoint in removables:
-            if place_info == Places._get_vol_name(mountpoint):
-                print('', mountpoint)
-                return mountpoint
+        for mount_point in removables:
+            if place_info == Places._get_vol_name(mount_point):
+                return mount_point
         return ''
 
     @staticmethod
-    def _get_vol_name(mountpoint):
+    def _get_vol_name(mount_point):
         """
         Only for windows
-        :param mountpoint:
+        :param mount_point:
         :return: volume label
         """
-        import ctypes
-        kernel32 = ctypes.windll.kernel32
-        volume_name_buffer = ctypes.create_unicode_buffer(1024)
-        file_system_name_buffer = ctypes.create_unicode_buffer(1024)
-        serial_number = None
-        max_component_length = None
-        file_system_flags = None
-        rc = kernel32.GetVolumeInformationW(
-            ctypes.c_wchar_p(mountpoint),
-            volume_name_buffer,
-            ctypes.sizeof(volume_name_buffer),
-            serial_number,
-            max_component_length,
-            file_system_flags,
-            file_system_name_buffer,
-            ctypes.sizeof(file_system_name_buffer)
-        )
-        print('|-> _get_vol_name', volume_name_buffer.value)
-        return volume_name_buffer.value
+        if os.name == "nt":
+            kernel32 = ctypes.windll.kernel32
+            volume_name_buffer = ctypes.create_unicode_buffer(1024)
+            if kernel32.GetVolumeInformationW(ctypes.c_wchar_p(mount_point),
+                                              volume_name_buffer,
+                                              ctypes.sizeof(volume_name_buffer),
+                                              None, None, None, None, 0) > 0:
+                return volume_name_buffer.value
+            return ''
+        else:
+            return ''
