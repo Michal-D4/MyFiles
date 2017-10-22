@@ -23,7 +23,7 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
@@ -108,7 +108,7 @@
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
-       <widget class="QListView" name="filesList">
+       <widget class="QTreeView" name="filesList">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -129,7 +129,7 @@
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
-       <widget class="QListView" name="extList">
+       <widget class="QTreeView" name="extList">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -140,7 +140,7 @@
          <enum>QAbstractItemView::ExtendedSelection</enum>
         </property>
        </widget>
-       <widget class="QListView" name="tagsList">
+       <widget class="QTreeView" name="tagsList">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tags&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -148,7 +148,7 @@
          <enum>QAbstractItemView::ExtendedSelection</enum>
         </property>
        </widget>
-       <widget class="QListView" name="authorsList">
+       <widget class="QTreeView" name="authorsList">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Authors&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
