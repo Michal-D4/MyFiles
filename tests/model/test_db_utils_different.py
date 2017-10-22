@@ -38,7 +38,7 @@ class TestDDBUtils(unittest.TestCase):
  (SELECT DirID, Path, ParentID, 0 as level FROM Dirs WHERE ParentID = 0 UNION ALL
  SELECT t.DirID, t.Path, t.ParentID, x.level + 1 as lvl
  FROM x INNER JOIN Dirs AS t
- ON t.ParentID = x.DirID ) SELECT * FROM x;''')
+ ON t.ParentID = x.DirID ) SELECT * FROM x order by ParentID desc, Path;''')
 
     def test_generate_sql_0_1(self):
         sql = self.dbu.generate_sql(0, 1)
@@ -54,7 +54,7 @@ class TestDDBUtils(unittest.TestCase):
  (SELECT DirID, Path, ParentID, 0 as level FROM Dirs WHERE DirID = 1 UNION ALL
  SELECT t.DirID, t.Path, t.ParentID, x.level + 1 as lvl
  FROM x INNER JOIN Dirs AS t
- ON t.ParentID = x.DirID ) SELECT * FROM x;''')
+ ON t.ParentID = x.DirID ) SELECT * FROM x order by ParentID desc, Path;''')
 
     def test_generate_sql_1_1(self):
         sql = self.dbu.generate_sql(1, 1)
@@ -70,10 +70,10 @@ class TestDDBUtils(unittest.TestCase):
         self.assertIsNotNone(cursor)
 
         aa = tuple(cursor)
-        self.assertEqual(aa, ((1, 'f:\\Docs', 0, 0),
+        self.assertEqual(aa, ((4, 'f:\\Docs\\Python\\main', 3, 2),
                               (2, 'f:\\Docs\\Box', 1, 1),
                               (3, 'f:\\Docs\\Python', 1, 1),
-                              (4, 'f:\\Docs\\Python\\main', 3, 2)))
+                              (1, 'f:\\Docs', 0, 0)))
 
     def test_dir_tree_select_level_1_root_1(self):
         cursor = self.dbu.dir_tree_select(1, 1)
@@ -90,11 +90,11 @@ class TestDDBUtils(unittest.TestCase):
         self.assertIsNotNone(cursor)
 
         aa = tuple(cursor)
-        self.assertEqual(aa, ((1, 'f:\\Docs', 0, 0),
-                              (5, 'd:\\Doc2\\Java', 0, 0),
+        self.assertEqual(aa, ((4, 'f:\\Docs\\Python\\main', 3, 2),
                               (2, 'f:\\Docs\\Box', 1, 1),
                               (3, 'f:\\Docs\\Python', 1, 1),
-                              (4, 'f:\\Docs\\Python\\main', 3, 2)))
+                              (5, 'd:\\Doc2\\Java', 0, 0),
+                              (1, 'f:\\Docs', 0, 0)))
 
     def test_dir_tree_select_level_1_root_0(self):
         cursor = self.dbu.dir_tree_select(0, 1)

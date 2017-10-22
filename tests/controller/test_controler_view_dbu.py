@@ -3,7 +3,7 @@ import unittest
 from model.db_utils import *
 from unittest.mock import MagicMock, Mock
 from unittest.mock import patch, call
-from controller.my_qt_model import TreeModel, MyListModel
+from controller.my_qt_model import TreeModel, TableModel
 from controller import my_controller
 from model.db_utils import DBUtils
 
@@ -23,18 +23,21 @@ class TestMyControllerViewDbu(unittest.TestCase):
         # self.connection.close()
         pass
 
-    def test__populate_ext_list(self):
-        self.mock_dbu.select_other.return_value = [('e1', 1), ('e2', 2)]
+    @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
+    def test__populate_ext_list( self, mock_model ):
+        rv = [(101, 'e1', 1), (102, 'e2', 2),
+              (103, 'e3', 1), (104, 'e4', 0),
+              (1, 'g1', 0), (2, 'g2', 0)]
+        self.mock_dbu.select_other.return_value = rv
 
-        mock_model_class = Mock()
-        my_controller.MyListModel = mock_model_class
-        mock_model_obj = Mock(spec_set=MyListModel)
-        mock_model_class.return_value = mock_model_obj
+        mock_model_obj = Mock(spec_set=TableModel)
+        mock_model.return_value = mock_model_obj
 
         self.controller._populate_ext_list()
+
         self.mock_dbu.select_other.assert_called_once_with('EXT')
-        # mock_model_obj.append_row.assert_called_with((1, 'e1')) # only last call tested
-        mock_model_obj.append_row.assert_called_with((2, 'e2'))
+        mock_model.assert_called_once_with(rv)
+        mock_model_obj.setHeaderData.assert_called_with(0, 0, "Extensions")
         self.mock_view.extList.setModel.assert_called_once()
 
     def test__populate_tag_list(self):
@@ -51,17 +54,18 @@ class TestMyControllerViewDbu(unittest.TestCase):
 
     @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
     def test__populate_directory_tree(self, mock_model):
-        mock_model.return_value = 'model'
+        mock_model_obj = Mock(spec_set=TableModel)
+        mock_model.return_value = mock_model_obj
 
         self.controller._populate_directory_tree()
         self.mock_dbu.dir_tree_select.assert_called_once_with(dir_id=0, level=0)
         mock_model.assert_called_once()
-        self.mock_view.dirTree.setModel.assert_called_once_with('model')
+        self.mock_view.dirTree.setModel.assert_called_once_with(mock_model_obj)
 
     def test__get_selected_extensions(self):
         self.mock_view.extList.selectedIndexes.side_effect = ((1, 2), ())
 
-        mock_model = Mock(spec_set=MyListModel)
+        mock_model = Mock(spec_set=TableModel)
         self.mock_view.extList.model.return_value = mock_model
         mock_model.data.side_effect = ('item1', 'item2')
 

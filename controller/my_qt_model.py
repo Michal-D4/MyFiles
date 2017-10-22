@@ -1,27 +1,13 @@
-from PyQt5.QtGui import QStandardItem
-
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListModel, QVariant
-
-# import sys
-# sys._excepthook = sys.excepthook
-# def my_exception_hook(exctype, value, traceback):
-#     # Print the error and traceback
-#     print(exctype, value, traceback)
-#     # Call the normal Exception hook after
-#     sys._excepthook(exctype, value, traceback)
-#     sys.exit(1)
-#
-# # Set the exception hook to our wrapping function
-# sys.excepthook = my_exception_hook
+from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListModel, QAbstractTableModel
 
 
 class TreeItem(object):
     MyDataRole = Qt.UserRole + 1
 
-    def __init__(self, data, user_data=None, parent=None):
+    def __init__( self, data_, user_data=None, parent=None ):
         self.parentItem = parent
         self.userData = user_data
-        self.itemData = data
+        self.itemData = data_
         self.childItems = []
 
     def appendChild(self, item):
@@ -41,7 +27,7 @@ class TreeItem(object):
     def data(self, column, role):
         try:
             if role == Qt.DisplayRole:
-                return self.itemData[0]
+                return self.itemData[column]
 
             if role == self.MyDataRole:
                 return self.userData
@@ -59,14 +45,17 @@ class TreeItem(object):
             return self.parentItem.childItems.index(self)
 
         return 0
-        
+
+    def set_data(self, data_):
+        self.itemData = data_
+
 
 class TreeModel(QAbstractItemModel):
-    def __init__(self, data, parent=None):
+    def __init__( self, data_, parent=None ):
         super(TreeModel, self).__init__(parent)
 
-        self.rootItem = TreeItem(data=("Directories",))
-        self.setupModelData(data, self.rootItem)
+        self.rootItem = TreeItem(data_=("",))
+        self._setup_model_data(data_)
 
     def columnCount(self, parent):
         if parent.isValid():
@@ -91,7 +80,7 @@ class TreeModel(QAbstractItemModel):
 
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data(section, role)
 
@@ -116,13 +105,13 @@ class TreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        childItem = index.internalPointer()
-        parentItem = childItem.parent()
+        child_item = index.internalPointer()
+        parent_item = child_item.parent()
 
-        if parentItem == self.rootItem:
+        if parent_item == self.rootItem:
             return QModelIndex()
 
-        return self.createIndex(parentItem.row(), 0, parentItem)
+        return self.createIndex(parent_item.row(), 0, parent_item)
 
     def rowCount(self, parent=QModelIndex()):
         if parent.column() > 0:
@@ -135,39 +124,64 @@ class TreeModel(QAbstractItemModel):
 
         return parentItem.childCount()
 
-    def setupModelData(self, dir_tree, parent):
-        id_list = []
-        items_list = {0: parent}  # as dir
-        for row in dir_tree:
-            items_list[row[0]] = TreeItem(data=(row[1],), user_data=(row[0], row[2]))
-            id_list.append((row[0], row[2]))  # id and parent_id
+    def setHeaderData(self, p_int, orientation, value, role=None):
+        if not type(value) is tuple:
+            value = value.split(' ')
+        print(type(value), value)
+        self.rootItem.set_data(value)
 
-        for id_ in reversed(id_list):
+    def _setup_model_data( self, rows ):
+        """
+        Fill tree structure
+        :param rows: iterable, each item contains 3 elements
+                        item[0] - Id of item, unique;
+                        item[1] - data of Qt.DisplayRole;
+                        item[2] - Id of parent item, 0 for root,
+                     and sorted by item(2) - parent ID - in descendant order
+        :return: None
+        """
+        id_list = []
+        items_list = {0: self.rootItem}
+        for row in rows:
+            if not type(row[1]) is tuple:
+                row = (row[0], (row[1],), row[2])
+            items_list[row[0]] = TreeItem(data_=tuple(row[1]), user_data=(row[0::2]))
+            id_list.append((row[0::2]))
+
+        for id_ in id_list:
             if id_[1] in items_list:
                 items_list[id_[1]].appendChild(items_list[id_[0]])
 
 
-class MyListModel(QAbstractListModel):
+class TableModel(QAbstractTableModel):
     MyDataRole = Qt.UserRole + 1
 
     def __init__(self, parent=None, *args):
-        """ datain: a list where each item is a row
-        """
-        QAbstractListModel.__init__(self, parent, *args)
+        super(TableModel, self).__init__(parent)
+        self.__header = ()
         self.__data = []
+        self.__user_data = []
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent):
+        if parent.isValid():
+            return 0
         return len(self.__data)
+
+    def columnCount(self, parent = None):
+        return len(self.__header)
 
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
-                return self.__data[index.row()][0]
+                return self.__data[index.row()][index.column()]
             elif role == self.MyDataRole:
-                return self.__data[index.row()][1]
+                return self.__user_data[index.row()]
         return None
 
     def append_row(self, row):
+        if not type(row) is tuple:
+            row = (row,)
+        print('|--> append_row', row)
         self.__data.append(row)
 
     def appendData(self, value, role=Qt.EditRole):
@@ -182,3 +196,22 @@ class MyListModel(QAbstractListModel):
         del self.__data[row:row + count]
         self.endRemoveRows()
         return True
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.__header[section]
+
+    def setHeaderData(self, p_int, orientation, value, role=None):
+        print(type(value), value, value.split(' '))
+        if not type(value) is tuple:
+            value = value.split(' ')
+        self.__header = value
+
+    def setData(self, index, value, role):
+        if index.isValid():
+            if role == Qt.DisplayRole:
+                self.__data[index] = value
+                return
+            if role == TableModel.MyDataRole:
+                self.__user_data = value
+

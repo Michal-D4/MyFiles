@@ -4,7 +4,7 @@ import os
 from PyQt5.QtWidgets import QMessageBox, QInputDialog, QLineEdit, QFileDialog
 from PyQt5.QtCore import Qt
 
-from controller.my_qt_model import TreeModel, MyListModel
+from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
 from model.db_utils import DBUtils
 from model.utils import create_db
@@ -83,9 +83,8 @@ class MyController():
 
     def _populate_ext_list(self):
         ext_list = self.dbu.select_other('EXT')
-        model = MyListModel()
-        for ext in ext_list:
-            model.append_row(ext[1::-1])       # = (ext[1], ext[0]) = (Extension, ExtID)
+        model = TreeModel(ext_list)
+        model.setHeaderData(0, 0, "Extensions")
         self.view.extList.setModel(model)
 
     def _populate_tag_list(self):
@@ -114,6 +113,7 @@ class MyController():
         dir_tree = self.dbu.dir_tree_select(dir_id=0, level=0)
 
         model = TreeModel(dir_tree)
+        model.setHeaderData(0, Qt.Horizontal, ("Directories",))
 
         self.view.dirTree.setModel(model)
 
@@ -147,7 +147,6 @@ class MyController():
         extensions = self.view.extList.selectedIndexes()
         if extensions:
             model = self.view.extList.model()
-            model.data(extensions[0], Qt.DisplayRole)
             ext_ = ', '.join(model.data(i, Qt.DisplayRole) for i in extensions)
         else:
             ext_ = ''

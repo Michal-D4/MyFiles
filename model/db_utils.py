@@ -7,9 +7,11 @@ Selects = {'TREE': ('''WITH x(DirID, Path, ParentID, level) AS
  FROM x INNER JOIN Dirs AS t
  ON t.ParentID = x.DirID''',
                     'and lvl <= {} ) SELECT * FROM x;',
-                    ') SELECT * FROM x;'),
+                    ') SELECT * FROM x order by ParentID desc, Path;'),
            'PLACES': 'select * from myPlaces;',
-           'EXT': 'select * from Extensions',
+           'EXT': '''select ExtID+1000, Extension as title, GroupID as ID from Extensions 
+           UNION select GroupID, GroupName as title, 0 as ID from ExtGroups
+           order by ID desc, title;''',
            'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;'}
 
