@@ -1,10 +1,8 @@
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListModel, QAbstractTableModel
+from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractTableModel
 
 
 class TreeItem(object):
-    MyDataRole = Qt.UserRole + 1
-
-    def __init__( self, data_, user_data=None, parent=None ):
+    def __init__(self, data_, user_data=None, parent=None):
         self.parentItem = parent
         self.userData = user_data
         self.itemData = data_
@@ -22,17 +20,14 @@ class TreeItem(object):
 
     def columnCount(self):
         return len(self.itemData)
-        # return 1
 
     def data(self, column, role):
         try:
             if role == Qt.DisplayRole:
                 return self.itemData[column]
 
-            if role == self.MyDataRole:
+            if role == Qt.UserRole:
                 return self.userData
-
-            return None
 
         except IndexError:
             return None
@@ -51,7 +46,7 @@ class TreeItem(object):
 
 
 class TreeModel(QAbstractItemModel):
-    def __init__( self, data_, parent=None ):
+    def __init__(self, data_, parent=None):
         super(TreeModel, self).__init__(parent)
 
         self.rootItem = TreeItem(data_=("",))
@@ -64,15 +59,9 @@ class TreeModel(QAbstractItemModel):
             return self.rootItem.columnCount()
 
     def data(self, index, role):
-        if not index.isValid():
-            return None
-
-        if not role in (Qt.DisplayRole, Qt.UserRole):
-            return None
-
-        item = index.internalPointer()
-
-        return item.data(index.column(), role)
+        if index.isValid() & role in (Qt.DisplayRole, Qt.UserRole):
+            item = index.internalPointer()
+            return item.data(index.column(), role)
 
     def flags(self, index):
         if not index.isValid():
@@ -83,8 +72,6 @@ class TreeModel(QAbstractItemModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data(section, role)
-
-        return None
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -98,8 +85,8 @@ class TreeModel(QAbstractItemModel):
         childItem = parentItem.child(row)
         if childItem:
             return self.createIndex(row, column, childItem)
-        else:
-            return QModelIndex()
+
+        return QModelIndex()
 
     def parent(self, index):
         if not index.isValid():
@@ -114,7 +101,7 @@ class TreeModel(QAbstractItemModel):
         return self.createIndex(parent_item.row(), 0, parent_item)
 
     def rowCount(self, parent=QModelIndex()):
-        if parent.column() > 0:
+        if parent.column() > 0:         # ??? why
             return 0
 
         if not parent.isValid():
@@ -125,12 +112,11 @@ class TreeModel(QAbstractItemModel):
         return parentItem.childCount()
 
     def setHeaderData(self, p_int, orientation, value, role=None):
-        if not type(value) is tuple:
+        if isinstance(value, str):
             value = value.split(' ')
-        print(type(value), value)
         self.rootItem.set_data(value)
 
-    def _setup_model_data( self, rows ):
+    def _setup_model_data(self, rows):
         """
         Fill tree structure
         :param rows: iterable, each item contains 3 elements
@@ -143,9 +129,9 @@ class TreeModel(QAbstractItemModel):
         id_list = []
         items_list = {0: self.rootItem}
         for row in rows:
-            if not type(row[1]) is tuple:
+            if not isinstance(row[1], tuple):
                 row = (row[0], (row[1],), row[2])
-            items_list[row[0]] = TreeItem(data_=tuple(row[1]), user_data=(row[0::2]))
+            items_list[row[0]] = TreeItem(data_=row[1], user_data=(row[0::2]))
             id_list.append((row[0::2]))
 
         for id_ in id_list:
@@ -154,8 +140,6 @@ class TreeModel(QAbstractItemModel):
 
 
 class TableModel(QAbstractTableModel):
-    MyDataRole = Qt.UserRole + 1
-
     def __init__(self, parent=None, *args):
         super(TableModel, self).__init__(parent)
         self.__header = ()
@@ -167,25 +151,25 @@ class TableModel(QAbstractTableModel):
             return 0
         return len(self.__data)
 
-    def columnCount(self, parent = None):
+    def columnCount(self, parent=None):
         return len(self.__header)
 
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
                 return self.__data[index.row()][index.column()]
-            elif role == self.MyDataRole:
+            elif role == Qt.UserRole:
                 return self.__user_data[index.row()]
-        return None
 
-    def append_row(self, row):
-        if not type(row) is tuple:
+    def append_row(self, row, user_data=None):
+        if not isinstance(row, tuple):
             row = (row,)
-        print('|--> append_row', row)
         self.__data.append(row)
 
+        self.__user_data.append(user_data)
+
     def appendData(self, value, role=Qt.EditRole):
-        in_row = self.rowCount()
+        in_row = self.rowCount(QModelIndex())
         self.__data.append(value)
         index = self.createIndex(in_row, 0, 0)
         self.dataChanged.emit(index, index)
@@ -202,8 +186,7 @@ class TableModel(QAbstractTableModel):
             return self.__header[section]
 
     def setHeaderData(self, p_int, orientation, value, role=None):
-        print(type(value), value, value.split(' '))
-        if not type(value) is tuple:
+        if isinstance(value, str):
             value = value.split(' ')
         self.__header = value
 
@@ -212,6 +195,5 @@ class TableModel(QAbstractTableModel):
             if role == Qt.DisplayRole:
                 self.__data[index] = value
                 return
-            if role == TableModel.MyDataRole:
+            if role == Qt.UserRole:
                 self.__user_data = value
-
