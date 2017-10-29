@@ -21,7 +21,7 @@ class MyController():
         self.view = view.ui_main
 
     def get_places_view(self):
-        return self._cb_places
+        return self.view.cb_places
 
     def get_db_utils(self):
         return self._dbu
@@ -54,26 +54,6 @@ class MyController():
         self._dbu = DBUtils(self._connection)
         self._populate_all_widgets()
 
-    def on_populate_view(self, widget_name):
-        if widget_name == 'all':
-            self._populate_all_widgets()
-        elif widget_name == 'dirTree':
-            self._populate_directory_tree((0, 0))
-        elif widget_name == 'extList':
-            self._populate_ext_list()
-        elif widget_name == 'tagsList':
-            self._populate_tag_list()
-        elif widget_name == 'authorsList':
-            self._populate_author_list()
-        elif widget_name == 'filesList':
-            self._populate_file_list()
-        elif widget_name == 'commentField':
-            self._populate_comment_field()
-        elif widget_name == 'cb_places':
-            self._cb_places.populate_cb_places()
-        else:
-            pass
-
     def on_change_data(self, sender, data):
         '''
         handle of changing data in widgets
@@ -83,6 +63,10 @@ class MyController():
         '''
         if sender == 'cb_places':
             self._cb_places.about_change_place(data)
+        elif sender == 'filesList':
+            self._populate_file_list(data[0])
+        elif sender == 'dirTree':
+            self._populate_directory_tree(data[0])
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -95,7 +79,7 @@ class MyController():
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, ("Key words",))
         for tag, id in tag_list:
-            model.append_row((tag,), id)
+            model.append_row(tag, id)
         self.view.tagsList.setModel(model)
 
     def _populate_author_list(self):
@@ -103,14 +87,16 @@ class MyController():
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, "Authors")
         for author, id in author_list:
-            print('_populate_author_list', author, id)
             model.append_row(author, id)
         self.view.authorsList.setModel(model)
 
-    def _populate_file_list(self):
-        sel_idx = self.view.dirTree.selectedIndexes()
-        cur_idx = self.view.dirTree.currentIndex()
-        print('_populate_file_list', cur_idx, sel_idx)
+    def _populate_file_list(self, dir_idx):
+        model = TableModel()
+        files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx,))
+        model.setHeaderData(0, Qt.Horizontal, 'File Year Pages Size')
+        for ff in files:
+            model.append_row(ff[3:], ff[:3])
+        self.view.filesList.setModel(model)
 
     def _populate_comment_field(self):
         file_idx = self.view.filesList.selectedIndexes()
@@ -125,25 +111,25 @@ class MyController():
                 'Key words: {}'.format(', '.join(tags)),
                 'Authors: {}'.format(', '.join(authors)),
                 comment)))
-            print('_populate_comment_field', tags, authors, comment)
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)
-        self._populate_directory_tree((0, 0))
-        # self._populate_file_list()        # populate only on demand
-        # self._populate_comment_field()    # populate only on demand
+        self._cb_places.populate_cb_places()
+        self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
         self._populate_ext_list()
         self._populate_tag_list()
         self._populate_author_list()
-        self._cb_places.populate_cb_places()
 
-    def _populate_directory_tree(self, data):
-        dir_tree = self._dbu.dir_tree_select(dir_id=data[0], level=data[1])
+    def _populate_directory_tree(self, place_id):
+        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
 
         model = TreeModel(dir_tree)
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
 
         self.view.dirTree.setModel(model)
+        idx = model.index(0, 0)
+        self.view.dirTree.setCurrentIndex(idx)
+        self._populate_file_list(model.data(idx, role=Qt.UserRole)[0])
 
     def on_scan_files(self):
         """
@@ -161,7 +147,7 @@ class MyController():
         if _data:
             files = LoadDBData(self._connection, self._cb_places.get_curr_place())
             files.load_data(_data)
-            self._populate_directory_tree()
+            self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
 
     def _scan_file_system(self):
         ext_ = self._get_selected_extensions()
@@ -185,7 +171,7 @@ class MyController():
 
         if a_file:
             line = next(a_file)
-            if not self._cb_places.get_curr_place()[1] in line:
+            if not self._cb_places.get_curr_place()[1][1] in line:
                 MyController._bad_file_message(file_name)
                 a_file = ()
 

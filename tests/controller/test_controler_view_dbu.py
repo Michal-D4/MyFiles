@@ -17,55 +17,66 @@ class TestMyControllerViewDbu(unittest.TestCase):
         self.controller.view = self.mock_view
 
         self.mock_dbu = Mock(spec_set=DBUtils)
-        self.controller.dbu = self.mock_dbu
+        self.controller._dbu = self.mock_dbu
 
     def tearDown(self):
         # self.connection.close()
         pass
 
     @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
-    def test__populate_ext_list( self, mock_model ):
+    def test__populate_ext_list(self, mock_model):
         rv = [(101, 'e1', 1), (102, 'e2', 2),
               (103, 'e3', 1), (104, 'e4', 0),
               (1, 'g1', 0), (2, 'g2', 0)]
         self.mock_dbu.select_other.return_value = rv
 
-        mock_model_obj = Mock(spec_set=TableModel)
-        mock_model.return_value = mock_model_obj
-
         self.controller._populate_ext_list()
 
         self.mock_dbu.select_other.assert_called_once_with('EXT')
         mock_model.assert_called_once_with(rv)
-        mock_model_obj.setHeaderData.assert_called_with(0, 0, "Extensions")
+        mock_model.return_value.setHeaderData.assert_called_with(0, 1, "Extensions")
         self.mock_view.extList.setModel.assert_called_once()
 
-    def test__populate_tag_list(self):
-        pass
+    @patch('controller.my_controller.TableModel', spec_set=TableModel)
+    def test__populate_tag_list(self, mock_model):
+        self.mock_dbu.select_other.return_value = (('tag 1', 1), ('tag 2', 2))
 
-    def test__populate_author_list(self):
-        pass
+        self.controller._populate_tag_list()
+        self.mock_dbu.select_other.assert_called_once_with('TAGS')
+        count = mock_model.return_value.append_row.call_count
+        self.assertEqual(count, 2, msg='append_row must be called 2 times, but not')
+        mock_model.return_value.append_row.assert_called_with('tag 2', 2)
 
-    def test__populate_file_list(self):
+    @patch('controller.my_controller.TableModel', spec_set=TableModel)
+    def test__populate_author_list(self, mock_model):
+        self.mock_dbu.select_other.return_value = (('author 1', 1), ('author 2', 2))
+
+        self.controller._populate_author_list()
+        self.mock_dbu.select_other.assert_called_once_with('AUTHORS')
+        count = mock_model.return_value.append_row.call_count
+        self.assertEqual(count, 2, msg='append_row must be called 2 times, but not')
+        mock_model.return_value.append_row.assert_called_with('author 2', 2)
+
+    @patch('controller.my_controller.TableModel', spec_set=TableModel)
+    def test__populate_file_list(self, mock_model):
         pass
 
     def test__populate_comment_field(self):
         pass
 
+    @patch.object(my_controller.MyController, '_populate_file_list')
     @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
-    def test__populate_directory_tree(self, mock_model):
-        mock_model_obj = Mock(spec_set=TableModel)
-        mock_model.return_value = mock_model_obj
+    def test__populate_directory_tree(self, mock_model, mock_file_list):
 
-        self.controller._populate_directory_tree()
-        self.mock_dbu.dir_tree_select.assert_called_once_with(dir_id=0, level=0)
+        self.controller._populate_directory_tree(0)
+        self.mock_dbu.dir_tree_select.assert_called_once_with(dir_id=0, level=0, place_id=0)
         mock_model.assert_called_once()
-        self.mock_view.dirTree.setModel.assert_called_once_with(mock_model_obj)
+        self.mock_view.dirTree.setModel.assert_called_once_with(mock_model.return_value)
 
-    def test__get_selected_extensions(self):
+    @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
+    def test__get_selected_extensions(self, mock_model):
         self.mock_view.extList.selectedIndexes.side_effect = ((1, 2), ())
 
-        mock_model = Mock(spec_set=TableModel)
         self.mock_view.extList.model.return_value = mock_model
         mock_model.data.side_effect = ('item1', 'item2')
 
