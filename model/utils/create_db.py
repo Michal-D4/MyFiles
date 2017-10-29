@@ -8,16 +8,13 @@ CREATE TABLE IF NOT EXISTS Files (
 FileID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 DirID INTEGER NOT NULL,
 ExtID INTEGER,
-AuthorID INTEGER,
-TagID INTEGER,
+PlaceId INTEGER,
 FileName TEXT,
 CommentID INTEGER,
 Year INTEGER,
 Pages INTEGER,
 Size INTEGER,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID),
-FOREIGN KEY(AuthorID) REFERENCES FileAuthor(AuthorID),
-FOREIGN KEY(TagID) REFERENCES FileTag(TagID),
 FOREIGN KEY(CommentID) REFERENCES Comments(CommentID),
 FOREIGN KEY(ExtID) REFERENCES Extensions(ExtID)
 );
@@ -51,9 +48,9 @@ CREATE TABLE IF NOT EXISTS FileTag (
     'CREATE UNIQUE INDEX IF NOT EXISTS FileTagIdx1 ON FileTag(FileID, TagID);',
     'CREATE INDEX IF NOT EXISTS FileTagIdx2 ON FileTag(TagID);',
     '''
-CREATE TABLE IF NOT EXISTS myPlaces (
-myPlaceId INTEGER NOT NULL PRIMARY KEY,
-myPlace TEXT,
+CREATE TABLE IF NOT EXISTS Places (
+PlaceId INTEGER NOT NULL PRIMARY KEY,
+Place TEXT,
 Title TEXT
 );
     ''',
@@ -61,7 +58,7 @@ Title TEXT
 CREATE TABLE IF NOT EXISTS Dirs (
 DirID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Path TEXT,
-myPlaceId INTEGER,
+PlaceId INTEGER,
 ParentID INTEGER,
 FOREIGN KEY(ParentID) REFERENCES Dirs(DirID)
 );
@@ -86,13 +83,10 @@ CREATE TABLE IF NOT EXISTS Comments (
 CommentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Comment TEXT
 ); ''',
-    'CREATE INDEX IF NOT EXISTS Dirs_myPlaceId ON Dirs(myPlaceId, DirID);',
+    'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
-    'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(ExtID);',
-    'CREATE INDEX IF NOT EXISTS Files_CommentID ON Files(CommentID);',
-    'CREATE INDEX IF NOT EXISTS Files_TagID ON Files(TagID);',
-    'CREATE INDEX IF NOT EXISTS Files_AuthorID ON Files(AuthorID);',
-    'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(DirID);'
+    'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(PlaceId, ExtID);',
+    'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(PlaceId, DirID);'
 )
 
 
@@ -107,12 +101,12 @@ def create_all_objects(conn_param):
 
     set_initial_place(conn_param)
 
+
 def set_initial_place(conn_param):
     cursor = conn_param.cursor()
     loc = socket.gethostname()
-    cursor.execute('''insert into myPlaces (myPlaceId, myPlace, Title)    
+    cursor.execute('''insert into Places (PlaceId, Place, Title)    
         values (:id, :place, :title)''', (0, loc, loc))
-    # loc2 = cursor.lastrowid
     conn_param.commit()
 
 

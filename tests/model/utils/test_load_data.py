@@ -30,7 +30,7 @@ class TestLoadData2(unittest.TestCase):
         create_db.socket = mock_socket
         mock_socket.gethostname.return_value = 'My place'
         create_db.create_all_objects(self.connection)
-        curr_place = (1, 'test_place', 'test_place')
+        curr_place = ('test_place', 'Title')
         self.load_db = load_db_data.LoadDBData(self.connection, curr_place)
 
     def tearDown(self):

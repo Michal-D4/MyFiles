@@ -1,10 +1,10 @@
 import os
 
 SQL_FIND_PART_PATH = '''select ParentID
-    from Dirs where Path like :newPath and myPlaceId = :place;'''
+    from Dirs where Path like :newPath and PlaceId = :place;'''
 
 SQL_FIND_EXACT_PATH = '''select DirID, Path
-    from Dirs where Path = :newPath and myPlaceId = :place;'''
+    from Dirs where Path = :newPath and PlaceId = :place;'''
 
 SQL_CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
  where ParentID = :currId and Path like :newPath and DirID != :newId;'''
@@ -13,12 +13,12 @@ SQL_FIND_FILE = '''select *
     from Files where DirID = :dir_id and FileName = :file;'''
 
 SQL_INSERT_DIR = '''insert into Dirs
-    (Path, ParentID, myPlaceId)
+    (Path, ParentID, PlaceId)
     values (:path, :id, :placeId);'''
 
 SQL_INSERT_FILE = '''insert into Files
-    (DirID, FileName, ExtID)
-    values (:dir_id, :file, :ext_id);'''
+    (DirID, FileName, ExtID, PlaceId)
+    values (:dir_id, :file, :ext_id, :placeId);'''
 
 SQL_FIND_EXT = '''select ExtID
     from Extensions where Extension = ?;'''
@@ -44,15 +44,18 @@ class LoadDBData:
 
     def set_current_place(self, current_place):
         '''
-        Check existence of place in myPlaces table and insert it if absent
+        Check existence of place in Places table and insert it if absent
         :return:  None
         '''
-        count = self.cursor.execute('select count(*) from myPlaces where myPlaceId = :locID;',
-                                    (self.place_id,)).fetchone()
-        if count[0] == 0:
-            self.cursor.execute('''insert into myPlaces (myPlaceId, myPlace, Title)
-            values (:id, :place, :title)''', current_place)
+        place_id = self.cursor.execute('select PlaceId from Places where Place = :loc;',
+                                    (current_place[1][1],)).fetchone()
+        if place_id is None:
+            self.cursor.execute('''insert into Places (Place, Title)
+            values (:place, :title)''', current_place)
+            self.place_id = self.cursor.lastrowid
             self.conn.commit()
+        else:
+            self.place_id = place_id[0]
 
     def load_data(self, data):
         """
@@ -61,7 +64,6 @@ class LoadDBData:
         :return: None
         """
         for line in data:
-            # print(line)
             idx = self.insert_dir(line)
             self.insert_file(idx, line)
         self.conn.commit()
@@ -81,7 +83,8 @@ class LoadDBData:
             new_id = self.insert_extension(file)
             self.cursor.execute(SQL_INSERT_FILE, {'dir_id': idx,
                                                   'file': file,
-                                                  'ext_id': new_id})
+                                                  'ext_id': new_id,
+                                                  'placeId': self.place_id})
 
     def insert_extension(self, file):
         if file.rfind('.') > 0:
@@ -106,8 +109,7 @@ class LoadDBData:
         :return: row ID of file dir
         '''
         path = full_file_name.rpartition(os.sep)[0]
-        closest_parent_path = self.search_closest_parent(path)
-        idx, parent_path = closest_parent_path
+        idx, parent_path = self.search_closest_parent(path)
         if parent_path == path:
             return idx
 
@@ -126,7 +128,7 @@ class LoadDBData:
 
     def parent_id_for_child(self, path):
         '''
-        Check new file path:
+        Check the new file path:
           if it can be parent for other directories
         :param path:
         :return: parent Id of first found child, -1 if not children

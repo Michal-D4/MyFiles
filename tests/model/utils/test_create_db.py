@@ -7,16 +7,13 @@ TEST_DATA = (
 FileID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 DirID INTEGER NOT NULL,
 ExtID INTEGER,
-AuthorID INTEGER,
-TagID INTEGER,
+PlaceId INTEGER,
 FileName TEXT,
 CommentID INTEGER,
 Year INTEGER,
 Pages INTEGER,
 Size INTEGER,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID),
-FOREIGN KEY(AuthorID) REFERENCES FileAuthor(AuthorID),
-FOREIGN KEY(TagID) REFERENCES FileTag(TagID),
 FOREIGN KEY(CommentID) REFERENCES Comments(CommentID),
 FOREIGN KEY(ExtID) REFERENCES Extensions(ExtID)
 )''',),
@@ -41,15 +38,15 @@ Tag TEXT
 )''',),
 ('CREATE UNIQUE INDEX FileTagIdx1 ON FileTag(FileID, TagID)',),
 ('CREATE INDEX FileTagIdx2 ON FileTag(TagID)',),
-('''CREATE TABLE myPlaces (
-myPlaceId INTEGER NOT NULL PRIMARY KEY,
-myPlace TEXT,
+('''CREATE TABLE Places (
+PlaceId INTEGER NOT NULL PRIMARY KEY,
+Place TEXT,
 Title TEXT
 )''',),
 ('''CREATE TABLE Dirs (
 DirID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Path TEXT,
-myPlaceId INTEGER,
+PlaceId INTEGER,
 ParentID INTEGER,
 FOREIGN KEY(ParentID) REFERENCES Dirs(DirID)
 )''',),
@@ -67,13 +64,10 @@ GroupName TEXT
 CommentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Comment TEXT
 )''',),
-('CREATE INDEX Dirs_myPlaceId ON Dirs(myPlaceId, DirID)',),
+('CREATE INDEX Dirs_PlaceId ON Dirs(PlaceId, DirID)',),
 ('CREATE INDEX Dirs_ParentID ON Dirs(ParentID)',),
-('CREATE INDEX Files_ExtID ON Files(ExtID)',),
-('CREATE INDEX Files_CommentID ON Files(CommentID)',),
-('CREATE INDEX Files_TagID ON Files(TagID)',),
-('CREATE INDEX Files_AuthorID ON Files(AuthorID)',),
-('CREATE INDEX Files_DirID ON Files(DirID)',))
+('CREATE INDEX Files_ExtID ON Files(PlaceId, ExtID)',),
+('CREATE INDEX Files_DirID ON Files(PlaceId, DirID)',))
 )
 
 
@@ -89,6 +83,7 @@ class MyTestCase(unittest.TestCase):
         rr = self.connection.cursor()
         pp = rr.execute('select sql from sqlite_master;')
         tt = tuple(pp)
+        # print(tt)
         self.assertTupleEqual(tt, TEST_DATA)
 
 
