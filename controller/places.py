@@ -30,7 +30,6 @@ class Places:
         """
         idx = self._view.currentIndex()
         place_info = self._places[idx][1]
-        print('|---> is_disk_mounted: idx', idx, 'place_info', place_info)
         if not place_info:      # impossible to check if mounted
             return self.NOT_DEFINED
 
@@ -48,7 +47,6 @@ class Places:
     def is_removable(device):
         parts = psutil.disk_partitions()
         removable = next(x.opts for x in parts if x.device == device)
-        print('|---> is_removable', removable)
         return removable == 'rw,removable'
 
     def populate_cb_places(self):
@@ -60,16 +58,18 @@ class Places:
             self._view.addItems((x[2] for x in self._places))
 
             loc = socket.gethostname()
-            # if not self.is_not_exist(loc):  # due to error the current place was not created
             idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
-            print('|---> populate_cb_places', idx)
 
-            self._curr_place = self._places[idx]
+            self._curr_place = (idx, self._places[idx])
             self._view.setCurrentIndex(idx)
 
         self._view.blockSignals(False)
 
     def about_change_place(self, data):
+        """
+        :param data: tuple (index in view, current text in view)
+        :return: None
+        """
         prev_id = self._curr_place[0]
         idx = self._view.currentIndex()
         if data[0] >= len(self._places):
@@ -77,7 +77,7 @@ class Places:
         else:
             self._change_place(data)
         if prev_id != self._curr_place[0]:
-            self.conrtoller.on_populate_view('dirTree')
+            self.conrtoller.on_change_data('dirTree', (self._curr_place[1][0],))
 
     def update_disk_info(self, root):
         """
@@ -88,12 +88,12 @@ class Places:
         """
         if self.is_disk_mounted() == self.NOT_DEFINED:
             disk_info = self._get_disk_info(root)
-            print('|---> update_disk_info', disk_info)
 
             if self.is_not_exist(disk_info):
-                self._dbu.update_other('REMOVAL_DISK_INFO', (disk_info, self._curr_place[0]))
-                self._curr_place = (self._curr_place[0], disk_info, self._curr_place[2])
-                self._places[self._curr_place[0]] = self._curr_place
+                self._dbu.update_other('REMOVAL_DISK_INFO', (disk_info, self._curr_place[1][0]))
+                self._curr_place = (self._curr_place[0],
+                                    (self._curr_place[1][0], disk_info, self._curr_place[1][2]))
+                self._places[self._curr_place[0]] = self._curr_place[1]
                 return True
 
         return False
@@ -104,7 +104,7 @@ class Places:
         :return: label of disk if removal, otherwise - computer name
         """
         disk = psutil.os.path._getvolumepathname(root)
-        print('|---> _get_disk_info', disk)
+
         if self.is_removable(disk):
             disk_info = self._get_vol_name(disk)  # disk label
         else:
@@ -113,7 +113,6 @@ class Places:
 
     def is_not_exist(self, disk_info):
         res = self._dbu.select_other('IS_EXIST', (disk_info,)).fetchone()
-        print('|---> is_not_exist', res is None, res)
         return res is None
 
     def _change_place(self, data):
@@ -127,7 +126,7 @@ class Places:
         if self.is_disk_mounted() == self.NOT_MOUNTED:
             res = self._ask_switch_to_unavailable_storage(data)
             if res == 0:                # Ok button
-                self._curr_place = self._places[data[0]]
+                self._curr_place = (data[0], self._places[data[0]])
             elif res == 1:              # Remove button
                 self._remove_current_place()
             else:                       # Cancel - return to prev.place
@@ -135,7 +134,7 @@ class Places:
                 self._view.setCurrentIndex(self._curr_place[0])
                 self._view.blockSignals(False)
         else:                           # switches to new place silently
-            self._curr_place = self._places[data[0]]
+            self._curr_place = (data[0], self._places[data[0]])
 
     def _remove_current_place(self):
         idx = self._view.currentIndex()
@@ -156,18 +155,13 @@ class Places:
         return res is None
 
     def _add_place(self, data):
-        print('|---> _add_place', data)
+        """
+        :param data: tuple (index in view, current text in view)
+        :return: None
+        """
         res = self._ask_rename_or_new()
         if res == 0:                # add new
-            jj = self._dbu.insert_other('PLACES', ('', data[1]))
-            self._curr_place = (jj, '', data[1])
-            print('      _curr_place', self._curr_place)
-            self._places.append(self._curr_place)
-            root = QFileDialog.getExistingDirectory(parent=self._view,
-                                                    caption='Select root folder')
-            print('|-----> root', root)
-            if root:
-                self.update_disk_info(root)
+            self._add_new(data)
         elif res == 1:              # rename
             self._rename_place((self._curr_place[0], data[1]))
         else:                       # cancel
@@ -176,19 +170,38 @@ class Places:
             self._view.setCurrentIndex(self._curr_place[0])
             self._view.blockSignals(False)
 
+    def _add_new(self, data):
+        """
+        :param data: tuple (index in view, current text in view)
+        :return: None
+        """
+        jj = self._dbu.insert_other('PLACES', ('', data[1]))
+        self._curr_place = (self._view.currentIndex(), (jj, '', data[1]))
+        self._places.append(self._curr_place[1])
+        root = QFileDialog.getExistingDirectory(parent=self._view,
+                                                caption='Select root folder')
+        if root:
+            self.update_disk_info(root)
+
     def _rename_place(self, data):
-        print('|---> _rename_place', data)
-        print('      _curr_place  ', self._curr_place)
-        print('      _places      ', self._places)
-        self._curr_place = (self._curr_place[0], self._curr_place[1], data[1])
-        self._places[self._curr_place[0]] = self._curr_place
+        """
+        :param data: tuple (index in view, current text in view)
+        :return: None
+        """
+        self._curr_place = (self._curr_place[0],
+                            (self._curr_place[1][0],
+                             self._curr_place[1][1], data[1]))
+        self._places[self._curr_place[0]] = self._curr_place[1]
 
         self._view.blockSignals(True)
+
         self._view.clear()
+
         self._view.addItems((x[2] for x in self._places))
 
         self._view.setCurrentIndex(self._curr_place[0])
         self._view.setCurrentText(data[1])
+
         self._view.blockSignals(False)
 
         self._dbu.update_other('PLACES', (data[1], self._curr_place[0]))

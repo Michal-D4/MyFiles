@@ -27,7 +27,7 @@ class TestPlaces(unittest.TestCase):
     @patch.object(Places, '_add_place')
     def test_about_change_place(self, mock_add_place, mock_change_place):
         data = (0, 'place 1')
-        self.tested_places._curr_place = (0, 'in', 'out')
+        self.tested_places._curr_place = (0, (0, 'in', 'out'))
 
         # if data[0] >= len of list of places, then call _add_place
         #  now list is empty
@@ -47,7 +47,7 @@ class TestPlaces(unittest.TestCase):
                            mock_ask_switch_to_unavailable_storage,
                            mock_remove_current_place):
         self.tested_places._places = [(0, 'in', 'out'), ]
-        self.tested_places._curr_place = (0, 'in', 'out')
+        self.tested_places._curr_place = (0, (0, 'in', 'out'))
 
         mock_is_disk_mounted.side_effect = (self.tested_places.MOUNTED,
                                             self.tested_places.NOT_MOUNTED,
@@ -71,7 +71,7 @@ class TestPlaces(unittest.TestCase):
     @patch.object(Places, '_not_in_dirs')
     def test__remove_current_place(self, mock_not_in_dirs):
         self.tested_places._places = [(0, 'in', 'out'), ]
-        self.tested_places._curr_place = (0, 'in', 'out')
+        self.tested_places._curr_place = (0, (0, 'in', 'out'))
 
         self.tested_places._view.currentIndex.return_value = 0
         mock_not_in_dirs.side_effect = (False, True)
@@ -86,7 +86,7 @@ class TestPlaces(unittest.TestCase):
 
     def test__rename_place(self):
         self.tested_places._places = [(0, 'a', 'a')]
-        self.tested_places._curr_place = (0, 'a', 'a')
+        self.tested_places._curr_place = (0, (0, 'in', 'out'))
 
         self.tested_places._rename_place((1, 'data'))
         self.tested_places._view.addItems.assert_called_once()
@@ -108,36 +108,31 @@ class TestPlaces(unittest.TestCase):
                          [call.blockSignals(True),
                           call.blockSignals(False)])
 
-    @patch('controller.places.QFileDialog', spec_set=QFileDialog)
-    @patch.object(Places, 'update_disk_info')
+    @patch.object(Places, '_add_new')
+    @patch.object(Places, '_ask_rename_or_new')
+    def test__add_place_add_new(self, mock_ask_rename_or_new, mock__add_new):
+        mock_ask_rename_or_new.return_value = 0
+
+        self.tested_places._add_place((1, 'data'))
+        mock__add_new.assert_called_once_with((1, 'data'))
+
     @patch.object(Places, '_rename_place')
     @patch.object(Places, '_ask_rename_or_new')
-    def test__add_place(self, mock_ask_rename_or_new, mock_rename_place,
-                        mock_update_disk_info, mock_file_dialog):
+    def test__add_place_rename(self, mock_ask_rename_or_new, mock_rename_place):
 
-        mock_ask_rename_or_new.side_effect = (0, 0, 1, 2)
-        mock_file_dialog.getExistingDirectory.side_effect = ('', 'f:/')
+        self.tested_places._curr_place = (0, (0, 'some_place', 'some_title'))
 
-        # _ask_rename_or_new returns 0 -> add new place,
-        #  without selecting directory
+        mock_ask_rename_or_new.return_value = 1
+
         self.tested_places._add_place((1, 'data'))
-        self.tested_places._dbu.insert_other.assert_called_once_with('PLACES', ('', 'data'))
-        mock_update_disk_info.assert_not_called()
+        mock_rename_place.assert_called_once_with((0, 'data'))
 
-        self.tested_places._dbu.insert_other.return_value = 1
+    @patch.object(Places, '_ask_rename_or_new')
+    def test__add_place_cancel(self, mock_ask_rename_or_new):
 
-        # _ask_rename_or_new returns 0 -> add new place,
-        #  with selecting directory
-        self.tested_places._add_place((1, 'data'))
-        self.tested_places._dbu.insert_other.assert_called_with('PLACES', ('', 'data'))
-        mock_update_disk_info.assert_called_once_with('f:/')
+        self.tested_places._curr_place = (0, (0, 'some_place', 'some_title'))
+        mock_ask_rename_or_new.return_value = 2
 
-        # _ask_rename_or_new returns 1 -> call _rename_place
-        self.tested_places._add_place((1, 'data'))
-        mock_rename_place.assert_called_once_with((1, 'data'))
-
-        # _ask_rename_or_new returns 2, i.e not 0 or 1  -> cancel,
-        #  roll back all changes
         self.tested_places._add_place((1, 'data'))
         self.tested_places._view.removeItem.assert_called_once()
 
@@ -181,7 +176,7 @@ class TestPlaces(unittest.TestCase):
 
         res = self.tested_places.get_curr_place()
 
-        self.assertEqual(res, (4, 'inner name2', 6))
+        self.assertEqual(res, (1, (4, 'inner name2', 6)))
 
     @patch('controller.places.psutil', spec_set=psutil)
     def test_is_removable(self, mock_disk_partitions):
@@ -236,7 +231,7 @@ class TestPlaces(unittest.TestCase):
     def test_update_disk_info(self, mock_os_pass, mock_mounted,
                               mock__get_disk_info, mock_check_if_not_exist):
         self.tested_places._places = [(0, 'a', 'a')]
-        self.tested_places._curr_place = (0, 'a', 'a')
+        self.tested_places._curr_place = (0, (0, 'a', 'a'))
 
         idx = 0
         disk_label = 'disk_label'

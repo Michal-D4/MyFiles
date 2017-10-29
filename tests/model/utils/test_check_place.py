@@ -21,12 +21,13 @@ class TestCheckPlace(unittest.TestCase):
 
 
     def test_check_place(self):
-        curr_place = (1, 'test_place', 'test_place')
+        curr_place = ('test_place', 'Title')
         load_db = load_db_data.LoadDBData(self.connection, curr_place)
 
         self.assertEqual(load_db.place_id, 1)
 
-        tt = self.connection.execute('select * from myPlaces').fetchall()
+        tt = self.connection.execute('select * from Places').fetchall()
         pp = tuple(tt)
-        self.assertEqual(pp, ((0, 'My place', 'My place'), curr_place))
+        self.assertEqual(pp, ((0, 'My place', 'My place'),
+                              (1, 'test_place', 'Title')))
 
