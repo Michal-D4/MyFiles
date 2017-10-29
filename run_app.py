@@ -26,7 +26,6 @@ def main():
     my_app = MainFlow(open_dialog=dlg)
 
     _controller = MyController(my_app)
-    my_app.populate_view_signal.connect(_controller.on_populate_view)
     my_app.scan_files_signal.connect(_controller.on_scan_files)
 
     # when data changed on any widget

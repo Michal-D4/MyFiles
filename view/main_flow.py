@@ -6,7 +6,6 @@ from view.ui_new_view import Ui_MainWindow
 
 
 class MainFlow(QtWidgets.QMainWindow):
-    populate_view_signal = pyqtSignal(str)        # str - name of Widget
     change_data_signal = pyqtSignal(str, tuple)   # str - name of Widget, tuple - data
     scan_files_signal = pyqtSignal()
 
@@ -26,14 +25,13 @@ class MainFlow(QtWidgets.QMainWindow):
         self.ui_main.actionGetFiles.triggered.connect(self.go)
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
-        self.ui_main.dirTree.doubleClicked.connect(self.dir_changed)
+        self.ui_main.dirTree.clicked.connect(self.dir_changed)
 
         self.open_dialog = open_dialog
 
-    def dir_changed(self, signal):
-        print('|---> MainFlow.dir_changed')
-        print(signal)
-        pass
+    def dir_changed(self, curr_idx):
+        dir_idx = self.ui_main.dirTree.model().data(curr_idx, Qt.UserRole)[0]
+        self.change_data_signal.emit('filesList', (dir_idx,))
 
     def change_place(self, idx):
         self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))
@@ -64,23 +62,13 @@ class MainFlow(QtWidgets.QMainWindow):
     def go(self):
         print('go ====>')
 
-    def populate_all(self):
-        print('|---> MainFlow.populate_all')
-        self.populate_view_signal.emit('all')
-
-    def populate_tree(self):
-        print('|---> MainFlow.populate_tree')
-        self.populate_view_signal.emit('dirTree')
-
     def open_data_base(self):
         self.open_dialog.exec_()
 
     def first_open_data_base(self):
         if not self.open_dialog.skip_open_dialog():
-            print('MainFlow.first_open_data_base ===> run open_data_base')
             self.open_data_base()
         else:
-            print('MainFlow.first_open_data_base ===> connect to recent used DB')
             self.open_dialog.emit_open_dialog()
 
     def closeEvent(self, event):
