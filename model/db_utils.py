@@ -18,9 +18,9 @@ Selects = {'TREE':
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
            'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
-           'FILE_TAGS': '',
+           'FILE_TAGS': 'select Tag from Tags where TagID in (select TagID from FileTag where FileID = ?);',
            'FILE_AUTHORS': ' '.join(('select Author from Authors where AuthorID in',
-                                     'select AuthorID from FileAuthor where FileID = ?;')),
+                                     '(select AuthorID from FileAuthor where FileID = ?);')),
            'FILE_COMMENT': '',
            'FILES_CUR_DIR': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
                                       'Pages, Size from Files where DirId = ?;'))
