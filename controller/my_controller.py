@@ -64,9 +64,11 @@ class MyController():
         if sender == 'cb_places':
             self._cb_places.about_change_place(data)
         elif sender == 'filesList':
-            self._populate_file_list(data[0])
+            self._populate_file_list(data)
         elif sender == 'dirTree':
             self._populate_directory_tree(data[0])
+        elif sender == 'commentField':
+            self._populate_comment_field(data)
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -91,26 +93,32 @@ class MyController():
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
-        model = TableModel()
-        files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx,))
-        model.setHeaderData(0, Qt.Horizontal, 'File Year Pages Size')
-        for ff in files:
-            model.append_row(ff[3:], ff[:3])
-        self.view.filesList.setModel(model)
+        if dir_idx:
+            model = TableModel()
+            files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))
+            model.setHeaderData(0, Qt.Horizontal, 'File Year Pages Size')
+            for ff in files:
+                model.append_row(ff[3:], ff[:3])
+            self.view.filesList.setModel(model)
 
-    def _populate_comment_field(self):
-        file_idx = self.view.filesList.selectedIndexes()
-        if file_idx:
-            _idx = file_idx[0]
-            assert isinstance(_idx, int), \
-                "the type is {} instead of int".format(type(_idx))
-            tags = self._dbu.select_other("FILE_TAGS", _idx)
-            authors = self._dbu.select_other("FILE_AUTHORS", _idx)
-            comment = self._dbu.select_other("FILE_COMMENT", _idx)
+    def _populate_comment_field(self, data):
+        print('|---> _populate_comment_field', data)
+        file_id = data[0]
+        comment_id = data[2]
+        if file_id:
+            assert isinstance(file_id, int), \
+                "the type of file_id is {} instead of int".format(type(file_id))
+            tags = self._dbu.select_other("FILE_TAGS", (file_id,))
+            authors = self._dbu.select_other("FILE_AUTHORS", (file_id,))
+            if comment_id:
+                comment = self._dbu.select_other("FILE_COMMENT", (comment_id,))
+            else:
+                comment = ''
             self.view.commentField.setText('\\n'.join((
                 'Key words: {}'.format(', '.join(tags)),
                 'Authors: {}'.format(', '.join(authors)),
                 comment)))
+            # print(self.view.commentField.plainText)
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)
@@ -129,7 +137,8 @@ class MyController():
         self.view.dirTree.setModel(model)
         idx = model.index(0, 0)
         self.view.dirTree.setCurrentIndex(idx)
-        self._populate_file_list(model.data(idx, role=Qt.UserRole)[0])
+        print('model.data', model.data(idx, role=Qt.UserRole))
+        self._populate_file_list(model.data(idx, role=Qt.UserRole))
 
     def on_scan_files(self):
         """

@@ -164,9 +164,10 @@ class TestMyController(unittest.TestCase):
 
         # todo : in case of 'other place' check
         # 1) if place defined in the first line of file
-        # 2) if such place registred in DB - possible action:
+        # 2) if such place registered in DB - possible action:
         #    a)  show message with name of this place
-        #    b)  switch to place in file or create new place
+        #    b)  - switch to place in file
+        #        - or create new place
         mock_open.return_value = (x for x in list_lines)
         res = self.controller._read_from_file()
         self.assertEqual(tuple(res), ())

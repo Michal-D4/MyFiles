@@ -61,7 +61,8 @@ class TreeModel(QAbstractItemModel):
     def data(self, index, role):
         if index.isValid() & role in (Qt.DisplayRole, Qt.UserRole):
             item = index.internalPointer()
-            return item.data(index.column(), role)
+            if item:
+                return item.data(index.column(), role)
 
     def flags(self, index):
         if not index.isValid():

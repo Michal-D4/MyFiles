@@ -26,11 +26,16 @@ class MainFlow(QtWidgets.QMainWindow):
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.dirTree.clicked.connect(self.dir_changed)
+        self.ui_main.filesList.clicked.connect(self.file_changed)
 
         self.open_dialog = open_dialog
 
+    def file_changed(self, curr_idx):
+        idxs = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
+        self.change_data_signal.emit('commentField', idxs)
+
     def dir_changed(self, curr_idx):
-        dir_idx = self.ui_main.dirTree.model().data(curr_idx, Qt.UserRole)[0]
+        dir_idx = self.ui_main.dirTree.model().data(curr_idx, Qt.UserRole)
         self.change_data_signal.emit('filesList', (dir_idx,))
 
     def change_place(self, idx):
