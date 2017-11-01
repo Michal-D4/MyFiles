@@ -64,11 +64,26 @@ class MyController():
         if sender == 'cb_places':
             self._cb_places.about_change_place(data)
         elif sender == 'filesList':
-            self._populate_file_list(data)
+            self._populate_file_list(data[0])
         elif sender == 'dirTree':
             self._populate_directory_tree(data[0])
         elif sender == 'commentField':
             self._populate_comment_field(data)
+        elif sender == 'Edit key words':
+            self._edit_key_words()
+        elif sender == 'Edit authors':
+            self._edit_authors()
+        elif sender == 'Edit comment':
+            self._edit_comment()
+
+    def _edit_key_words(self):
+        pass
+
+    def _edit_authors(self):
+        pass
+
+    def _edit_comment(self):
+        pass
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -93,6 +108,7 @@ class MyController():
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
+        print('|---> _populate_file_list', dir_idx)
         if dir_idx:
             model = TableModel()
             files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))

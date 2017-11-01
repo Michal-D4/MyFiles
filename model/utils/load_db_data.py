@@ -1,4 +1,7 @@
 import os
+import datetime
+
+from PyPDF2 import PdfFileReader
 
 SQL_FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and PlaceId = :place;'''
@@ -27,6 +30,11 @@ SQL_FIND_EXT = '''select ExtID
 SQL_INSERT_EXT = '''insert into Extensions
     (Extension, GroupID) values (:ext, 0);'''
 
+SQL_INSERT_AUTHOR = 'insert into Authors (Author) values (?);'
+
+SQL_INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
+
+SQL_INSERT_COMMENT = 'insert into Comments (Comment) value (?);'
 
 class LoadDBData:
     """
@@ -41,6 +49,7 @@ class LoadDBData:
         self.cursor = self.conn.cursor()
         self.place_id = current_place[0]
         self.set_current_place(current_place)
+        self.file_info = []
 
     def set_current_place(self, current_place):
         '''
@@ -76,15 +85,69 @@ class LoadDBData:
         :return: None
         """
         # TODO add additional data: creation date, size, page number.
-        file = line.rpartition(os.sep)[2]
+        file = os.path.split(line)[1]
+        # file = line.rpartition(os.sep)[2]
 
         item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': idx, 'file': file}).fetchone()
         if not item:
-            new_id = self.insert_extension(file)
+            ext_id, ext = self.insert_extension(file)
+            self.get_file_info(line, ext)
+            comm_id, pages = self._insert_comment()
+
             self.cursor.execute(SQL_INSERT_FILE, {'dir_id': idx,
                                                   'file': file,
-                                                  'ext_id': new_id,
-                                                  'placeId': self.place_id})
+                                                  'ext_id': ext_id,
+                                                  'placeId': self.place_id,
+                                                  'comm_id': comm_id,
+                                                  'year': self.file_info[1],
+                                                  'page': pages})
+            file_id = self.cursor.lastrowid
+            if self.file_info[3]:
+                self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3], file_id))
+                auth_id = self.cursor.lastrowid
+                self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
+
+    def _insert_comment(self):
+        if len(self.file_info) > 2:
+            comm = '\n'.join((x for x in self.file_info[4:] if not x == ''))    # todo formatting
+            self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
+            comm_id = self.cursor.lastrowid
+            pages = self.file_info[2]
+        else:
+            comm_id = 0
+            pages = ''
+        return comm_id, pages
+
+    def get_file_info(self, file, ext):
+        '''
+        Store info in self.file_info:
+            0 - size,
+            1 - year,  further - pdf-info
+            2 - pages,
+            3 - author,
+            4 - CreationDate
+            5 - Title
+        :param file: full path
+        :param ext: pdf or not pdf
+        :return: None
+        '''
+        st = os.stat(file)
+        self.file_info.append(st.st_size)
+        self.file_info.append(datetime.datetime.fromtimestamp(st.st_ctime).date().isoformat())
+        if str.lower(ext) == 'pdf':
+            self.get_pdf_info(file)
+
+    def get_pdf_info(self, file):
+        try:
+            fr = PdfFileReader(open(file, "rb"))
+            self.file_info.append(fr.getNumPages())
+            fi = fr.documentInfo
+            self.file_info.append(fi.getText('/Author'))
+            ww = fi.getText('/CreationDate')
+            self.file_info.append('-'.join((ww[2:6], ww[6:8], ww[8:10])))
+            self.file_info.append(fi.getText('/Title'))
+        except IOError:
+            pass
 
     def insert_extension(self, file):
         if file.rfind('.') > 0:
@@ -100,7 +163,7 @@ class LoadDBData:
                 idx = self.cursor.lastrowid
         else:
             idx = 0
-        return idx
+        return idx, ext
 
     def insert_dir(self, full_file_name):
         '''
