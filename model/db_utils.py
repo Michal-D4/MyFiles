@@ -71,8 +71,8 @@ class DBUtils:
         return sql
 
     def select_other(self, sql, params=()):
-        # print('|---> select_other', sql, params)
-        # print(Selects[sql])
+        print('|---> select_other', sql, params)
+        print(Selects[sql])
         self.curs.execute(Selects[sql], params)
         return self.curs
 

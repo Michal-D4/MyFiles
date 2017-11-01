@@ -17,7 +17,7 @@ LOAD_DATA_IN_RANDOM_ORDER = (r'f:\Docs\Python\main.docx',
                              r'd:\Doc2\Java\some.txt',
                              r'f:\Docs\Box\main\on.docx',
                              r'f:\Docs\triton\sec\boo.no',
-                             r'f:\Docs\A.Блок.txt',
+                             r'f:\A.Блок.txt',
                              r'f:\Docs\Python\А.Блок.docx',
                              r'f:\Docs\Box\Блок.docx'
                              )
@@ -251,7 +251,7 @@ class TestLoadData2(unittest.TestCase):
                           (3, r'd:\Doc2\Java', 1, 0),
                           (4, r'f:\Docs\Box\main', 1, 7),
                           (5, r'f:\Docs\triton\sec', 1, 6),
-                          (6, r'f:\Docs', 1, 0),
+                          (6, 'f:', 1, 0),
                           (7, r'f:\Docs\Box', 1, 6))
                          )
 

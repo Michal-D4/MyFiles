@@ -1,4 +1,5 @@
 import os
+from PyPDF2 import PdfFileReader
 
 SQL_FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and PlaceId = :place;'''
@@ -41,6 +42,7 @@ class LoadDBData:
         self.cursor = self.conn.cursor()
         self.place_id = current_place[0]
         self.set_current_place(current_place)
+        self.file_info = []
 
     def set_current_place(self, current_place):
         '''
@@ -76,15 +78,32 @@ class LoadDBData:
         :return: None
         """
         # TODO add additional data: creation date, size, page number.
-        file = line.rpartition(os.sep)[2]
+        file = os.path.split(line)[1]
+        # file = line.rpartition(os.sep)[2]
 
         item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': idx, 'file': file}).fetchone()
         if not item:
-            new_id = self.insert_extension(file)
+            ext_id, ext = self.insert_extension(file)
+            self.get_file_info(line, ext)
             self.cursor.execute(SQL_INSERT_FILE, {'dir_id': idx,
                                                   'file': file,
-                                                  'ext_id': new_id,
+                                                  'ext_id': ext_id,
                                                   'placeId': self.place_id})
+
+    def get_file_info(self, file, ext):
+        if str.lower(ext) == 'pdf':
+            self.get_pdf_info(file)
+        else:
+            os.stat(file).st_size
+            os.stat(file).st_file_attributes
+
+    def get_pdf_info(self, file):
+        fr = PdfFileReader(open(file, "rb"))
+        fr.getNumPages()
+        dict = fr.documentInfo
+        dict.getText('/CreationDate')
+        dict.getText('/Author')
+        dict.getText('/Title')
 
     def insert_extension(self, file):
         if file.rfind('.') > 0:
@@ -100,7 +119,7 @@ class LoadDBData:
                 idx = self.cursor.lastrowid
         else:
             idx = 0
-        return idx
+        return idx, ext
 
     def insert_dir(self, full_file_name):
         '''

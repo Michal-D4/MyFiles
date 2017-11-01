@@ -1,20 +1,20 @@
-from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
 
 
-class MainFlow(QtWidgets.QMainWindow):
+class MainFlow(QMainWindow):
     change_data_signal = pyqtSignal(str, tuple)   # str - name of Widget, tuple - data
     scan_files_signal = pyqtSignal()
 
     def __init__(self, parent=None, open_dialog=MyDBChoice):
-        QtWidgets.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self.ui_main = Ui_MainWindow()
         self.ui_main.setupUi(self)
 
-        self.ui_main.cb_places = QtWidgets.QComboBox()
+        self.ui_main.cb_places = QComboBox()
         self.ui_main.cb_places.setEditable(True)
         self.ui_main.toolBar.addWidget(self.ui_main.cb_places)
 
@@ -28,7 +28,29 @@ class MainFlow(QtWidgets.QMainWindow):
         self.ui_main.dirTree.clicked.connect(self.dir_changed)
         self.ui_main.filesList.clicked.connect(self.file_changed)
 
+        self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.filesList.customContextMenuRequested.connect(self._file_pop_menu)
+
+        self.ui_main.commentField.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.commentField.customContextMenuRequested.connect(self._comment_menu)
+
         self.open_dialog = open_dialog
+
+    def _comment_menu(self, pos):
+        menu = QMenu(self)
+        edit_tags = menu.addAction('Edit key words')
+        edit_authors = menu.addAction('Edit authors')
+        edit_comment = menu.addAction('Edit comment')
+        action = menu.exec_(self.ui_main.commentField.mapToGlobal(pos))
+        if action:
+            print('|---> _comment_menu', action.text())
+            self.change_data_signal.emit(action.text(), ())
+
+    def _file_pop_menu(self, pos):
+        # todo method _file_pop_menu not implemented yet
+        menu = QMenu(self)
+        action1 = menu.addAction('Delete')
+        action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
 
     def file_changed(self, curr_idx):
         idxs = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
