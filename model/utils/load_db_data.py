@@ -86,7 +86,6 @@ class LoadDBData:
         """
         # TODO add additional data: creation date, size, page number.
         file = os.path.split(full_file_name)[1]
-        # file = full_file_name.rpartition(os.sep)[2]
 
         item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
         if not item:
