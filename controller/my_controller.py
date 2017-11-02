@@ -125,16 +125,25 @@ class MyController():
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
             tags = self._dbu.select_other("FILE_TAGS", (file_id,))
+            tgs = []
+            for tt in tags:
+                tgs.append(tt)
             authors = self._dbu.select_other("FILE_AUTHORS", (file_id,))
+            auth = []
+            for aa in authors:
+                auth.append(aa[0])
             if comment_id:
-                comment = self._dbu.select_other("FILE_COMMENT", (comment_id,))
+                comment = tuple(self._dbu.select_other("FILE_COMMENT", (comment_id,)))
+                comm = []
+                for cc in comment:
+                    comm.append(cc[0])
             else:
-                comment = ''
-            self.view.commentField.setText('\\n'.join((
-                'Key words: {}'.format(', '.join(tags)),
-                'Authors: {}'.format(', '.join(authors)),
-                comment)))
-            # print(self.view.commentField.plainText)
+                comm = ('',)
+            print('    tags', tgs, '   authors', auth, '  comment', comm)
+            self.view.commentField.setText('\r\n'.join((
+                'Key words: {}'.format(', '.join(tgs)),
+                'Authors: {}'.format(', '.join(auth)),
+                comm[0])))
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)

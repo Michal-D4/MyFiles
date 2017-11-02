@@ -47,7 +47,7 @@ class MainFlow(QMainWindow):
             self.change_data_signal.emit(action.text(), ())
 
     def _file_pop_menu(self, pos):
-        # todo method _file_pop_menu not implemented yet
+        # todo method _file_pop_menu not implemented yet -- not clear yet
         menu = QMenu(self)
         action1 = menu.addAction('Delete')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))

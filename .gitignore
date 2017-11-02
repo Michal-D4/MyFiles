@@ -11,4 +11,5 @@
 *.sqlite
 ui_*.py
 *_rc.py
-setup.pcl
+# setup.pcl used to pickle settings
+*.pcl

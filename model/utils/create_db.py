@@ -111,6 +111,6 @@ def set_initial_place(conn_param):
 
 
 if __name__ == "__main__":
-    BASE_FILE = "..//..//new_db.sqlite"
+    BASE_FILE = ":memory:"
     IT_IS = sqlite3.connect(BASE_FILE)
     create_all_objects(IT_IS)
