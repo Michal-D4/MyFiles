@@ -45,6 +45,7 @@ class MyController():
                     yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
+        print('|---> on_open_db', file_name, create)
         if create:
             self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
             create_db.create_all_objects(self._connection)
