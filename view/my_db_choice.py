@@ -1,25 +1,12 @@
 import sys
 import pickle
 
-from PyQt5.QtWidgets import QDialog, QFileDialog
+from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 from PyQt5.QtCore import pyqtSignal
 
 from view.ui_db_choice import Ui_ChoiceDB
 
 SKIP_OPEN_DIALOG = 2
-
-sys._excepthook = sys.excepthook
-
-
-def my_exception_hook(exctype, value, traceback):
-    # Print the error and traceback
-    print(exctype, value, traceback)
-    # Call the normal Exception hook after
-    sys._excepthook(exctype, value, traceback)
-    sys.exit(1)
-
-
-sys.excepthook = my_exception_hook
 
 
 class MyDBChoice(QDialog):
@@ -35,12 +22,16 @@ class MyDBChoice(QDialog):
         self.ui_db_choice.okButton.clicked.connect(self.accept)
         self.ui_db_choice.addButton.clicked.connect(self.add)
         self.ui_db_choice.delButton.clicked.connect(self.delete)
+        self.ui_db_choice.listOfBDs.currentRowChanged.connect(self.row_changed)
 
         self.ui_db_choice.listOfBDs.setSelectionMode(1)
 
         self.init_data = None
         self.load_init_data()
         self.initiate_window(self.init_data)
+
+    def row_changed(self, curr_row):
+        self.init_data[1] = curr_row
 
     def add(self):
         options = QFileDialog.Options(QFileDialog.HideNameFilterDetails |
@@ -52,10 +43,10 @@ class MyDBChoice(QDialog):
 
     def delete(self):
         idx = self.ui_db_choice.listOfBDs.currentIndex()
-        print('|--> delete', idx.row())
-        # print('|--> delete', self.init_data[2][idx])
-        item = self.ui_db_choice.listOfBDs.currentItem()
-        self.ui_db_choice.listOfBDs.removeItemWidget(item)
+        if idx.isValid():
+            i = idx.row()
+            self.ui_db_choice.listOfBDs.takeItem(idx.row())
+            self.init_data[2].remove(self.init_data[2][i])
 
     def accept(self):
         self.emit_open_dialog()
@@ -63,31 +54,34 @@ class MyDBChoice(QDialog):
         super(MyDBChoice, self).accept()
 
     def new_db(self):
-        options = QFileDialog.Options(QFileDialog.HideNameFilterDetails)
+        options = QFileDialog.Options(QFileDialog.HideNameFilterDetails |
+                                      QFileDialog.DontConfirmOverwrite)
         file_name, _ = QFileDialog.getSaveFileName(self, "Create DB", "",
                                                   options=options)
         if file_name:
-            self.create_new_db(file_name)
-            self.open_DB_signal.emit(file_name, True)
-            self.save_init_data()
-            super(MyDBChoice, self).accept()
+            if not file_name in self.init_data[2]:
+                self.create_new_db(file_name)
+                self.open_DB_signal.emit(file_name, True)
+                self.save_init_data()
+                super(MyDBChoice, self).accept()
+            else:
+                self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
 
     def create_new_db(self, file_name):
         if not file_name in self.init_data[2]:
             self.init_data[2].append(file_name)
-            self.ui_db_choice.listOfBDs.addItem(file_name)
-            s = self.ui_db_choice.listOfBDs.count() - 1
-            self.init_data[1] = s
-            self.ui_db_choice.listOfBDs.setCurrentRow(s)  # select added item
+            item = QListWidgetItem(file_name)
+            self.ui_db_choice.listOfBDs.addItem(item)
+            self.ui_db_choice.listOfBDs.setCurrentItem(item)
             self.ui_db_choice.okButton.setDisabled(False)
         else:
-            self.init_data[1] = self.init_data[2].index(file_name)
+            self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
+            # self.init_data[1] = self.init_data[2].index(file_name)
 
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
 
     def emit_open_dialog(self):
         file_name = self.ui_db_choice.listOfBDs.currentItem().text()
-        self.init_data[1] = self.init_data[2].index(file_name)
         self.open_DB_signal.emit(file_name, False)
 
     def initiate_window(self, init_data):
@@ -110,13 +104,16 @@ class MyDBChoice(QDialog):
                 self.ui_db_choice.okButton.setDisabled(True)
 
     def get_file_name(self):
-        return self.init_data[self.init_data[1]]
+        return self.init_data[2][self.init_data[1]]
 
     def load_init_data(self):
         _data = [0, 0, []]
         try:
             with open('setup.pcl', 'rb') as f:
                 _data = pickle.load(f)
+                file = _data[2][_data[1]]
+                _data[2].sort()
+                _data[1] = _data[2].index(file)
         except (EOFError, FileNotFoundError):
             pass
         self.init_data = _data
