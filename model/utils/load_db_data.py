@@ -30,6 +30,7 @@ SQL_FIND_EXT = '''select ExtID
 SQL_INSERT_EXT = '''insert into Extensions
     (Extension, GroupID) values (:ext, 0);'''
 
+SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
 SQL_INSERT_AUTHOR = 'insert into Authors (Author) values (?);'
 
 SQL_INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
@@ -84,7 +85,6 @@ class LoadDBData:
         :param full_file_name:
         :return: None
         """
-        # TODO add additional data: creation date, size, page number.
         file = os.path.split(full_file_name)[1]
 
         item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
@@ -104,9 +104,17 @@ class LoadDBData:
                                                   'size': self.file_info[0]})
             file_id = self.cursor.lastrowid
             if len(self.file_info) > 3 and self.file_info[3]:
-                self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3], ))
-                auth_id = self.cursor.lastrowid
-                self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
+                self.insert_author(file_id)
+
+    def insert_author(self, file_id):
+        # todo need cycle in case of several authors
+        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, self.file_info[3]).fetchone()
+        if not auth_idl:
+            self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3],))
+            auth_id = self.cursor.lastrowid
+        else:
+            auth_id = auth_idl[0]
+        self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
 
     def _insert_comment(self):
         if len(self.file_info) > 2:
