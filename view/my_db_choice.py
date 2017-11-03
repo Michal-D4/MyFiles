@@ -8,6 +8,19 @@ from view.ui_db_choice import Ui_ChoiceDB
 
 SKIP_OPEN_DIALOG = 2
 
+sys._excepthook = sys.excepthook
+
+
+def my_exception_hook(exctype, value, traceback):
+    # Print the error and traceback
+    print(exctype, value, traceback)
+    # Call the normal Exception hook after
+    sys._excepthook(exctype, value, traceback)
+    sys.exit(1)
+
+
+sys.excepthook = my_exception_hook
+
 
 class MyDBChoice(QDialog):
     open_DB_signal = pyqtSignal(str, bool)
@@ -20,12 +33,34 @@ class MyDBChoice(QDialog):
 
         self.ui_db_choice.newButton.clicked.connect(self.new_db)
         self.ui_db_choice.okButton.clicked.connect(self.accept)
+        self.ui_db_choice.addButton.clicked.connect(self.add)
+        self.ui_db_choice.delButton.clicked.connect(self.delete)
 
         self.ui_db_choice.listOfBDs.setSelectionMode(1)
 
         self.init_data = None
         self.load_init_data()
         self.initiate_window(self.init_data)
+
+    def add(self):
+        options = QFileDialog.Options(QFileDialog.HideNameFilterDetails |
+                                      QFileDialog.DontConfirmOverwrite)
+        file_name, _ = QFileDialog.getSaveFileName(self, "Create DB", "",
+                                                  options=options)
+        if file_name:
+            self.create_new_db(file_name)
+
+    def delete(self):
+        idx = self.ui_db_choice.listOfBDs.currentIndex()
+        print('|--> delete', idx.row())
+        # print('|--> delete', self.init_data[2][idx])
+        item = self.ui_db_choice.listOfBDs.currentItem()
+        self.ui_db_choice.listOfBDs.removeItemWidget(item)
+
+    def accept(self):
+        self.emit_open_dialog()
+        self.save_init_data()
+        super(MyDBChoice, self).accept()
 
     def new_db(self):
         options = QFileDialog.Options(QFileDialog.HideNameFilterDetails)
@@ -49,11 +84,6 @@ class MyDBChoice(QDialog):
             self.init_data[1] = self.init_data[2].index(file_name)
 
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
-
-    def accept(self):
-        self.emit_open_dialog()
-        self.save_init_data()
-        super(MyDBChoice, self).accept()
 
     def emit_open_dialog(self):
         file_name = self.ui_db_choice.listOfBDs.currentItem().text()
