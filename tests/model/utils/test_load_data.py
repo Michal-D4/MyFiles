@@ -134,7 +134,7 @@ class TestLoadData2(unittest.TestCase):
 
     def test_insert_extension(self):
         jj = self.load_db.insert_extension('Блок.txt')
-        self.assertEqual(jj, 1)
+        self.assertEqual(jj, (1, 'txt'))
 
         curs = self.connection.cursor()
         curs.execute('select * from Extensions;')
@@ -142,10 +142,10 @@ class TestLoadData2(unittest.TestCase):
 
     def test_insert_extension_file_without_extension(self):
         jj = self.load_db.insert_extension('Блок')
-        self.assertEqual(jj, 0)
+        self.assertEqual(jj, (0, ''))
 
         jj = self.load_db.insert_extension('.Блок')
-        self.assertEqual(jj, 0)
+        self.assertEqual(jj, (0, ''))
         curs = self.connection.cursor()
 
         curs.execute('select * from Extensions;')
@@ -153,9 +153,9 @@ class TestLoadData2(unittest.TestCase):
 
     def test_insert_extension_with_2_dots(self):
         jj = self.load_db.insert_extension('.Блок.txt')
-        self.assertEqual(jj, 1)
+        self.assertEqual(jj, (1, 'txt'))
         jj = self.load_db.insert_extension('A.Блок.txt')
-        self.assertEqual(jj, 1)
+        self.assertEqual(jj, (1, 'txt'))
         curs = self.connection.cursor()
 
     def test_insert_file(self):
