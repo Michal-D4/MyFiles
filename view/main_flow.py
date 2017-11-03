@@ -25,7 +25,7 @@ class MainFlow(QMainWindow):
         self.ui_main.actionGetFiles.triggered.connect(self.go)
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
-        self.ui_main.dirTree.clicked.connect(self.dir_changed)
+        # self.ui_main.dirTree.clicked.connect(self.toggle_selection)
         self.ui_main.filesList.clicked.connect(self.file_changed)
 
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -56,10 +56,12 @@ class MainFlow(QMainWindow):
         idxs = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
         self.change_data_signal.emit('commentField', idxs)
 
-    def dir_changed(self, curr_idx):
-        print('|---> dir_changed  curr_idx:', curr_idx)
-        dir_idx = self.ui_main.dirTree.model().data(curr_idx, Qt.UserRole)
-        self.change_data_signal.emit('filesList', (dir_idx,))
+    # def toggle_selection(self, curr_idx):
+    #     print('|---> toggle_selection', curr_idx)
+    #     if self.ui_main.dirTree.selectedIndexes():
+    #         self.ui_main.dirTree.selectedIndexes().clear()
+    #     else:
+    #         pass
 
     def change_place(self, idx):
         self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))

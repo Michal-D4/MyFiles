@@ -165,8 +165,17 @@ class MyController():
         self.view.dirTree.setModel(model)
         idx = model.index(0, 0)
         self.view.dirTree.setCurrentIndex(idx)
-        print('model.data', model.data(idx, role=Qt.UserRole))
+
         self._populate_file_list(model.data(idx, role=Qt.UserRole))
+
+        self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
+
+    def sel_changed(self, sel1, sel2):
+        idx = sel2.indexes()
+        print('|---> sel_changed', len(idx))
+
+        dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
+        self._populate_file_list(dir_idx)
 
     def on_scan_files(self):
         """
