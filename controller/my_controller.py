@@ -157,9 +157,9 @@ class MyController():
         self._populate_author_list()
 
     def _populate_directory_tree(self, place_id):
-        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
+        dirs = self._get_dirs(place_id)
 
-        model = TreeModel(dir_tree)
+        model = TreeModel(dirs)
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
 
         self.view.dirTree.setModel(model)
@@ -169,6 +169,13 @@ class MyController():
         self._populate_file_list(model.data(idx, role=Qt.UserRole))
 
         self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
+
+    def _get_dirs(self, place_id):
+        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
+        dirs = []
+        for rr in dir_tree:
+            dirs.append((rr[0], os.path.split(rr[1])[1], rr[2], rr[1]))
+        return dirs
 
     def sel_changed(self, sel1, sel2):
         idx = sel2.indexes()
