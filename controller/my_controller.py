@@ -78,9 +78,11 @@ class MyController():
             self._edit_comment()
 
     def _edit_key_words(self):
+        # todo - provide the list/table of existed and allow add new
         pass
 
     def _edit_authors(self):
+        # todo - provide the list/table of existed and allow add new
         pass
 
     def _edit_comment(self):
@@ -204,6 +206,13 @@ class MyController():
         except IOError:
             a_file = ()
 
+        # todo : in case of 'other place' check if place defined in the first line of file
+        # 1) if not defined - possible action:
+        #    a)  show message and stop action
+        #    b)  ???
+        # 2) if defined - possible action:
+        #    a)  - switch to place in file
+        #    b)  - create new place
         if a_file:
             line = next(a_file)
             if not self._cb_places.get_curr_place()[1][1] in line:

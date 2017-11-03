@@ -57,6 +57,7 @@ class MainFlow(QMainWindow):
         self.change_data_signal.emit('commentField', idxs)
 
     def dir_changed(self, curr_idx):
+        print('|---> dir_changed  curr_idx:', curr_idx)
         dir_idx = self.ui_main.dirTree.model().data(curr_idx, Qt.UserRole)
         self.change_data_signal.emit('filesList', (dir_idx,))
 
@@ -87,6 +88,7 @@ class MainFlow(QMainWindow):
         self.scan_files_signal.emit()
 
     def go(self):
+        # todo - implement file selection according selected ext., authors, tags, root
         print('go ====>')
 
     def open_data_base(self):
