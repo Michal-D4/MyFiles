@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu
+from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu, QTreeView
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt
 
 from view.my_db_choice import MyDBChoice
@@ -25,7 +25,6 @@ class MainFlow(QMainWindow):
         self.ui_main.actionGetFiles.triggered.connect(self.go)
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
-        # self.ui_main.dirTree.clicked.connect(self.toggle_selection)
         self.ui_main.filesList.clicked.connect(self.file_changed)
 
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -55,13 +54,6 @@ class MainFlow(QMainWindow):
     def file_changed(self, curr_idx):
         idxs = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
         self.change_data_signal.emit('commentField', idxs)
-
-    # def toggle_selection(self, curr_idx):
-    #     print('|---> toggle_selection', curr_idx)
-    #     if self.ui_main.dirTree.selectedIndexes():
-    #         self.ui_main.dirTree.selectedIndexes().clear()
-    #     else:
-    #         pass
 
     def change_place(self, idx):
         self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))
@@ -94,13 +86,33 @@ class MainFlow(QMainWindow):
         print('go ====>')
 
     def open_data_base(self):
+        """
+        Open DB with click button on toolbar
+        :return:
+        """
         self.open_dialog.exec_()
 
     def first_open_data_base(self):
+        """
+        Open DB when application starts
+        :return:
+        """
         if not self.open_dialog.skip_open_dialog():
-            self.open_data_base()
+            self.open_dialog.exec_()
         else:
             self.open_dialog.emit_open_dialog()
+        print('|---> first_open_data_base  END')
+        self.ui_main.dirTree.mousePressEvent = self.mousePressEvent
+
+    def mousePressEvent(self, event):
+        """
+        Deselect all when click on empty place
+        :param event:
+        :return:
+        """
+        print('|---> mousePressEvent', self)
+        self.ui_main.dirTree.clearSelection()
+        QTreeView.mousePressEvent(self.ui_main.dirTree, event)
 
     def closeEvent(self, event):
         settings = QSettings('myorg', 'myapp')

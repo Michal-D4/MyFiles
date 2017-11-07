@@ -180,9 +180,9 @@ class MyController():
     def sel_changed(self, sel1, sel2):
         idx = sel2.indexes()
         print('|---> sel_changed', len(idx))
-
-        dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
-        self._populate_file_list(dir_idx)
+        if idx:
+            dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
+            self._populate_file_list(dir_idx)
 
     def on_scan_files(self):
         """

@@ -64,12 +64,15 @@ class TestMyControllerViewDbu(unittest.TestCase):
     def test__populate_comment_field(self):
         pass
 
+    @patch.object(my_controller.MyController, '_get_dirs')
     @patch.object(my_controller.MyController, '_populate_file_list')
     @patch('controller.my_controller.TreeModel', spec_set=TreeModel)
-    def test__populate_directory_tree(self, mock_model, mock_file_list):
+    def test__populate_directory_tree(self, mock_model, mock_file_list, mock_get_dirs):
+
+        mock_get_dirs.return_value = []
 
         self.controller._populate_directory_tree(0)
-        self.mock_dbu.dir_tree_select.assert_called_once_with(dir_id=0, level=0, place_id=0)
+        mock_get_dirs.assert_called_once_with(0)
         mock_model.assert_called_once()
         self.mock_view.dirTree.setModel.assert_called_once_with(mock_model.return_value)
 
