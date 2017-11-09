@@ -1,7 +1,4 @@
 import os
-import datetime
-
-from PyPDF2 import PdfFileReader
 
 SQL_FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and PlaceId = :place;'''
@@ -12,16 +9,15 @@ SQL_FIND_EXACT_PATH = '''select DirID, Path
 SQL_CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
  where ParentID = :currId and Path like :newPath and DirID != :newId;'''
 
-SQL_FIND_FILE = '''select *
-    from Files where DirID = :dir_id and FileName = :file;'''
+SQL_FIND_FILE = 'select * from Files where DirID = :dir_id and FileName = :file;'
 
 SQL_INSERT_DIR = '''insert into Dirs
     (Path, ParentID, PlaceId)
     values (:path, :id, :placeId);'''
 
 SQL_INSERT_FILE = '''insert into Files
-    (DirID, FileName, ExtID, PlaceId, CommentID, Year, Pages, Size)
-    values (:dir_id, :file, :ext_id, :placeId, :comm_id, :year, :page, :size);'''
+    (DirID, FileName, ExtID, PlaceId, Size)
+    values (:dir_id, :file, :ext_id, :placeId, 0);'''
 
 SQL_FIND_EXT = '''select ExtID
     from Extensions where Extension = ?;'''
@@ -30,12 +26,6 @@ SQL_FIND_EXT = '''select ExtID
 SQL_INSERT_EXT = '''insert into Extensions
     (Extension, GroupID) values (:ext, 0);'''
 
-SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
-SQL_INSERT_AUTHOR = 'insert into Authors (Author) values (?);'
-
-SQL_INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
-
-SQL_INSERT_COMMENT = 'insert into Comments (Comment) values (?);'
 
 class LoadDBData:
     """
@@ -50,7 +40,6 @@ class LoadDBData:
         self.cursor = self.conn.cursor()
         self.place_id = current_place[0]
         self.set_current_place(current_place)
-        self.file_info = []
 
     def set_current_place(self, current_place):
         '''
@@ -91,85 +80,11 @@ class LoadDBData:
         if not item:
             ext_id, ext = self.insert_extension(file)
             print('|---> insert_file', ext_id, ext)
-            self.get_file_info(full_file_name, ext)
-            comm_id, pages = self._insert_comment()
 
             self.cursor.execute(SQL_INSERT_FILE, {'dir_id': dir_id,
                                                   'file': file,
                                                   'ext_id': ext_id,
-                                                  'placeId': self.place_id,
-                                                  'comm_id': comm_id,
-                                                  'year': self.file_info[1],
-                                                  'page': pages,
-                                                  'size': self.file_info[0]})
-            file_id = self.cursor.lastrowid
-            if len(self.file_info) > 3 and self.file_info[3]:
-                self.insert_author(file_id)
-
-    def insert_author(self, file_id):
-        # todo need cycle in case of several authors
-        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, self.file_info[3]).fetchone()
-        if not auth_idl:
-            self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3],))
-            auth_id = self.cursor.lastrowid
-        else:
-            auth_id = auth_idl[0]
-        self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
-
-    def _insert_comment(self):
-        if len(self.file_info) > 2:
-            comm = '\r\n'.join((str(x) for x in self.file_info[4:] if not x == ''))    # todo formatting
-            self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
-            comm_id = self.cursor.lastrowid
-            print('|---> _insert_comment', comm_id, comm)
-            pages = self.file_info[2]
-        else:
-            comm_id = 0
-            pages = ''
-        return comm_id, pages
-
-    def get_file_info(self, file, ext):
-        '''
-        Store info in self.file_info:
-            0 - size,
-            1 - year,  further - pdf-info
-            2 - pages,
-            3 - author,
-            4 - CreationDate
-            5 - Title
-        :param file: full path
-        :param ext: pdf or not pdf
-        :return: None
-        '''
-        print('|---> get_file_info', ext, file)
-        self.file_info.clear()
-        if os._exists(file):
-            st = os.stat(file)
-            self.file_info.append(st.st_size)
-            self.file_info.append(datetime.datetime.fromtimestamp(st.st_ctime).date().isoformat())
-            if str.lower(ext) == 'pdf':
-                self.get_pdf_info(file)
-        else:
-            self.file_info.append('')
-            self.file_info.append('')
-        print('|---> get_file_info', self.file_info)
-
-    def get_pdf_info(self, file):
-        print('|---> get_pdf_info', file)
-        try:
-            fr = PdfFileReader(open(file, "rb"), strict=False)
-            self.file_info.append(fr.getNumPages())
-            fi = fr.documentInfo
-            if not fi is None:
-                self.file_info.append(fi.getText('/Author'))
-                ww = fi.getText('/CreationDate')
-                if ww:
-                    self.file_info.append('-'.join((ww[2:6], ww[6:8], ww[8:10])))
-                else:
-                    self.file_info.append('')
-                self.file_info.append(fi.getText('/Title'))
-        except IOError:
-            pass
+                                                  'placeId': self.place_id})
 
     def insert_extension(self, file):
         if file.rfind('.') > 0:

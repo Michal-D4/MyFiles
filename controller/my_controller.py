@@ -217,25 +217,20 @@ class MyController():
     def _read_from_file(self):
         file_name = QFileDialog().getOpenFileName(self.view.extList, 'Choose input file',
                                                   os.getcwd())
-        try:
-            a_file = open(file_name)
-        except IOError:
-            a_file = ()
-
-        # todo : in case of 'other place' check if place defined in the first line of file
-        # 1) if not defined - possible action:
-        #    a)  show message and stop action
-        #    b)  ???
-        # 2) if defined - possible action:
-        #    a)  - switch to place in file
-        #    b)  - create new place
-        if a_file:
+        with open(file_name, 'rb') as a_file:
             line = next(a_file)
             if not self._cb_places.get_curr_place()[1][1] in line:
+                # todo : in case of 'other place' check if place defined in the first line of file
+                # 1) if not defined - possible action:
+                #    a)  show message and stop action
+                #    b)  ???
+                # 2) if defined - possible action:
+                #    a)  - switch to place in file
+                #    b)  - create new place
                 MyController._bad_file_message(file_name)
                 a_file = ()
-
-        return a_file
+            return a_file
+        return ()
 
     @staticmethod
     def _bad_file_message(file_name):

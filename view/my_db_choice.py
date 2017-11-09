@@ -108,14 +108,11 @@ class MyDBChoice(QDialog):
 
     def load_init_data(self):
         _data = [0, 0, []]
-        try:
-            with open('setup.pcl', 'rb') as f:
-                _data = pickle.load(f)
-                file = _data[2][_data[1]]
-                _data[2].sort()
-                _data[1] = _data[2].index(file)
-        except (EOFError, FileNotFoundError):
-            pass
+        with open('setup.pcl', 'rb') as f:
+            _data = pickle.load(f)
+            file = _data[2][_data[1]]
+            _data[2].sort()
+            _data[1] = _data[2].index(file)
         self.init_data = _data
 
     def save_init_data(self):
