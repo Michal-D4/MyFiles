@@ -1,3 +1,5 @@
+# controller/my_controller.py
+
 import sqlite3
 import os
 
@@ -8,6 +10,7 @@ from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
 from model.db_utils import DBUtils
 from model.utils import create_db
+from model.file_info import FileInfo
 from model.helpers import *
 from model.utils.load_db_data import LoadDBData
 
@@ -19,6 +22,7 @@ class MyController():
         self._connection = None
         self._dbu = None
         self._cb_places = None
+        self.db_name : str = ''
         self.view = view.ui_main
 
     def get_places_view(self):
@@ -47,6 +51,7 @@ class MyController():
 
     def on_open_db(self, file_name, create):
         print('|---> on_open_db', file_name, create)
+        self.db_name = file_name
         if create:
             self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
             create_db.create_all_objects(self._connection)
@@ -202,6 +207,8 @@ class MyController():
             files = LoadDBData(self._connection, self._cb_places.get_curr_place())
             files.load_data(_data)
             self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
+            thread = FileInfo(self.db_name, self._cb_places.get_curr_place())
+            thread.start()
 
     def _scan_file_system(self):
         ext_ = self._get_selected_extensions()

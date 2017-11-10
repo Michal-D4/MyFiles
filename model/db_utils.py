@@ -1,3 +1,5 @@
+# model/db_utils.py
+
 Selects = {'TREE':
                ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',

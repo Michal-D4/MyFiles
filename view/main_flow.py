@@ -1,3 +1,5 @@
+# view/main_flow.py
+
 from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu, QTreeView
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt
 

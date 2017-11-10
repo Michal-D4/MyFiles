@@ -1,5 +1,9 @@
+# model/file_info.py
+
 import os
 import datetime
+import sqlite3
+from threading import Thread
 from PyPDF2 import PdfFileReader
 
 from model.helpers import *
@@ -22,10 +26,17 @@ Pages = :page,
 Size = :size
 where FileID = file_id;'''
 
+# TODO send the result of SQL_FILES_WITHOUT_INFO and yield the file info from here
+class FileInfo(Thread):
+    def run(self):
+        super().run()
+        self.update_files()
 
-class FileInfo:
-    def __init__(self, conn, place_id):
+    def __init__(self, db_name, place_id):
+        super().__init__()
+        print('|--> FileInfo.__init__', db_name, place_id)
         self.place_id = place_id
+        conn = sqlite3.connect(db_name)
         self.cursor = conn.cursor()
         self.file_info = []
 
