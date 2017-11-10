@@ -1,3 +1,5 @@
+# model/file_info.py
+
 import os
 import datetime
 from PyPDF2 import PdfFileReader

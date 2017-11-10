@@ -1,3 +1,5 @@
+# controller/my_qt_model.py
+
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractTableModel
 
 
