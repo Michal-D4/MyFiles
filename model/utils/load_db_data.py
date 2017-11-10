@@ -1,4 +1,5 @@
 import os
+from model.helpers import *
 
 SQL_FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and PlaceId = :place;'''
@@ -87,10 +88,7 @@ class LoadDBData:
                                                   'placeId': self.place_id})
 
     def insert_extension(self, file):
-        if file.rfind('.') > 0:
-            ext = file.rpartition('.')[2]
-        else:
-            ext = ''
+        ext = get_file_extension(file)
         if ext:
             item = self.cursor.execute(SQL_FIND_EXT, (ext,)).fetchone()
             if item:

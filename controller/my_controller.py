@@ -8,6 +8,7 @@ from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
 from model.db_utils import DBUtils
 from model.utils import create_db
+from model.helpers import *
 from model.utils.load_db_data import LoadDBData
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
@@ -34,11 +35,11 @@ class MyController():
         :param extensions: list of extensions
         :return: generator
         """
-        for dir_name, dir_names, file_names in os.walk(root):
+        for dir_name, _, file_names in os.walk(root):
             if extensions:
                 ext_ = tuple(x.strip('. ') for x in extensions.split(','))
                 for filename in file_names:
-                    if filename.rpartition('.')[2] in ext_:
+                    if get_file_extension(filename) in ext_:
                         yield os.path.join(dir_name, filename)
             else:
                 for filename in file_names:

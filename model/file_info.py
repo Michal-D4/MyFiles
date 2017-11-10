@@ -2,6 +2,8 @@ import os
 import datetime
 from PyPDF2 import PdfFileReader
 
+from model.helpers import *
+
 SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
 
 SQL_INSERT_AUTHOR = 'insert into Authors (Author) values (?);'
@@ -67,7 +69,7 @@ class FileInfo:
             st = os.stat(full_file_name)
             self.file_info.append(st.st_size)
             self.file_info.append(datetime.datetime.fromtimestamp(st.st_ctime).date().isoformat())
-            if str.lower(full_file_name.rpartition('.')[2]) == 'pdf':
+            if get_file_extension(full_file_name) == 'pdf':
                 self.get_pdf_info(full_file_name)
         else:
             self.file_info.append('')
@@ -80,19 +82,21 @@ class FileInfo:
             fr = PdfFileReader(pdf_file, strict=False)
             self.file_info.append(fr.getNumPages())
             fi = fr.documentInfo
-            if not fi is None:
+            if fi is not None:
                 self.file_info.append(fi.getText('/Author'))
-                ww = fi.getText('/CreationDate')
-                if ww:
-                    self.file_info.append('-'.join((ww[2:6], ww[6:8], ww[8:10])))
-                else:
-                    self.file_info.append('')
+                self.file_info.append(self.pdf_creation_date(fi))
                 self.file_info.append(fi.getText('/Title'))
+
+    def pdf_creation_date(self, fi):
+        ww = fi.getText('/CreationDate')
+        if ww:
+            return  '-'.join((ww[2:6], ww[6:8], ww[8:10]))
+        return ''
 
     def update_file(self, file_id, full_file_name):
         """
-        Insert file into Files table
-        :param dir_id:
+        Update file info in tables Files, Authors and Comments
+        :param file_id:
         :param full_file_name:
         :return: None
         """
@@ -110,4 +114,5 @@ class FileInfo:
     def update_files(self):
         curr = self.cursor.execute(SQL_FILES_WITHOUT_INFO, self.place_id)
         for file_id, file, path in curr:
-            self.update_file(file_id, file)
+            file_name = os.path.join(path, file)
+            self.update_file(file_id, file_name)
