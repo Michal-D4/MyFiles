@@ -4,7 +4,7 @@ import os
 import datetime
 import sqlite3
 from threading import Thread
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfFileReader, utils
 
 from model.helpers import *
 
@@ -24,38 +24,44 @@ CommentID = :comm_id,
 Year = :year,
 Pages = :page,
 Size = :size
-where FileID = file_id;'''
+where FileID = :file_id;'''
+
 
 # TODO send the result of SQL_FILES_WITHOUT_INFO and yield the file info from here
 class FileInfo(Thread):
     def run(self):
         super().run()
+        print('|===> FileInfo start time', sqlite3.time.time())
         self.update_files()
 
-    def __init__(self, db_name, place_id):
+    def __init__( self, conn, place_id ):
         super().__init__()
-        print('|--> FileInfo.__init__', db_name, place_id)
+        # print('|--> FileInfo.__init__', conn, place_id)
         self.place_id = place_id
-        conn = sqlite3.connect(db_name)
+        self.conn = conn
         self.cursor = conn.cursor()
         self.file_info = []
 
     def insert_author(self, file_id):
         # todo need cycle in case of several authors
-        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, self.file_info[3]).fetchone()
+        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, (self.file_info[3],)).fetchone()
         if not auth_idl:
             self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3],))
+            self.conn.commit()
             auth_id = self.cursor.lastrowid
         else:
             auth_id = auth_idl[0]
+        # print('|--> insert_author', self.file_info[3], file_id, auth_id)
         self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
+        self.conn.commit()
 
     def _insert_comment(self):
         if len(self.file_info) > 2:
-            comm = '\r\n'.join((str(x) for x in self.file_info[4:] if not x == ''))    # todo formatting
+            comm = 'Creation date {}\r\nTitle: {}'.format(self.file_info[4], self.file_info[5])
             self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
+            self.conn.commit()
             comm_id = self.cursor.lastrowid
-            print('|---> _insert_comment', comm_id, comm)
+            # print('|---> _insert_comment', comm_id, comm)
             pages = self.file_info[2]
         else:
             comm_id = 0
@@ -63,7 +69,7 @@ class FileInfo(Thread):
         return comm_id, pages
 
     def get_file_info(self, full_file_name):
-        '''
+        """
         Store info in self.file_info:
             0 - size,
             1 - year,  further - pdf-info
@@ -73,10 +79,10 @@ class FileInfo(Thread):
             5 - Title
         :param full_file_name:
         :return: None
-        '''
-        print('|---> get_file_info', full_file_name)
+        """
+        # print('|---> get_file_info', full_file_name)
         self.file_info.clear()
-        if os._exists(full_file_name):
+        if os.path.isfile(full_file_name):
             st = os.stat(full_file_name)
             self.file_info.append(st.st_size)
             self.file_info.append(datetime.datetime.fromtimestamp(st.st_ctime).date().isoformat())
@@ -85,23 +91,32 @@ class FileInfo(Thread):
         else:
             self.file_info.append('')
             self.file_info.append('')
-        print('|---> get_file_info', self.file_info)
+        # print('|---> get_file_info', self.file_info)
 
     def get_pdf_info(self, file):
-        print('|---> get_pdf_info', file)
+        # print('|---> get_pdf_info', file)
         with (open(file, "rb")) as pdf_file:
             fr = PdfFileReader(pdf_file, strict=False)
-            self.file_info.append(fr.getNumPages())
-            fi = fr.documentInfo
-            if fi is not None:
-                self.file_info.append(fi.getText('/Author'))
-                self.file_info.append(self.pdf_creation_date(fi))
-                self.file_info.append(fi.getText('/Title'))
+            try:
+                self.file_info.append(fr.getNumPages())
+            except (ValueError, utils.PdfReadError):
+                print('|---> error', file)
+                self.file_info.append(0)
+                self.file_info.append('')
+                self.file_info.append('')
+                self.file_info.append('')
+            else:
+                fi = fr.documentInfo
+                if fi is not None:
+                    self.file_info.append(fi.getText('/Author'))
+                    self.file_info.append(FileInfo.pdf_creation_date(fi))
+                    self.file_info.append(fi.getText('/Title'))
 
-    def pdf_creation_date(self, fi):
+    @staticmethod
+    def pdf_creation_date(fi):
         ww = fi.getText('/CreationDate')
         if ww:
-            return  '-'.join((ww[2:6], ww[6:8], ww[8:10]))
+            return '-'.join((ww[2:6], ww[6:8], ww[8:10]))
         return ''
 
     def update_file(self, file_id, full_file_name):
@@ -119,11 +134,15 @@ class FileInfo(Thread):
                                               'page': pages,
                                               'size': self.file_info[0],
                                               'file_id': file_id})
+        self.conn.commit()
         if len(self.file_info) > 3 and self.file_info[3]:
             self.insert_author(file_id)
 
     def update_files(self):
-        curr = self.cursor.execute(SQL_FILES_WITHOUT_INFO, self.place_id)
-        for file_id, file, path in curr:
+        curr = self.cursor.execute(SQL_FILES_WITHOUT_INFO, {'place_id': self.place_id})
+        file_list = list(curr)
+        for file_id, file, path in file_list:
             file_name = os.path.join(path, file)
+            # print(file_name)
             self.update_file(file_id, file_name)
+        print('|===> FileInfo end time', sqlite3.time.time())

@@ -22,7 +22,6 @@ class MyController():
         self._connection = None
         self._dbu = None
         self._cb_places = None
-        self.db_name : str = ''
         self.view = view.ui_main
 
     def get_places_view(self):
@@ -50,13 +49,14 @@ class MyController():
                     yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
-        print('|---> on_open_db', file_name, create)
-        self.db_name = file_name
+        # print('|---> on_open_db', file_name, create)
         if create:
-            self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
+            self._connection = sqlite3.connect(file_name, check_same_thread=False,
+                                               detect_types=DETECT_TYPES)
             create_db.create_all_objects(self._connection)
         else:
-            self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
+            self._connection = sqlite3.connect(file_name, check_same_thread=False,
+                                               detect_types=DETECT_TYPES)
 
         self._dbu = DBUtils(self._connection)
         self._populate_all_widgets()
@@ -117,7 +117,7 @@ class MyController():
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
-        print('|---> _populate_file_list', dir_idx)
+        # print('|---> _populate_file_list', dir_idx)
         if dir_idx:
             model = TableModel()
             files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))
@@ -127,7 +127,7 @@ class MyController():
             self.view.filesList.setModel(model)
 
     def _populate_comment_field(self, data):
-        print('|---> _populate_comment_field', data)
+        # print('|---> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
@@ -148,7 +148,7 @@ class MyController():
                     comm.append(cc[0])
             else:
                 comm = ('',)
-            print('    tags', tgs, '   authors', auth, '  comment', comm)
+            # print('    tags', tgs, '   authors', auth, '  comment', comm)
             self.view.commentField.setText('\r\n'.join((
                 'Key words: {}'.format(', '.join(tgs)),
                 'Authors: {}'.format(', '.join(auth)),
@@ -185,7 +185,7 @@ class MyController():
 
     def sel_changed(self, sel1, sel2):
         idx = sel2.indexes()
-        print('|---> sel_changed', len(idx))
+        # print('|---> sel_changed', len(idx))
         if idx:
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
             self._populate_file_list(dir_idx)
@@ -198,16 +198,19 @@ class MyController():
         2) reading from prepared file for  unmounted disk
         :return: None
         """
+        print('|===> on_scan_files start time', sqlite3.time.time())
         if self._cb_places.is_disk_mounted() == Places.NOT_MOUNTED:
             _data = self._read_from_file()
         else:
             _data = self._scan_file_system()
 
         if _data:
-            files = LoadDBData(self._connection, self._cb_places.get_curr_place())
+            curr_place = self._cb_places.get_curr_place()
+            files = LoadDBData(self._connection, curr_place)
             files.load_data(_data)
+            print('|===> on_scan_files end time', sqlite3.time.time())
             self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
-            thread = FileInfo(self.db_name, self._cb_places.get_curr_place())
+            thread = FileInfo(self._connection, curr_place[1][0])
             thread.start()
 
     def _scan_file_system(self):

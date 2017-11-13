@@ -8,11 +8,12 @@ import os
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from view.main_flow import MainFlow
 
+
 class Places:
     NOT_REMOVAL, NOT_DEFINED, MOUNTED, NOT_MOUNTED = range(4)
 
     def __init__(self, parent):
-        self.conrtoller = parent
+        self.controller = parent
         self._view = parent.get_places_view()
         self._dbu = parent.get_db_utils()
         self._places = []
@@ -79,7 +80,7 @@ class Places:
         else:
             self._change_place(data)
         if prev_id != self._curr_place[0]:
-            self.conrtoller.on_change_data('dirTree', (self._curr_place[1][0],))
+            self.controller.on_change_data('dirTree', (self._curr_place[1][0],))
 
     def update_disk_info(self, root):
         """
