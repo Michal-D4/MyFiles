@@ -10,9 +10,9 @@ from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
 from model.db_utils import DBUtils
 from model.utils import create_db
-from model.file_info import FileInfo
+from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
-from model.utils.load_db_data import LoadDBData
+# from model.utils.load_db_data import LoadDBData
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
@@ -198,7 +198,8 @@ class MyController():
         2) reading from prepared file for  unmounted disk
         :return: None
         """
-        print('|===> on_scan_files start time', sqlite3.time.time())
+        # import datetime
+        # start_time = datetime.datetime.now()
         if self._cb_places.is_disk_mounted() == Places.NOT_MOUNTED:
             _data = self._read_from_file()
         else:
@@ -206,10 +207,14 @@ class MyController():
 
         if _data:
             curr_place = self._cb_places.get_curr_place()
-            files = LoadDBData(self._connection, curr_place)
-            files.load_data(_data)
-            print('|===> on_scan_files end time', sqlite3.time.time())
-            self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
+            load_files = LoadFiles(self._connection, curr_place, _data)
+            load_files.start()
+            # print('|===> on_scan_files start time', start_time)
+            # files = LoadDBData(self._connection, curr_place)
+            # files.load_data(_data)
+            # end_time = datetime.datetime.now()
+            # print('|===> on_scan_files end time', end_time, ' delta', end_time-start_time)
+            # self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
             thread = FileInfo(self._connection, curr_place[1][0])
             thread.start()
 

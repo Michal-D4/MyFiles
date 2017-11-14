@@ -6,6 +6,7 @@ import sqlite3
 from threading import Thread
 from PyPDF2 import PdfFileReader, utils
 
+from model.utils.load_db_data import LoadDBData
 from model.helpers import *
 
 SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
@@ -27,14 +28,31 @@ Size = :size
 where FileID = :file_id;'''
 
 
-# TODO send the result of SQL_FILES_WITHOUT_INFO and yield the file info from here
+class LoadFiles(Thread):
+    def __init__(self, conn, place_id, data_, group=None, target=None, name=None, args=(),
+                 kwargs=None, *, daemon=None):
+        super().__init__(group, target, name, args, kwargs, daemon=daemon)
+        self.place_id = place_id
+        self.conn = conn
+        self.data = data_
+
+    def run(self):
+        super().run()
+        start_time = datetime.datetime.now()
+        print('|===> LoadFiles start time', start_time)
+        files = LoadDBData(self.conn, self.place_id)
+        files.load_data(self.data)
+        end_time = datetime.datetime.now()
+        print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
+
+
 class FileInfo(Thread):
     def run(self):
         super().run()
         print('|===> FileInfo start time', sqlite3.time.time())
         self.update_files()
 
-    def __init__( self, conn, place_id ):
+    def __init__(self, conn, place_id):
         super().__init__()
         # print('|--> FileInfo.__init__', conn, place_id)
         self.place_id = place_id
@@ -57,7 +75,10 @@ class FileInfo(Thread):
 
     def _insert_comment(self):
         if len(self.file_info) > 2:
-            comm = 'Creation date {}\r\nTitle: {}'.format(self.file_info[4], self.file_info[5])
+            try:
+                comm = 'Creation date {}\r\nTitle: {}'.format(self.file_info[4], self.file_info[5])
+            except IndexError:
+                print('IndexError ', len(self.file_info))
             self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
             self.conn.commit()
             comm_id = self.cursor.lastrowid
@@ -94,23 +115,22 @@ class FileInfo(Thread):
         # print('|---> get_file_info', self.file_info)
 
     def get_pdf_info(self, file):
-        # print('|---> get_pdf_info', file)
+        print('|---> get_pdf_info', file)
         with (open(file, "rb")) as pdf_file:
-            fr = PdfFileReader(pdf_file, strict=False)
             try:
-                self.file_info.append(fr.getNumPages())
-            except (ValueError, utils.PdfReadError):
-                print('|---> error', file)
-                self.file_info.append(0)
-                self.file_info.append('')
-                self.file_info.append('')
-                self.file_info.append('')
-            else:
+                fr = PdfFileReader(pdf_file, strict=False)
                 fi = fr.documentInfo
+                self.file_info.append(fr.getNumPages())
+            except (ValueError, utils.PdfReadError, utils.PdfStreamError):
+                print('|---> error', file)
+                self.file_info += [0, '', '', '']
+            else:
                 if fi is not None:
                     self.file_info.append(fi.getText('/Author'))
                     self.file_info.append(FileInfo.pdf_creation_date(fi))
                     self.file_info.append(fi.getText('/Title'))
+                else:
+                    self.file_info += ['', '', '']
 
     @staticmethod
     def pdf_creation_date(fi):
@@ -143,6 +163,6 @@ class FileInfo(Thread):
         file_list = list(curr)
         for file_id, file, path in file_list:
             file_name = os.path.join(path, file)
-            # print(file_name)
+            print(file_name)
             self.update_file(file_id, file_name)
         print('|===> FileInfo end time', sqlite3.time.time())
