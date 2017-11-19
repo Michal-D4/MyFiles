@@ -68,6 +68,7 @@ class MyController():
         :param data:   - widget specific data
         :return:
         '''
+        print('|---> on_change_data', sender, data)
         if sender == 'cb_places':
             self._cb_places.about_change_place(data)
         elif sender == 'filesList':
@@ -82,6 +83,18 @@ class MyController():
             self._edit_authors()
         elif sender == 'Edit comment':
             self._edit_comment()
+        elif sender == 'Delete':
+            self._delete_file()
+        elif sender == 'Open':
+            self._open_file()
+
+    def _delete_file(self):
+        # todo - delete file from DB
+        pass
+
+    def _open_file(self):
+        # todo - open file
+        pass
 
     def _edit_key_words(self):
         # todo - provide the list/table of existed and allow add new
@@ -92,6 +105,7 @@ class MyController():
         pass
 
     def _edit_comment(self):
+        # todo - edit comment
         pass
 
     def _populate_ext_list(self):
@@ -177,17 +191,30 @@ class MyController():
         self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
 
     def _get_dirs(self, place_id):
+        """
+        Returns directory tree for current place
+        :param place_id:
+        :return: list of tuples (DirID, Dir name, ParentID, Full path of dir)
+        """
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
-        for rr in dir_tree:
+        for rr in dir_tree:         # DirID, Path, ParentID, level
             dirs.append((rr[0], os.path.split(rr[1])[1], rr[2], rr[1]))
         return dirs
 
     def sel_changed(self, sel1, sel2):
+        """
+        Changed selection in dirTree
+        :param sel1: QList<QModelIndex>
+        :param sel2: QList<QModelIndex>
+        :return: None
+        """
         idx = sel2.indexes()
-        # print('|---> sel_changed', len(idx))
+        print('|---> sel_changed', sel1, sel2)
         if idx:
+            print('     ', idx[0].row())
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
+            print(dir_idx)
             self._populate_file_list(dir_idx)
 
     def on_scan_files(self):
