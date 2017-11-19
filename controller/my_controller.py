@@ -93,6 +93,8 @@ class MyController():
 
     def _open_file(self):
         # todo - open file
+        file_name = ''
+        os.startfile(file_name)
         pass
 
     def _edit_key_words(self):
@@ -193,6 +195,7 @@ class MyController():
         :param place_id:
         :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
         """
+        # TODO for removal places - substitute root (i.e. E:\\)
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
         for rr in dir_tree:         # DirID, Path, ParentID, level
