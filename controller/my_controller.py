@@ -4,7 +4,7 @@ import sqlite3
 import os
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QModelIndex
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
@@ -49,7 +49,6 @@ class MyController():
                     yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
-        # print('|---> on_open_db', file_name, create)
         if create:
             self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                detect_types=DETECT_TYPES)
@@ -131,7 +130,6 @@ class MyController():
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
-        # print('|---> _populate_file_list', dir_idx)
         if dir_idx:
             model = TableModel()
             files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))
@@ -139,9 +137,9 @@ class MyController():
             for ff in files:
                 model.append_row(ff[3:], ff[:3])
             self.view.filesList.setModel(model)
+        self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
 
     def _populate_comment_field(self, data):
-        # print('|---> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
@@ -162,7 +160,6 @@ class MyController():
                     comm.append(cc[0])
             else:
                 comm = ('',)
-            # print('    tags', tgs, '   authors', auth, '  comment', comm)
             self.view.commentField.setText('\r\n'.join((
                 'Key words: {}'.format(', '.join(tgs)),
                 'Authors: {}'.format(', '.join(auth)),
@@ -209,12 +206,9 @@ class MyController():
         :param sel2: QList<QModelIndex>
         :return: None
         """
-        idx = sel2.indexes()
-        print('|---> sel_changed', sel1, sel2)
+        idx = sel1.indexes()
         if idx:
-            print('     ', idx[0].row())
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
-            print(dir_idx)
             self._populate_file_list(dir_idx)
 
     def on_scan_files(self):
@@ -236,12 +230,7 @@ class MyController():
             curr_place = self._cb_places.get_curr_place()
             load_files = LoadFiles(self._connection, curr_place, _data)
             load_files.start()
-            # print('|===> on_scan_files start time', start_time)
-            # files = LoadDBData(self._connection, curr_place)
-            # files.load_data(_data)
-            # end_time = datetime.datetime.now()
-            # print('|===> on_scan_files end time', end_time, ' delta', end_time-start_time)
-            # self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
+
             thread = FileInfo(self._connection, curr_place[1][0])
             thread.start()
 
