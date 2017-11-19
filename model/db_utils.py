@@ -11,9 +11,9 @@ Selects = {'TREE':
                 ') SELECT * FROM x order by ParentID desc, Path;'),
            'PLACES': 'select * from Places;',   # PlaceId starts with 0, where as other IDs with 1
            'IS_EXIST': 'select * from Places where Place = ?;',
-           'EXT': ' '.join(('select ExtID+1000, Extension as title, GroupID',
-                            'as ID from Extensions UNION select GroupID,',
-                            'GroupName as title, 0 as ID from ExtGroups',
+           'EXT': ' '.join(('select Extension as title, ExtID+1000, GroupID',
+                            'as ID from Extensions UNION select GroupName as title,',
+                            'GroupID, 0 as ID from ExtGroups',
                             'order by ID desc, title;')),
            'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;',

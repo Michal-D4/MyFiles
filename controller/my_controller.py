@@ -194,12 +194,12 @@ class MyController():
         """
         Returns directory tree for current place
         :param place_id:
-        :return: list of tuples (DirID, Dir name, ParentID, Full path of dir)
+        :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
         """
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
         for rr in dir_tree:         # DirID, Path, ParentID, level
-            dirs.append((rr[0], os.path.split(rr[1])[1], rr[2], rr[1]))
+            dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
     def sel_changed(self, sel1, sel2):
