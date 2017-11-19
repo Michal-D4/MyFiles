@@ -40,11 +40,11 @@ class LoadFiles(Thread):
     def run(self):
         super().run()
         start_time = datetime.datetime.now()
-        print('|===> LoadFiles start time', start_time)
+        # print('|===> LoadFiles start time', start_time)
         files = LoadDBData(self.conn, self.place_id)
         files.load_data(self.data)
         end_time = datetime.datetime.now()
-        print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
+        # print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
         E.set()
 
 
@@ -53,14 +53,13 @@ class FileInfo(Thread):
         super().run()
         E.wait()
         start_time = datetime.datetime.now()
-        print('|===> FileInfo start time', start_time)
+        # print('|===> FileInfo start time', start_time)
         self.update_files()
         end_time = datetime.datetime.now()
-        print('|===> FileInfo end time', end_time, ' delta', end_time - start_time)
+        # print('|===> FileInfo end time', end_time, ' delta', end_time - start_time)
 
     def __init__(self, conn, place_id):
         super().__init__()
-        # print('|--> FileInfo.__init__', conn, place_id)
         self.place_id = place_id
         self.conn = conn
         self.cursor = conn.cursor()
@@ -75,7 +74,6 @@ class FileInfo(Thread):
             auth_id = self.cursor.lastrowid
         else:
             auth_id = auth_idl[0]
-        # print('|--> insert_author', self.file_info[3], file_id, auth_id)
         self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
         self.conn.commit()
 
@@ -88,7 +86,6 @@ class FileInfo(Thread):
             self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
             self.conn.commit()
             comm_id = self.cursor.lastrowid
-            # print('|---> _insert_comment', comm_id, comm)
             pages = self.file_info[2]
         else:
             comm_id = 0
@@ -107,7 +104,6 @@ class FileInfo(Thread):
         :param full_file_name:
         :return: None
         """
-        # print('|---> get_file_info', full_file_name)
         self.file_info.clear()
         if os.path.isfile(full_file_name):
             st = os.stat(full_file_name)
@@ -118,17 +114,14 @@ class FileInfo(Thread):
         else:
             self.file_info.append('')
             self.file_info.append('')
-        # print('|---> get_file_info', self.file_info)
 
     def get_pdf_info(self, file):
-        print('|---> get_pdf_info', file)
         with (open(file, "rb")) as pdf_file:
             try:
                 fr = PdfFileReader(pdf_file, strict=False)
                 fi = fr.documentInfo
                 self.file_info.append(fr.getNumPages())
             except (ValueError, utils.PdfReadError, utils.PdfStreamError):
-                print('|---> error', file)
                 self.file_info += [0, '', '', '']
             else:
                 if fi is not None:
@@ -169,5 +162,4 @@ class FileInfo(Thread):
         file_list = list(curr)
         for file_id, file, path in file_list:
             file_name = os.path.join(path, file)
-            print(file_name)
             self.update_file(file_id, file_name)

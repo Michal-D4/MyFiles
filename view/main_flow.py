@@ -116,7 +116,6 @@ class MainFlow(QMainWindow):
         :param event:
         :return:
         """
-        print('|---> mousePressEvent', event.globalPos())
         self.ui_main.dirTree.clearSelection()
         QTreeView.mousePressEvent(self.ui_main.dirTree, event)
 
