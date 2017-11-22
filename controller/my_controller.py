@@ -212,7 +212,7 @@ class MyController():
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
             if root:
-                self._cb_places.update_disk_info(root)
+                self._cb_places.update_place_name(root)
                 return MyController._yield_files(root, ext_item)
 
         return ()       # not ok_pressed or root is empty

@@ -26,7 +26,7 @@ class Places:
     def get_mount_point(self):
         return self._mount_point
 
-    def is_disk_mounted(self):
+    def get_disk_state(self):
         """
         Has side effect - saves mount point in self._mount_point
         :return: NOT_DEFINED, NOT_REMOVAL, MOUNTED, NOT_MOUNTED
@@ -86,26 +86,26 @@ class Places:
         if prev_id != self._curr_place[0]:
             self.controller.on_change_data('dirTree', (self._curr_place[1][0],))
 
-    def update_disk_info(self, root):
+    def update_place_name(self, root):
         """
         Update only if 1) info is missing (NOT_DEFINED)
         and if 2) the place is not registered yet in data base
-        :param root: any path, used only volume - mount point
+        :param root: any path, used only "volume letter"/"mount point"
         :return: True / False
         """
-        if self.is_disk_mounted() == self.NOT_DEFINED:
-            disk_info = self._get_disk_info(root)
+        if self.get_disk_state() == self.NOT_DEFINED:
+            place_name = self._get_place_name(root)
 
-            if self.is_not_exist(disk_info):
-                self._dbu.update_other('REMOVAL_DISK_INFO', (disk_info, self._curr_place[1][0]))
+            if self.is_not_registered_place(place_name):
+                self._dbu.update_other('UPDATE_PLACE_NAME', (place_name, self._curr_place[1][0]))
                 self._curr_place = (self._curr_place[0],
-                                    (self._curr_place[1][0], disk_info, self._curr_place[1][2]))
+                                    (self._curr_place[1][0], place_name, self._curr_place[1][2]))
                 self._places[self._curr_place[0]] = self._curr_place[1]
                 return True
 
         return False
 
-    def _get_disk_info(self, root):
+    def _get_place_name(self, root):
         """
         :param root: any path, used only volume - mount point
         :return: label of disk if removal, otherwise - computer name
@@ -113,18 +113,18 @@ class Places:
         disk = psutil.os.path._getvolumepathname(root)
 
         if self.is_removable(disk):
-            disk_info = self._get_vol_name(disk)    # disk label
+            place_name = self._get_vol_name(disk)    # disk label
         else:
-            disk_info = socket.gethostname()        # computer name
-        return disk_info
+            place_name = socket.gethostname()        # computer name
+        return place_name
 
-    def is_not_exist(self, disk_info):
+    def is_not_registered_place(self, place_name):
         """
         Check if exists in DB
-        :param disk_info: "name of computer" or "label of USB"
+        :param place_name: "name of computer" or "label of USB"
         :return: bool
         """
-        res = self._dbu.select_other('IS_EXIST', (disk_info,)).fetchone()
+        res = self._dbu.select_other('IS_EXIST', (place_name,)).fetchone()
         return res is None
 
     def _change_place(self, data):
@@ -135,7 +135,7 @@ class Places:
         :param data: (current index in combobox, text of current item - Title)
         :return: None
         """
-        if self.is_disk_mounted() == self.NOT_MOUNTED:
+        if self.get_disk_state() == self.NOT_MOUNTED:
             res = self._ask_switch_to_unavailable_storage(data)
             if res == 0:                # Ok button
                 self._curr_place = (data[0], self._places[data[0]])
@@ -193,7 +193,7 @@ class Places:
         root = QFileDialog.getExistingDirectory(parent=self._view,
                                                 caption='Select root folder')
         if root:
-            self.update_disk_info(root)
+            self.update_place_name(root)
 
     def _rename_place(self, data):
         """
@@ -240,16 +240,17 @@ class Places:
         return res
 
     @staticmethod
-    def _get_mount_point(place_info):
+    def _get_mount_point(place_name):
         """
-        :param place_info: "computer name" or "USB label"
+        Get mount point for removal place
+        :param place_name: "computer name" or "USB label"
         :return: mount_point
         """
         parts = psutil.disk_partitions()
         removables = (x.mountpoint for x in parts if x.opts == 'rw,removable')
 
         for mount_point in removables:
-            if place_info == Places._get_vol_name(mount_point):
+            if place_name == Places._get_vol_name(mount_point):
                 return mount_point
         return ''
 

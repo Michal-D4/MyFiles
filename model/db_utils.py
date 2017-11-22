@@ -34,7 +34,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'AUTHORS': 'insert into Authors (Author) values (:author);'}
 
 Update = {'PLACES': 'update Places set Title = ? where PlaceId = ?;',
-          'REMOVAL_DISK_INFO': 'update Places set Place = ? where PlaceId = ?;'}
+          'UPDATE_PLACE_NAME': 'update Places set Place = ? where PlaceId = ?;'}
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'PLACES': 'delete from Places where PlaceId = ?;'}
