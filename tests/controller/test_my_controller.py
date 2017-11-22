@@ -141,7 +141,7 @@ class TestMyController(unittest.TestCase):
 
         self.controller._cb_places = mock_places
         res = self.controller._scan_file_system()  # QInputDialog => Ok, root = 'root'
-        mock_places.update_disk_info.assert_called_once_with('root')
+        mock_places.update_place_name.assert_called_once_with('root')
         mock_yield_files.assert_called_once_with('root', 'pdf')
         self.assertEqual(res, ('file_list',))
 

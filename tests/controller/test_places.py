@@ -42,21 +42,21 @@ class TestPlaces(unittest.TestCase):
 
     @patch.object(Places, '_remove_current_place')
     @patch.object(Places, '_ask_switch_to_unavailable_storage')
-    @patch.object(Places, 'is_disk_mounted')
-    def test__change_place(self, mock_is_disk_mounted,
+    @patch.object(Places, 'get_disk_state')
+    def test__change_place(self, mock_disk_state,
                            mock_ask_switch_to_unavailable_storage,
                            mock_remove_current_place):
         self.tested_places._places = [(0, 'in', 'out'), ]
         self.tested_places._curr_place = (0, (0, 'in', 'out'))
 
-        mock_is_disk_mounted.side_effect = (self.tested_places.MOUNTED,
-                                            self.tested_places.NOT_MOUNTED,
-                                            self.tested_places.NOT_MOUNTED,
-                                            self.tested_places.NOT_MOUNTED)
+        mock_disk_state.side_effect = (self.tested_places.MOUNTED,
+                                       self.tested_places.NOT_MOUNTED,
+                                       self.tested_places.NOT_MOUNTED,
+                                       self.tested_places.NOT_MOUNTED)
         mock_ask_switch_to_unavailable_storage.side_effect = (0, 1, 2)
 
         self.tested_places._change_place((0, 'data'))
-        mock_is_disk_mounted.assert_called_once()
+        mock_disk_state.assert_called_once()
         mock_ask_switch_to_unavailable_storage.assert_not_called()
 
         self.tested_places._change_place((0, 'data'))
@@ -149,19 +149,19 @@ class TestPlaces(unittest.TestCase):
                                                'other_place')
         mock_get_mount_point.side_effect = ('F:/', '')
 
-        res = self.tested_places.is_disk_mounted()
+        res = self.tested_places.get_disk_state()
         self.assertEqual(res, self.tested_places.NOT_DEFINED,
                          msg='Current place is not defined, but defined!!!')
 
-        res = self.tested_places.is_disk_mounted()
+        res = self.tested_places.get_disk_state()
         self.assertEqual(res, self.tested_places.NOT_REMOVAL,
                          msg='Current plase is not removable disk. But removal!!!')
 
-        res = self.tested_places.is_disk_mounted()
+        res = self.tested_places.get_disk_state()
         self.assertEqual(res, self.tested_places.MOUNTED,
                          msg='Removal disk is mounted. But not!!!')
 
-        res = self.tested_places.is_disk_mounted()
+        res = self.tested_places.get_disk_state()
         self.assertEqual(res, self.tested_places.NOT_MOUNTED,
                          msg='Removal disk is not mounted. But mounted!!!')
 
@@ -199,10 +199,10 @@ class TestPlaces(unittest.TestCase):
 
         mock_get_vol_name.return_value = 'place1'
 
-        res = self.tested_places._get_mount_point(place_info='place1')
+        res = self.tested_places._get_mount_point(place_name='place1')
         self.assertEqual(res, 'mountpoint1')
 
-        res = self.tested_places._get_mount_point(place_info='place2')
+        res = self.tested_places._get_mount_point(place_name='place2')
         self.assertEqual(res, '')
 
         # no removable disk
@@ -210,7 +210,7 @@ class TestPlaces(unittest.TestCase):
             psutil._common.sdiskpart('device1', 'mountpoint1', 'fs1', 'opts1'),
             psutil._common.sdiskpart('device2', 'mountpoint2', 'fs2', 'opts2')]
 
-        res = self.tested_places._get_mount_point(place_info='place2')
+        res = self.tested_places._get_mount_point(place_name='place2')
         self.assertEqual(res, '')
 
     @patch('controller.places.ctypes', spec_set=ctypes)
@@ -224,12 +224,12 @@ class TestPlaces(unittest.TestCase):
         res = Places._get_vol_name('any')   # GetVolumeInformationW: RC = 0
         self.assertEqual(res, '')
 
-    @patch.object(Places, 'is_not_exist')
-    @patch.object(Places, '_get_disk_info')
-    @patch.object(Places, 'is_disk_mounted')
+    @patch.object(Places, 'is_not_registered_place')
+    @patch.object(Places, '_get_place_name')
+    @patch.object(Places, 'get_disk_state')
     @patch('controller.places.psutil.os.path', spec_set=psutil.os.path)
-    def test_update_disk_info(self, mock_os_pass, mock_mounted,
-                              mock__get_disk_info, mock_check_if_not_exist):
+    def test_update_disk_info( self, mock_os_pass, mock_disk_state,
+                               mock__get_place_name, mock_is_not_registered_place ):
         self.tested_places._places = [(0, 'a', 'a')]
         self.tested_places._curr_place = (0, (0, 'a', 'a'))
 
@@ -238,21 +238,21 @@ class TestPlaces(unittest.TestCase):
         root = 'F:/'
 
         mock_os_pass._getvolumepathname.return_value = root
-        mock_mounted.side_effect = (self.tested_places.NOT_REMOVAL,
-                                    self.tested_places.NOT_DEFINED,
-                                    self.tested_places.NOT_DEFINED)
-        mock__get_disk_info.return_value = disk_label
-        mock_check_if_not_exist.side_effect = (False, True)
+        mock_disk_state.side_effect = (self.tested_places.NOT_REMOVAL,
+                                       self.tested_places.NOT_DEFINED,
+                                       self.tested_places.NOT_DEFINED)
+        mock__get_place_name.return_value = disk_label
+        mock_is_not_registered_place.side_effect = (False, True)
 
-        res = self.tested_places.update_disk_info(root)
+        res = self.tested_places.update_place_name(root)
         self.assertFalse(res,
                          msg='Disk info is already in data base, updated, but should not!!!')
 
-        res = self.tested_places.update_disk_info(root)
+        res = self.tested_places.update_place_name(root)
         self.assertFalse(res,
                          msg='Disk info is already in other place, updated, but should not!!!')
 
-        res = self.tested_places.update_disk_info(root)
+        res = self.tested_places.update_place_name(root)
         self.assertTrue(res, msg='Disk info is not updated, but SHOULD !!!')
         self.tested_places._dbu.update_other.assert_called_once_with('REMOVAL_DISK_INFO',
                                                            (disk_label, idx))
@@ -269,10 +269,10 @@ class TestPlaces(unittest.TestCase):
         disk_label = 'label'
 
         self.tested_places._dbu.select_other().fetchone.side_effect = ('label', None)
-        res = self.tested_places.is_not_exist(disk_label)
+        res = self.tested_places.is_not_registered_place(disk_label)
         self.assertFalse(res, msg='Label already in DB, but return None!!!')
 
-        res = self.tested_places.is_not_exist('aaa')
+        res = self.tested_places.is_not_registered_place('aaa')
         self.assertTrue(res, msg='Label is not in DB, but return !!!')
 
     @patch.object(Places, '_get_vol_name')
@@ -286,10 +286,10 @@ class TestPlaces(unittest.TestCase):
         mock_is_removable.side_effect = (True, False)
         mock__get_vol_name.return_value = 'Disk_label'
 
-        res = self.tested_places._get_disk_info('any')      # is_removable -> True
+        res = self.tested_places._get_place_name('any')      # is_removable -> True
         self.assertEqual(res, 'Disk_label', msg='Removal disk with label, but not!!!')
 
-        res = self.tested_places._get_disk_info('any_2')    # is_removable -> False
+        res = self.tested_places._get_place_name('any_2')    # is_removable -> False
         self.assertEqual(res, 'computer_name',
                          msg='Local hard disk - identified by computer name, but not!!!')
 

@@ -67,7 +67,6 @@ class MyController():
         :param data:   - widget specific data
         :return:
         '''
-        print('|---> on_change_data', sender, data)
         if sender == 'cb_places':
             self._cb_places.about_change_place(data)
         elif sender == 'filesList':
@@ -222,8 +221,6 @@ class MyController():
         2) reading from prepared file for  unmounted disk
         :return: None
         """
-        # import datetime
-        # start_time = datetime.datetime.now()
         if self._cb_places.is_disk_mounted() == Places.NOT_MOUNTED:
             _data = self._read_from_file()
         else:
@@ -244,7 +241,7 @@ class MyController():
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
             if root:
-                self._cb_places.update_disk_info(root)
+                self._cb_places.update_place_name(root)
                 return MyController._yield_files(root, ext_item)
 
         return ()       # not ok_pressed or root is empty
