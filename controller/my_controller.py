@@ -4,14 +4,15 @@ import sqlite3
 import os
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QModelIndex
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
 from model.db_utils import DBUtils
 from model.utils import create_db
+from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
-from model.utils.load_db_data import LoadDBData
+# from model.utils.load_db_data import LoadDBData
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
@@ -48,12 +49,13 @@ class MyController():
                     yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
-        print('|---> on_open_db', file_name, create)
         if create:
-            self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
+            self._connection = sqlite3.connect(file_name, check_same_thread=False,
+                                               detect_types=DETECT_TYPES)
             create_db.create_all_objects(self._connection)
         else:
-            self._connection = sqlite3.connect(file_name, detect_types=DETECT_TYPES)
+            self._connection = sqlite3.connect(file_name, check_same_thread=False,
+                                               detect_types=DETECT_TYPES)
 
         self._dbu = DBUtils(self._connection)
         self._populate_all_widgets()
@@ -79,6 +81,20 @@ class MyController():
             self._edit_authors()
         elif sender == 'Edit comment':
             self._edit_comment()
+        elif sender == 'Delete':
+            self._delete_file()
+        elif sender == 'Open':
+            self._open_file()
+
+    def _delete_file(self):
+        # todo - delete file from DB
+        pass
+
+    def _open_file(self):
+        # todo - open file
+        file_name = ''
+        os.startfile(file_name)
+        pass
 
     def _edit_key_words(self):
         # todo - provide the list/table of existed and allow add new
@@ -89,6 +105,7 @@ class MyController():
         pass
 
     def _edit_comment(self):
+        # todo - edit comment
         pass
 
     def _populate_ext_list(self):
@@ -114,7 +131,6 @@ class MyController():
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
-        print('|---> _populate_file_list', dir_idx)
         if dir_idx:
             model = TableModel()
             files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))
@@ -122,9 +138,9 @@ class MyController():
             for ff in files:
                 model.append_row(ff[3:], ff[:3])
             self.view.filesList.setModel(model)
+        self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
 
     def _populate_comment_field(self, data):
-        print('|---> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
@@ -145,7 +161,6 @@ class MyController():
                     comm.append(cc[0])
             else:
                 comm = ('',)
-            print('    tags', tgs, '   authors', auth, '  comment', comm)
             self.view.commentField.setText('\r\n'.join((
                 'Key words: {}'.format(', '.join(tgs)),
                 'Authors: {}'.format(', '.join(auth)),
@@ -174,15 +189,26 @@ class MyController():
         self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
 
     def _get_dirs(self, place_id):
+        """
+        Returns directory tree for current place
+        :param place_id:
+        :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
+        """
+        # TODO for removal places - substitute root (i.e. E:\\)
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
-        for rr in dir_tree:
-            dirs.append((rr[0], os.path.split(rr[1])[1], rr[2], rr[1]))
+        for rr in dir_tree:         # DirID, Path, ParentID, level
+            dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
     def sel_changed(self, sel1, sel2):
-        idx = sel2.indexes()
-        print('|---> sel_changed', len(idx))
+        """
+        Changed selection in dirTree
+        :param sel1: QList<QModelIndex>
+        :param sel2: QList<QModelIndex>
+        :return: None
+        """
+        idx = sel1.indexes()
         if idx:
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
             self._populate_file_list(dir_idx)
@@ -201,9 +227,12 @@ class MyController():
             _data = self._scan_file_system()
 
         if _data:
-            files = LoadDBData(self._connection, self._cb_places.get_curr_place())
-            files.load_data(_data)
-            self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
+            curr_place = self._cb_places.get_curr_place()
+            load_files = LoadFiles(self._connection, curr_place, _data)
+            load_files.start()
+
+            thread = FileInfo(self._connection, curr_place[1][0])
+            thread.start()
 
     def _scan_file_system(self):
         ext_ = self._get_selected_extensions()
