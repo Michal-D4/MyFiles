@@ -8,15 +8,16 @@ import os
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from view.main_flow import MainFlow
 
+
 class Places:
     NOT_REMOVAL, NOT_DEFINED, MOUNTED, NOT_MOUNTED = range(4)
 
     def __init__(self, parent):
-        self.conrtoller = parent
+        self.controller = parent
         self._view = parent.get_places_view()
         self._dbu = parent.get_db_utils()
-        self._places = []
-        self._curr_place = ()
+        self._places = []           # list of (PlaceId, Place, Title)
+        self._curr_place = ()       # (current id in combobox, (PlaceId, Place, Title))
         self._mount_point = ''
 
     def get_curr_place(self):
@@ -47,6 +48,10 @@ class Places:
 
     @staticmethod
     def is_removable(device):
+        """
+        :param device:  Disk letter / mount point
+        :return: bool
+        """
         parts = psutil.disk_partitions()
         removable = next(x.opts for x in parts if x.device == device)
         return removable == 'rw,removable'
@@ -79,7 +84,7 @@ class Places:
         else:
             self._change_place(data)
         if prev_id != self._curr_place[0]:
-            self.conrtoller.on_change_data('dirTree', (self._curr_place[1][0],))
+            self.controller.on_change_data('dirTree', (self._curr_place[1][0],))
 
     def update_disk_info(self, root):
         """
@@ -108,12 +113,17 @@ class Places:
         disk = psutil.os.path._getvolumepathname(root)
 
         if self.is_removable(disk):
-            disk_info = self._get_vol_name(disk)  # disk label
+            disk_info = self._get_vol_name(disk)    # disk label
         else:
-            disk_info = socket.gethostname()  # computer name
+            disk_info = socket.gethostname()        # computer name
         return disk_info
 
     def is_not_exist(self, disk_info):
+        """
+        Check if exists in DB
+        :param disk_info: "name of computer" or "label of USB"
+        :return: bool
+        """
         res = self._dbu.select_other('IS_EXIST', (disk_info,)).fetchone()
         return res is None
 
@@ -122,7 +132,7 @@ class Places:
         Check if selected place is available
         Ask for confirmation for switch to unavailable place/storage
         Save current item in self.curr_place if confirmed or available
-        :param data: only first item is used, it contains current index
+        :param data: (current index in combobox, text of current item - Title)
         :return: None
         """
         if self.is_disk_mounted() == self.NOT_MOUNTED:
@@ -150,15 +160,15 @@ class Places:
     def _not_in_dirs(self, place_id):
         """
         Check if there is reference from Dirs table to place_id
-        :param place_id:
-        :return:
+        :param place_id: PlaceId from DB
+        :return: bool
         """
         res = self._dbu.select_other('PLACE_IN_DIRS', (place_id,)).fetchone()
         return res is None
 
     def _add_place(self, data):
         """
-        :param data: tuple (index in view, current text in view)
+        :param data: (index in combobox, current text in combobox)
         :return: None
         """
         res = self._ask_rename_or_new()
@@ -174,7 +184,7 @@ class Places:
 
     def _add_new(self, data):
         """
-        :param data: tuple (index in view, current text in view)
+        :param data: (index in combobox, current text in combobox)
         :return: None
         """
         jj = self._dbu.insert_other('PLACES', ('', data[1]))
@@ -187,7 +197,7 @@ class Places:
 
     def _rename_place(self, data):
         """
-        :param data: tuple (index in view, current text in view)
+        :param data: (index in combobox, current text in combobox)
         :return: None
         """
         self._curr_place = (self._curr_place[0],
@@ -231,6 +241,10 @@ class Places:
 
     @staticmethod
     def _get_mount_point(place_info):
+        """
+        :param place_info: "computer name" or "USB label"
+        :return: mount_point
+        """
         parts = psutil.disk_partitions()
         removables = (x.mountpoint for x in parts if x.opts == 'rw,removable')
 

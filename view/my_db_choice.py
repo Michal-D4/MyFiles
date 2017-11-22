@@ -1,4 +1,5 @@
 # view/my_db_choice.py
+
 import sys
 import pickle
 
@@ -89,9 +90,9 @@ class MyDBChoice(QDialog):
         '''
         Initiate data in widgets
         :param init_data: list of 3 items:
-            1 - skipThisWindow flag, 0 or 2; 2 - skip
-            2 - index of last used DB
-            3 - list of DBs
+            0 - skipThisWindow flag, 0 or 2; 2 - skip
+            1 - index of last used DB
+            2 - list of DBs
         :return: None
         '''
         if init_data:
@@ -109,11 +110,14 @@ class MyDBChoice(QDialog):
 
     def load_init_data(self):
         _data = [0, 0, []]
-        with open('setup.pcl', 'rb') as f:
-            _data = pickle.load(f)
-            file = _data[2][_data[1]]
-            _data[2].sort()
-            _data[1] = _data[2].index(file)
+        try:
+            with open('setup.pcl', 'rb') as f:
+                _data = pickle.load(f)
+                file = _data[2][_data[1]]
+                _data[2].sort()
+                _data[1] = _data[2].index(file)
+        except (EOFError, FileNotFoundError):
+            pass
         self.init_data = _data
 
     def save_init_data(self):

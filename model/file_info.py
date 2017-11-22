@@ -2,8 +2,11 @@
 
 import os
 import datetime
-from PyPDF2 import PdfFileReader
+import sqlite3
+from threading import Thread, Event
+from PyPDF2 import PdfFileReader, utils
 
+from model.utils.load_db_data import LoadDBData
 from model.helpers import *
 
 SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
@@ -22,31 +25,67 @@ CommentID = :comm_id,
 Year = :year,
 Pages = :page,
 Size = :size
-where FileID = file_id;'''
+where FileID = :file_id;'''
 
+E = Event()
 
-class FileInfo:
-    def __init__(self, conn, place_id):
+class LoadFiles(Thread):
+    def __init__(self, conn, place_id, data_, group=None, target=None, name=None, args=(),
+                 kwargs=None, *, daemon=None):
+        super().__init__(group, target, name, args, kwargs, daemon=daemon)
         self.place_id = place_id
+        self.conn = conn
+        self.data = data_
+
+    def run(self):
+        super().run()
+        start_time = datetime.datetime.now()
+        # print('|===> LoadFiles start time', start_time)
+        files = LoadDBData(self.conn, self.place_id)
+        files.load_data(self.data)
+        end_time = datetime.datetime.now()
+        # print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
+        E.set()
+
+
+class FileInfo(Thread):
+    def run(self):
+        super().run()
+        E.wait()
+        start_time = datetime.datetime.now()
+        # print('|===> FileInfo start time', start_time)
+        self.update_files()
+        end_time = datetime.datetime.now()
+        # print('|===> FileInfo end time', end_time, ' delta', end_time - start_time)
+
+    def __init__(self, conn, place_id):
+        super().__init__()
+        self.place_id = place_id
+        self.conn = conn
         self.cursor = conn.cursor()
         self.file_info = []
 
     def insert_author(self, file_id):
         # todo need cycle in case of several authors
-        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, self.file_info[3]).fetchone()
+        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, (self.file_info[3],)).fetchone()
         if not auth_idl:
             self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3],))
+            self.conn.commit()
             auth_id = self.cursor.lastrowid
         else:
             auth_id = auth_idl[0]
         self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
+        self.conn.commit()
 
     def _insert_comment(self):
         if len(self.file_info) > 2:
-            comm = '\r\n'.join((str(x) for x in self.file_info[4:] if not x == ''))    # todo formatting
+            try:
+                comm = 'Creation date {}\r\nTitle: {}'.format(self.file_info[4], self.file_info[5])
+            except IndexError:
+                print('IndexError ', len(self.file_info))
             self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
+            self.conn.commit()
             comm_id = self.cursor.lastrowid
-            print('|---> _insert_comment', comm_id, comm)
             pages = self.file_info[2]
         else:
             comm_id = 0
@@ -54,7 +93,7 @@ class FileInfo:
         return comm_id, pages
 
     def get_file_info(self, full_file_name):
-        '''
+        """
         Store info in self.file_info:
             0 - size,
             1 - year,  further - pdf-info
@@ -64,10 +103,9 @@ class FileInfo:
             5 - Title
         :param full_file_name:
         :return: None
-        '''
-        print('|---> get_file_info', full_file_name)
+        """
         self.file_info.clear()
-        if os._exists(full_file_name):
+        if os.path.isfile(full_file_name):
             st = os.stat(full_file_name)
             self.file_info.append(st.st_size)
             self.file_info.append(datetime.datetime.fromtimestamp(st.st_ctime).date().isoformat())
@@ -76,23 +114,28 @@ class FileInfo:
         else:
             self.file_info.append('')
             self.file_info.append('')
-        print('|---> get_file_info', self.file_info)
 
     def get_pdf_info(self, file):
-        print('|---> get_pdf_info', file)
         with (open(file, "rb")) as pdf_file:
-            fr = PdfFileReader(pdf_file, strict=False)
-            self.file_info.append(fr.getNumPages())
-            fi = fr.documentInfo
-            if fi is not None:
-                self.file_info.append(fi.getText('/Author'))
-                self.file_info.append(self.pdf_creation_date(fi))
-                self.file_info.append(fi.getText('/Title'))
+            try:
+                fr = PdfFileReader(pdf_file, strict=False)
+                fi = fr.documentInfo
+                self.file_info.append(fr.getNumPages())
+            except (ValueError, utils.PdfReadError, utils.PdfStreamError):
+                self.file_info += [0, '', '', '']
+            else:
+                if fi is not None:
+                    self.file_info.append(fi.getText('/Author'))
+                    self.file_info.append(FileInfo.pdf_creation_date(fi))
+                    self.file_info.append(fi.getText('/Title'))
+                else:
+                    self.file_info += ['', '', '']
 
-    def pdf_creation_date(self, fi):
+    @staticmethod
+    def pdf_creation_date(fi):
         ww = fi.getText('/CreationDate')
         if ww:
-            return  '-'.join((ww[2:6], ww[6:8], ww[8:10]))
+            return '-'.join((ww[2:6], ww[6:8], ww[8:10]))
         return ''
 
     def update_file(self, file_id, full_file_name):
@@ -110,11 +153,13 @@ class FileInfo:
                                               'page': pages,
                                               'size': self.file_info[0],
                                               'file_id': file_id})
+        self.conn.commit()
         if len(self.file_info) > 3 and self.file_info[3]:
             self.insert_author(file_id)
 
     def update_files(self):
-        curr = self.cursor.execute(SQL_FILES_WITHOUT_INFO, self.place_id)
-        for file_id, file, path in curr:
+        curr = self.cursor.execute(SQL_FILES_WITHOUT_INFO, {'place_id': self.place_id})
+        file_list = list(curr)
+        for file_id, file, path in file_list:
             file_name = os.path.join(path, file)
             self.update_file(file_id, file_name)

@@ -123,19 +123,21 @@ class TreeModel(QAbstractItemModel):
         """
         Fill tree structure
         :param rows: iterable, each item contains 3 elements
-                        item[0] - Id of item, unique;
-                        item[1] - data of Qt.DisplayRole;
-                        item[2] - Id of parent item, 0 for root,
+                        item[0]  - data to be shown == Qt.DisplayRole,
+                        item[1:] - user_data:
+                        item[1]  - Id of item, unique,
+                        item[2]  - Id of parent item, 0 for root,
+                        ...
                      and sorted by item(2) - parent ID - in descendant order
         :return: None
         """
         id_list = []
         items_list = {0: self.rootItem}
         for row in rows:
-            if not isinstance(row[1], tuple):
-                row = (row[0], (row[1],), row[2])
-            items_list[row[0]] = TreeItem(data_=row[1], user_data=(row[0::2]))
-            id_list.append((row[0::2]))
+            if not isinstance(row[0], tuple):
+                row = ((row[0],),) + tuple(row[1:])
+            items_list[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
+            id_list.append((row[1:3]))
 
         for id_ in id_list:
             if id_[1] in items_list:

@@ -82,7 +82,6 @@ class LoadDBData:
         item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
         if not item:
             ext_id, ext = self.insert_extension(file)
-            print('|---> insert_file', ext_id, ext)
 
             self.cursor.execute(SQL_INSERT_FILE, {'dir_id': dir_id,
                                                   'file': file,

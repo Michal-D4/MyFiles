@@ -1,7 +1,8 @@
 # view/main_flow.py
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu, QTreeView
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QModelIndex
+from PyQt5.QtGui import QMouseEvent
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
@@ -51,11 +52,15 @@ class MainFlow(QMainWindow):
         # todo method _file_pop_menu not implemented yet -- not clear yet
         menu = QMenu(self)
         action1 = menu.addAction('Delete')
+        action2 = menu.addAction('Open')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
+        if action:
+            print('|---> _file_pop_menu', action.text())
+            self.change_data_signal.emit(action.text(), ())
 
-    def file_changed(self, curr_idx):
-        idxs = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
-        self.change_data_signal.emit('commentField', idxs)
+    def file_changed(self, curr_idx: QModelIndex):
+        idx_ = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
+        self.change_data_signal.emit('commentField', idx_)
 
     def change_place(self, idx):
         self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))
@@ -103,16 +108,14 @@ class MainFlow(QMainWindow):
             self.open_dialog.exec_()
         else:
             self.open_dialog.emit_open_dialog()
-        print('|---> first_open_data_base  END')
         self.ui_main.dirTree.mousePressEvent = self.mousePressEvent
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
         """
         Deselect all when click on empty place
         :param event:
         :return:
         """
-        print('|---> mousePressEvent', self)
         self.ui_main.dirTree.clearSelection()
         QTreeView.mousePressEvent(self.ui_main.dirTree, event)
 
