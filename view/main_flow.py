@@ -91,6 +91,8 @@ class MainFlow(QMainWindow):
     def go(self):
         # todo - implement file selection according selected ext., authors, tags, root
         print('go ====>')
+        params = ()
+        self.change_data_signal.emit('advanced_file_list', params)
 
     def open_data_base(self):
         """

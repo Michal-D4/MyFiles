@@ -85,6 +85,20 @@ class MyController():
             self._delete_file()
         elif sender == 'Open':
             self._open_file()
+        elif sender == 'advanced_file_list':
+            self.advanced_file_list()
+
+    def advanced_file_list(self):
+        # todo - select files
+        # extensions - or
+        # tags       - and
+        # authors    - or
+        # dir        - tree, level
+        # date ???   - after
+        dir_idx = [modelIndex.row() for modelIndex in
+                   self.view.dirTree.selectionModel().selectedRows()]
+        print('|---> advanced_file_list', dir_idx)
+        pass
 
     def _delete_file(self):
         # todo - delete file from DB
@@ -221,7 +235,7 @@ class MyController():
         2) reading from prepared file for  unmounted disk
         :return: None
         """
-        if self._cb_places.is_disk_mounted() == Places.NOT_MOUNTED:
+        if self._cb_places.get_disk_state() == Places.NOT_MOUNTED:
             _data = self._read_from_file()
         else:
             _data = self._scan_file_system()
