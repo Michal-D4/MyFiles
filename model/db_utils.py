@@ -53,13 +53,14 @@ class DBUtils:
         :param level: - max level of tree, 0 - all levels
         :return: cursor of directories
         """
-        sql = self.generate_sql(dir_id, level, place_id)
+        sql = DBUtils.generate_sql(dir_id, level, place_id)
 
         self.curs.execute(sql)
 
         return self.curs
 
-    def generate_sql(self, dir_id, level, place_id):
+    @staticmethod
+    def generate_sql(dir_id, level, place_id):
         tree_sql = Selects['TREE']
         tmp = (tree_sql[0], tree_sql[1].format(dir_id, place_id),
                tree_sql[2].format(dir_id, place_id), tree_sql[3],
