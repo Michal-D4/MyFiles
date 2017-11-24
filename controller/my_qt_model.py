@@ -165,6 +165,10 @@ class TableModel(QAbstractTableModel):
                 return self.__data[index.row()][index.column()]
             elif role == Qt.UserRole:
                 return self.__user_data[index.row()]
+            elif role == Qt.TextAlignmentRole:
+                if index.column() == 0:
+                    return Qt.AlignLeft
+                return Qt.AlignRight
 
     def append_row(self, row, user_data=None):
         if not isinstance(row, tuple):
