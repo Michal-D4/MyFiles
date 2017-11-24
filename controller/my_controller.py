@@ -95,20 +95,25 @@ class MyController():
         # authors    - or
         # dir        - tree, level
         # date ???   - after
-        dir_idx = [modelIndex.row() for modelIndex in
-                   self.view.dirTree.selectionModel().selectedRows()]
-        print('|---> advanced_file_list', dir_idx)
-        pass
+        dd = self.view.dirTree.selectionModel().selectedRows()  # list of indexes
+        if dd:
+            dir_ = self.view.dirTree.model().data(dd[0], Qt.UserRole)
+            print('|---> advanced_file_list', dir_)
 
     def _delete_file(self):
         # todo - delete file from DB
         pass
 
     def _open_file(self):
-        # todo - open file
-        file_name = ''
-        os.startfile(file_name)
-        pass
+
+        idx = self.view.dirTree.currentIndex()
+        dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
+        print('|--> _open_file', dir_)
+        f_idx = self.view.filesList.currentIndex()
+        file_name = self.view.filesList.model().data(f_idx)
+        print('|--> file_name', file_name)
+        full_file_name = os.path.join(dir_[2], file_name)
+        os.startfile(full_file_name)
 
     def _edit_key_words(self):
         # todo - provide the list/table of existed and allow add new
@@ -152,6 +157,12 @@ class MyController():
             for ff in files:
                 model.append_row(ff[3:], ff[:3])
             self.view.filesList.setModel(model)
+            for i in range(3):
+                self.view.filesList.resizeColumnToContents(i)
+
+            self.view.filesList.setAlternatingRowColors(True)
+            # self.view.filesList.setColumnWidth(0, 300)
+
         self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
 
     def _populate_comment_field(self, data):
