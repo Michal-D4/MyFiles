@@ -220,10 +220,15 @@ class MyController():
         :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
         """
         # TODO for removal places - substitute root (i.e. E:\\)
+        root = self._cb_places.get_mount_point()
+        print('|---> _get_dirs root', root)
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
         for rr in dir_tree:         # DirID, Path, ParentID, level
-            dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
+            if self._cb_places.get_disk_state == Places.NOT_REMOVAL:
+                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
+            else:
+                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], '\\'.join(root, rr[1])))
         return dirs
 
     def sel_changed(self, sel1, sel2):

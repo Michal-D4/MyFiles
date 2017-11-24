@@ -17,7 +17,7 @@ class Places:
         self._view = parent.get_places_view()
         self._dbu = parent.get_db_utils()
         self._places = []           # list of (PlaceId, Place, Title)
-        self._curr_place = ()       # (current id in combobox, (PlaceId, Place, Title))
+        self._curr_place = ()       # (index, (PlaceId, Place, Title), is_removal)
         self._mount_point = ''
 
     def get_curr_place(self):
@@ -67,7 +67,7 @@ class Places:
             loc = socket.gethostname()
             idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
 
-            self._curr_place = (idx, self._places[idx])
+            self._curr_place = (idx, self._places[idx], Places.NOT_REMOVAL)
             self._view.setCurrentIndex(idx)
 
         self._view.blockSignals(False)
@@ -94,12 +94,13 @@ class Places:
         :return: True / False
         """
         if self.get_disk_state() == self.NOT_DEFINED:
-            place_name = self._get_place_name(root)
+            place_info = self._get_place_name(root)
 
-            if self.is_not_registered_place(place_name):
-                self._dbu.update_other('UPDATE_PLACE_NAME', (place_name, self._curr_place[1][0]))
+            if self.is_not_registered_place(place_info):
+                self._dbu.update_other('UPDATE_PLACE_NAME', (place_info, self._curr_place[1][0]))
                 self._curr_place = (self._curr_place[0],
-                                    (self._curr_place[1][0], place_name, self._curr_place[1][2]))
+                                    (self._curr_place[1][0], place_info[0],
+                                     self._curr_place[1][2]), place_info[1])
                 self._places[self._curr_place[0]] = self._curr_place[1]
                 return True
 
@@ -113,9 +114,9 @@ class Places:
         disk = psutil.os.path._getvolumepathname(root)
 
         if self.is_removable(disk):
-            place_name = self._get_vol_name(disk)    # disk label
+            place_name = (self._get_vol_name(disk), self.MOUNTED)    # disk label
         else:
-            place_name = socket.gethostname()        # computer name
+            place_name = (socket.gethostname(), self.NOT_REMOVAL)    # computer name
         return place_name
 
     def is_not_registered_place(self, place_name):
@@ -138,7 +139,7 @@ class Places:
         if self.get_disk_state() == self.NOT_MOUNTED:
             res = self._ask_switch_to_unavailable_storage(data)
             if res == 0:                # Ok button
-                self._curr_place = (data[0], self._places[data[0]])
+                self._curr_place = (data[0], self._places[data[0]], self.NOT_MOUNTED)
             elif res == 1:              # Remove button
                 self._remove_current_place()
             else:                       # Cancel - return to prev.place
@@ -146,7 +147,8 @@ class Places:
                 self._view.setCurrentIndex(self._curr_place[0])
                 self._view.blockSignals(False)
         else:                           # switches to new place silently
-            self._curr_place = (data[0], self._places[data[0]])
+            print('|---> _change_place - disk state:', self.get_disk_state())
+            self._curr_place = (data[0], self._places[data[0]], self.get_disk_state())
 
     def _remove_current_place(self):
         idx = self._view.currentIndex()
@@ -188,7 +190,7 @@ class Places:
         :return: None
         """
         jj = self._dbu.insert_other('PLACES', ('', data[1]))
-        self._curr_place = (self._view.currentIndex(), (jj, '', data[1]))
+        self._curr_place = (self._view.currentIndex(), (jj, '', data[1]), self.NOT_DEFINED)
         self._places.append(self._curr_place[1])
         root = QFileDialog.getExistingDirectory(parent=self._view,
                                                 caption='Select root folder')
@@ -202,7 +204,8 @@ class Places:
         """
         self._curr_place = (self._curr_place[0],
                             (self._curr_place[1][0],
-                             self._curr_place[1][1], data[1]))
+                             self._curr_place[1][1], data[1]),
+                            self._curr_place[2])
         self._places[self._curr_place[0]] = self._curr_place[1]
 
         self._view.blockSignals(True)

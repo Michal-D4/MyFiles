@@ -2,6 +2,7 @@
 
 import os
 from model.helpers import *
+from controller.places import Places
 
 SQL_FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and PlaceId = :place;'''
@@ -42,6 +43,7 @@ class LoadDBData:
         self.conn = connection
         self.cursor = self.conn.cursor()
         self.place_id = current_place[0]
+        self.place_status = current_place[2]
         self.set_current_place(current_place)
 
     def set_current_place(self, current_place):
@@ -66,6 +68,8 @@ class LoadDBData:
         :return: None
         """
         for line in data:
+            if self.place_status == Places.MOUNTED:
+                line = line.partition(os.sep)[2]
             idx = self.insert_dir(line)
             self.insert_file(idx, line)
         self.conn.commit()
