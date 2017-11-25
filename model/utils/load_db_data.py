@@ -68,8 +68,9 @@ class LoadDBData:
         :return: None
         """
         for line in data:
+            line = line.translate({92: 47})
             if self.place_status == Places.MOUNTED:
-                line = line.partition(os.sep)[2]
+                line = line.partition(os.altsep)[2]
             idx = self.insert_dir(line)
             self.insert_file(idx, line)
         self.conn.commit()
@@ -111,7 +112,7 @@ class LoadDBData:
         :param full_file_name:
         :return: row ID of file dir
         '''
-        path = full_file_name.rpartition(os.sep)[0]
+        path = full_file_name.rpartition(os.altsep)[0]
         idx, parent_path = self.search_closest_parent(path)
         if parent_path == path:
             return idx
@@ -157,7 +158,7 @@ class LoadDBData:
             if item:
                 res = tuple(item)
                 break
-            path = path.rpartition(os.sep)[0]
+            path = path.rpartition(os.altsep)[0]
         return res
 
 

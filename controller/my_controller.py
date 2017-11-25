@@ -163,7 +163,9 @@ class MyController():
             self.view.filesList.setAlternatingRowColors(True)
             # self.view.filesList.setColumnWidth(0, 300)
 
-        self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
+            self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
+        else:
+            self.view.statusbar.showMessage('No data')
 
     def _populate_comment_field(self, data):
         file_id = data[0]
@@ -221,14 +223,13 @@ class MyController():
         """
         # TODO for removal places - substitute root (i.e. E:\\)
         root = self._cb_places.get_mount_point()
-        print('|---> _get_dirs root', root)
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
         for rr in dir_tree:         # DirID, Path, ParentID, level
-            if self._cb_places.get_disk_state == Places.NOT_REMOVAL:
+            if self._cb_places.get_disk_state() == Places.NOT_REMOVAL:
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
             else:
-                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], '\\'.join(root, rr[1])))
+                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
         return dirs
 
     def sel_changed(self, sel1, sel2):

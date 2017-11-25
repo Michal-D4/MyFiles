@@ -123,12 +123,12 @@ class TreeModel(QAbstractItemModel):
         """
         Fill tree structure
         :param rows: iterable, each item contains 3 elements
-                        item[0]  - data to be shown == Qt.DisplayRole,
-                        item[1:] - user_data:
-                        item[1]  - Id of item, unique,
-                        item[2]  - Id of parent item, 0 for root,
+             item[0]  - data to be shown == Qt.DisplayRole,
+             item[1:] - user_data:
+                  item[1]  - Id of item, unique,
+                  item[2]  - Id of parent item, 0 for root,
                         ...
-                     and sorted by item(2) - parent ID - in descendant order
+             and sorted by item(2) - parent ID - in descendant order
         :return: None
         """
         id_list = []

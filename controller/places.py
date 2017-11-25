@@ -17,7 +17,7 @@ class Places:
         self._view = parent.get_places_view()
         self._dbu = parent.get_db_utils()
         self._places = []           # list of (PlaceId, Place, Title)
-        self._curr_place = ()       # (index, (PlaceId, Place, Title), is_removal)
+        self._curr_place = ()       # (index, (PlaceId, Place, Title), place_state)
         self._mount_point = ''
 
     def get_curr_place(self):
@@ -94,10 +94,10 @@ class Places:
         :return: True / False
         """
         if self.get_disk_state() == self.NOT_DEFINED:
-            place_info = self._get_place_name(root)
+            place_info = self._get_place_name(root)     # (place, place state: MOUNTED or NOT_REMOVAL)
 
-            if self.is_not_registered_place(place_info):
-                self._dbu.update_other('UPDATE_PLACE_NAME', (place_info, self._curr_place[1][0]))
+            if self.is_not_registered_place(place_info[0]):
+                self._dbu.update_other('UPDATE_PLACE_NAME', (place_info[0], self._curr_place[1][0]))
                 self._curr_place = (self._curr_place[0],
                                     (self._curr_place[1][0], place_info[0],
                                      self._curr_place[1][2]), place_info[1])
@@ -254,7 +254,7 @@ class Places:
 
         for mount_point in removables:
             if place_name == Places._get_vol_name(mount_point):
-                return mount_point
+                return mount_point.split(os.sep)[0]
         return ''
 
     @staticmethod
