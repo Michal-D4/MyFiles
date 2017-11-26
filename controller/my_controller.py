@@ -105,15 +105,15 @@ class MyController():
         pass
 
     def _open_file(self):
-
         idx = self.view.dirTree.currentIndex()
         dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
-        print('|--> _open_file', dir_)
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        print('|--> file_name', file_name)
         full_file_name = os.path.join(dir_[2], file_name)
-        os.startfile(full_file_name)
+        if os.path.isfile(full_file_name):
+            os.startfile(full_file_name)
+        else:
+            MyController._show_message("Can't find file {}".format(full_file_name))
 
     def _edit_key_words(self):
         # todo - provide the list/table of existed and allow add new
@@ -290,16 +290,17 @@ class MyController():
                 # 2) if defined - possible action:
                 #    a)  - switch to place in file
                 #    b)  - create new place
-                MyController._bad_file_message(file_name)
+                MyController._show_message("The file {} doesn't have data from current place!".
+                                           format(file_name))
                 a_file = ()
             return a_file
         return ()
 
     @staticmethod
-    def _bad_file_message(file_name):
+    def _show_message(message, message_type=QMessageBox.Critical):
         box = QMessageBox()
-        box.setIcon(QMessageBox.Critical)
-        box.setText("The file {} doesn't have data from current place!".format(file_name))
+        box.setIcon(message_type)
+        box.setText(message)
         box.addButton('Ok', QMessageBox.AcceptRole)
         box.exec_()
 
