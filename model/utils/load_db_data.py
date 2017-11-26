@@ -44,9 +44,9 @@ class LoadDBData:
         self.cursor = self.conn.cursor()
         self.place_id = current_place[0]
         self.place_status = current_place[2]
-        self.set_current_place(current_place)
+        self.insert_current_place(current_place)
 
-    def set_current_place(self, current_place):
+    def insert_current_place(self, current_place):
         '''
         Check existence of place in Places table and insert it if absent
         :return:  None
