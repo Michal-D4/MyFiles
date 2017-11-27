@@ -1,10 +1,8 @@
 <RCC>
   <qresource prefix="image">
-    <file>fileopen.png</file>
-    <file>filenew.png</file>
-    <file>ic_action_play.png</file>
-    <file>plus.png</file>
-    <file>minus.png</file>
-    <file>loaddata.png</file>
+    <file>fileopen22.png</file>
+    <file>loaddata22.png</file>
+    <file>ic_action_play22.png</file>
+    <file>menu.png</file>
   </qresource>
 </RCC>
