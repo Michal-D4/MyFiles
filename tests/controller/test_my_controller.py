@@ -1,11 +1,18 @@
 import sqlite3
 import unittest
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch, call, mock_open
 
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 from controller import my_controller
 from controller.places import Places
+
+
+def my_next(open_mock):
+    s = open_mock.readline()
+    if s:
+        return s
+    raise StopIteration
 
 
 class TestMyController(unittest.TestCase):
@@ -50,7 +57,7 @@ class TestMyController(unittest.TestCase):
 
         self.controller.on_open_db('my file', True)
 
-        mock_sqlite3.connect.assert_called_with('my file', detect_types=3)
+        mock_sqlite3.connect.assert_called_with('my file', check_same_thread=False, detect_types=3)
         mock_create_db.create_all_objects.assert_called_once()
         mock_populate.assert_called_once()
 
@@ -61,7 +68,7 @@ class TestMyController(unittest.TestCase):
 
         self.controller.on_open_db('my file', False)
 
-        mock_sqlite3.connect.assert_called_with('my file', detect_types=3)
+        mock_sqlite3.connect.assert_called_with('my file', check_same_thread=False, detect_types=3)
         mock_create_db.create_all_objects.assert_not_called()
         mock_populate.assert_called_once()
 
@@ -90,33 +97,32 @@ class TestMyController(unittest.TestCase):
         mock_populate_author_list.assert_called_once()
         mock_places.return_value.populate_cb_places.assert_called_once()
 
-    @patch.object(my_controller.MyController, '_populate_directory_tree')
-    @patch.object(my_controller.MyController, '_read_from_file')
-    @patch.object(my_controller.MyController, '_scan_file_system')
-    @patch('controller.my_controller.LoadDBData', autospec=True)
-    def test_on_scan_files(self, mock_LoadDBData, mock_scan_file_system,
-                           mock_read_from_file, mock__populate_directory_tree):
-
-        mock_cb_places = Mock(spec_set=Places)
-        self.controller._cb_places = mock_cb_places
-        mock_cb_places.get_curr_place.return_value = (0, (0, 'some_place', 'some_title'))
-
-        mock_cb_places.is_disk_mounted.side_effect = (Places.MOUNTED, Places.NOT_MOUNTED)
-
-        mock_scan_file_system.return_value = '_scan_file_system'
-
-        mock_read_from_file.return_value = '_read_from_file'
-
-        self.controller.on_scan_files()
-        mock_scan_file_system.assert_called_once()
-        mock_read_from_file.assert_not_called()
-        mock_LoadDBData.return_value.load_data.assert_called_with('_scan_file_system')
-
-        self.controller.on_scan_files()
-        mock_read_from_file.assert_called_once()
-        mock_LoadDBData.return_value.load_data.assert_called_with('_read_from_file')
-
-        pass
+    # All things were changed - scan files is done in separate thread
+    # =====================================================================
+    # @patch.object(my_controller.MyController, '_populate_directory_tree')
+    # @patch.object(my_controller.MyController, '_read_from_file')
+    # @patch.object(my_controller.MyController, '_scan_file_system')
+    # def test_on_scan_files(self, mock_scan_file_system,
+    #                        mock_read_from_file, mock__populate_directory_tree):
+    #
+    #     mock_cb_places = Mock(spec_set=Places)
+    #     self.controller._cb_places = mock_cb_places
+    #     mock_cb_places.get_curr_place.return_value = (0, (0, 'some_place', 'some_title'))
+    #
+    #     mock_cb_places.get_disk_state.side_effect = (Places.MOUNTED, Places.NOT_MOUNTED)
+    #
+    #     mock_scan_file_system.return_value = '_scan_file_system'
+    #
+    #     mock_read_from_file.return_value = '_read_from_file'
+    #
+    #     self.controller.on_scan_files()
+    #     mock_scan_file_system.assert_called_once()
+    #     mock_read_from_file.assert_not_called()
+    #     mock_LoadDBData.return_value.load_data.assert_called_with('_scan_file_system')
+    #
+    #     self.controller.on_scan_files()
+    #     mock_read_from_file.assert_called_once()
+    #     mock_LoadDBData.return_value.load_data.assert_called_with('_read_from_file')
 
     @patch('controller.my_controller.Places', spec_set=Places)
     @patch.object(my_controller.MyController, '_get_selected_extensions')
@@ -148,18 +154,21 @@ class TestMyController(unittest.TestCase):
     @patch.object(my_controller.MyController, '_show_message')
     @patch('controller.my_controller.QFileDialog', spec_set=QFileDialog)
     @patch('controller.my_controller.Places', spec_set=Places)
-    @patch('controller.my_controller.open')
-    def test__read_from_file(self, mock_open, mock_places, mock_file_dialog, mock_show_message):
-        list_lines = ['### same place ###', 'first file name', 'second file name']
-        mock_open.return_value = (x for x in list_lines)
+    def test__read_from_file(self, mock_places, mock_file_dialog, mock_show_message):
+        list_lines = '### same place ###\nfirst file name\nsecond file name\n'
         self.controller._cb_places = mock_places
-        mock_places.get_curr_place.side_effect = ((0, (0, 'same place', 'same_title')),
-                                                  (0, (0, 'other_place', 'other_title')))
+        mock_places.get_curr_place.side_effect = ((0, (0, 'same place', 'same_title'), 0),
+                                                  (0, (0, 'other_place', 'other_title'), 0))
         mock_file_dialog.getOpenFileName.return_value = 'file name'
 
-        res = self.controller._read_from_file()
-        self.assertEqual(list(res), list_lines[1:])
+        self.mock_open_file = mock_open(read_data=list_lines)
+        self.mock_open_file.return_value.__iter__ = lambda self:self
+        self.mock_open_file.return_value.__next__ = my_next
 
-        mock_open.return_value = (x for x in list_lines)
-        res = self.controller._read_from_file()
-        self.assertEqual(tuple(res), ())
+        with patch('builtins.open', self.mock_open_file):
+            res = self.controller._read_from_file()
+            self.assertEqual(list(res), ['first file name\n', 'second file name\n'])
+
+            res = self.controller._read_from_file()
+            self.assertEqual(tuple(res), ())
+
