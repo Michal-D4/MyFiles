@@ -153,15 +153,12 @@ class MyController():
         if dir_idx:
             model = TableModel()
             files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))
-            model.setHeaderData(0, Qt.Horizontal, 'File Year Pages Size')
+            model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
             for ff in files:
                 model.append_row(ff[3:], ff[:3])
             self.view.filesList.setModel(model)
-            for i in range(3):
-                self.view.filesList.resizeColumnToContents(i)
 
             self.view.filesList.setAlternatingRowColors(True)
-            # self.view.filesList.setColumnWidth(0, 300)
 
             self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
         else:

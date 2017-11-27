@@ -17,10 +17,6 @@ class MainFlow(QMainWindow):
         self.ui_main = Ui_MainWindow()
         self.ui_main.setupUi(self)
 
-        self.ui_main.cb_places = QComboBox()
-        self.ui_main.cb_places.setEditable(True)
-        self.ui_main.toolBar.addWidget(self.ui_main.cb_places)
-
         self.restore_setting()
 
         self.ui_main.actionOpenDB.triggered.connect(self.open_data_base)
@@ -29,6 +25,7 @@ class MainFlow(QMainWindow):
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.clicked.connect(self.file_changed)
+        self.ui_main.filesList.resizeEvent = self.resize_event
 
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui_main.filesList.customContextMenuRequested.connect(self._file_pop_menu)
@@ -37,6 +34,19 @@ class MainFlow(QMainWindow):
         self.ui_main.commentField.customContextMenuRequested.connect(self._comment_menu)
 
         self.open_dialog = open_dialog
+
+        lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
+        self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line).width() for line in lines]
+
+    def resize_event(self, event):
+        self.ui_main.filesList.blockSignals(True)
+        w = event.size().width()
+        ww = [sum(self.widths)] + self.widths
+        if w > ww[0]*2:
+            ww[0] = w - ww[0]
+        for k in range(4):
+            self.ui_main.filesList.setColumnWidth(k, ww[k])
+        self.ui_main.filesList.blockSignals(False)
 
     def _comment_menu(self, pos):
         menu = QMenu(self)
