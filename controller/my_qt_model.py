@@ -150,19 +150,25 @@ class TableModel(QAbstractTableModel):
         self.__header = ()
         self.__data = []
         self.__user_data = []
+        self.column_count = 0
 
     def rowCount(self, parent):
         if parent.isValid():
             return 0
         return len(self.__data)
 
+    def setColumnCount(self, count):
+        self.column_count = count
+
     def columnCount(self, parent=None):
-        return len(self.__header)
+        return self.column_count
 
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
-                return self.__data[index.row()][index.column()]
+                if len(self.__data[index.row()]) > index.column():
+                    return self.__data[index.row()][index.column()]
+                return None
             elif role == Qt.UserRole:
                 return self.__user_data[index.row()]
             elif role == Qt.TextAlignmentRole:
@@ -174,6 +180,8 @@ class TableModel(QAbstractTableModel):
         if not isinstance(row, tuple):
             row = (row,)
         self.__data.append(row)
+
+        print('append_row', row, len(self.__data), len(self.__data[0]))
 
         self.__user_data.append(user_data)
 
@@ -191,6 +199,8 @@ class TableModel(QAbstractTableModel):
         return True
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if not self.__header:
+            return None
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.__header[section]
 
@@ -198,6 +208,7 @@ class TableModel(QAbstractTableModel):
         if isinstance(value, str):
             value = value.split(' ')
         self.__header = value
+        self.column_count = len(value)
 
     def setData(self, index, value, role):
         if index.isValid():
