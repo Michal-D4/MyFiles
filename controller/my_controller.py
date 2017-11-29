@@ -69,8 +69,6 @@ class MyController():
         '''
         if sender == 'cb_places':
             self._cb_places.about_change_place(data)
-        elif sender == 'filesList':
-            self._populate_file_list(data[0])
         elif sender == 'dirTree':
             self._populate_directory_tree(data[0])
         elif sender == 'commentField':
@@ -118,7 +116,7 @@ class MyController():
     def _edit_key_words(self):
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
-        tag_list = self._dbu.select_other('TAGS')
+        tag_list = self._dbu.select_other('TAGS').fetchall()
         edit_tags = ItemEdit(titles, tag_list)
 
         if edit_tags.exec_():
@@ -127,8 +125,30 @@ class MyController():
 
     def save_key_words(self, words):
         curr_idx = self.view.filesList.currentIndex()
+
+        # current_file_id = (FileID, DirID, CommentID)
         current_file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-        print('|--> save_key_words', curr_idx.row(), current_file_id)
+
+        tags = words.split(', ')
+        # existed - list of tuples (Tag, TagID)
+        existed = self._dbu.select_other('TAGS_BY_NAME', tags)
+        e_ids = []
+        e_tags = []
+        for a in existed:
+            e_ids.append(a[1])
+            e_tags.append(a[0])
+
+        for tag in tags:
+            if not tag in e_tags:
+                tagId = self._dbu.insert_other('TAGS', (tag,))
+                iid = self._dbu.insert_other('TAG_FILE', (tagId, current_file_id[0]))
+                print('iid-1', iid)
+            else:   # existed, check if tag connect to current file
+                tag_id = e_ids[e_tags.index(tag)]
+                cc = self._dbu.select_other['TAG_FILE', (tag_id, current_file_id[0])].fetchone()
+                if not cc:
+                    iid = self._dbu.insert_other('TAG_FILE', (tag_id, current_file_id[0]))
+                    print('iid-2', iid)
 
     def _edit_authors(self):
         # todo - provide the list/table of existed and allow add new
@@ -161,11 +181,17 @@ class MyController():
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
+        """
+        :param dir_idx:
+        :return:
+        """
         if dir_idx:
             model = TableModel()
-            files = self._dbu.select_other('FILES_CUR_DIR', (dir_idx[0],))
+            files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
             for ff in files:
+                # ff[:3] = [FileID, DirID, CommentID]
+                # ff[:3] = [FileName, Year, Pages, Size]
                 model.append_row(ff[3:], ff[:3])
             self.view.filesList.setModel(model)
 
@@ -229,7 +255,6 @@ class MyController():
         :param place_id:
         :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
         """
-        # TODO for removal places - substitute root (i.e. E:\\)
         root = self._cb_places.get_mount_point()
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
@@ -249,6 +274,7 @@ class MyController():
         """
         idx = sel1.indexes()
         if idx:
+            # dir_idx = (DirID, ParentID, Full path)
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
             self._populate_file_list(dir_idx)
 

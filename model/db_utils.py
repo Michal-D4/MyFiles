@@ -18,20 +18,22 @@ Selects = {'TREE':
            'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;',
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
+           'TAGS_BY_NAME': 'select Tag, TagID from Tags where Tag in (:tag_names);',
            'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'FILE_TAGS': 'select Tag from Tags where TagID in (select TagID from FileTag where FileID = ?);',
            'FILE_AUTHORS': ' '.join(('select Author from Authors where AuthorID in',
                                      '(select AuthorID from FileAuthor where FileID = ?);')),
            'FILE_COMMENT': 'select Comment from Comments where CommentID = ?;',
-           'FILES_CUR_DIR': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
+           'FILES_CURR_DIR': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
                                       'Pages, Size from Files where DirId = ?;'))
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'TAGS': 'insert into Tags (Tag) values (:tag);',
-          'AUTHORS': 'insert into Authors (Author) values (:author);'}
+          'AUTHORS': 'insert into Authors (Author) values (:author);',
+          'TAG_FILE': 'insert into FileTag (TagID, FileID) values (:tag_id, :file_id)'}
 
 Update = {'PLACES': 'update Places set Title = ? where PlaceId = ?;',
           'UPDATE_PLACE_NAME': 'update Places set Place = ? where PlaceId = ?;'}
