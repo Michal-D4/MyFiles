@@ -12,7 +12,7 @@ from model.db_utils import DBUtils
 from model.utils import create_db
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
-# from model.utils.load_db_data import LoadDBData
+from view.item_edit import ItemEdit
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
@@ -116,8 +116,19 @@ class MyController():
             MyController._show_message("Can't find file {}".format(full_file_name))
 
     def _edit_key_words(self):
-        # todo - provide the list/table of existed and allow add new
-        pass
+        titles = ('Enter new tags separated by commas',
+                  'Select tags from list', 'Apply key words / tags')
+        tag_list = self._dbu.select_other('TAGS')
+        edit_tags = ItemEdit(titles, tag_list)
+
+        if edit_tags.exec_():
+            res = edit_tags.get_rezult()
+            self.save_key_words(res)
+
+    def save_key_words(self, words):
+        curr_idx = self.view.filesList.currentIndex()
+        current_file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        print('|--> save_key_words', curr_idx.row(), current_file_id)
 
     def _edit_authors(self):
         # todo - provide the list/table of existed and allow add new

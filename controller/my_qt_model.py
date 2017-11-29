@@ -179,10 +179,8 @@ class TableModel(QAbstractTableModel):
     def append_row(self, row, user_data=None):
         if not isinstance(row, tuple):
             row = (row,)
+
         self.__data.append(row)
-
-        print('append_row', row, len(self.__data), len(self.__data[0]))
-
         self.__user_data.append(user_data)
 
     def appendData(self, value, role=Qt.EditRole):
@@ -213,7 +211,7 @@ class TableModel(QAbstractTableModel):
     def setData(self, index, value, role):
         if index.isValid():
             if role == Qt.DisplayRole:
-                self.__data[index] = value
+                self.__data[index.row()][index.column()] = value
                 return
             if role == Qt.UserRole:
-                self.__user_data = value
+                self.__user_data[index.row()][index.column()] = value

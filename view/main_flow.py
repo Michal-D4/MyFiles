@@ -49,14 +49,15 @@ class MainFlow(QMainWindow):
         self.ui_main.filesList.blockSignals(False)
 
     def _comment_menu(self, pos):
-        menu = QMenu(self)
-        edit_tags = menu.addAction('Edit key words')
-        edit_authors = menu.addAction('Edit authors')
-        edit_comment = menu.addAction('Edit comment')
-        action = menu.exec_(self.ui_main.commentField.mapToGlobal(pos))
-        if action:
-            print('|---> _comment_menu', action.text())
-            self.change_data_signal.emit(action.text(), ())
+        if self.ui_main.filesList.currentIndex().isValid():
+            menu = QMenu(self)
+            edit_tags = menu.addAction('Edit key words')
+            edit_authors = menu.addAction('Edit authors')
+            edit_comment = menu.addAction('Edit comment')
+            action = menu.exec_(self.ui_main.commentField.mapToGlobal(pos))
+            if action:
+                print('|---> _comment_menu', action.text())
+                self.change_data_signal.emit(action.text(), ())
 
     def _file_pop_menu(self, pos):
         # todo method _file_pop_menu not implemented yet -- not clear yet
