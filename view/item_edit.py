@@ -18,8 +18,8 @@ class ItemEdit(QDialog):
         self.setWindowTitle(titles[2])
 
         self.list_items = items
-        self.sel_items = selected_items
-        self.sel_indexes = []
+        self.sel_indexes = [self.list_items.index(item) for item in selected_items]
+        print(list(zip(self.sel_indexes, selected_items)))
 
         model = TableModel2(parent=self.view.items)
         self.view.items.setModel(model)
@@ -31,26 +31,9 @@ class ItemEdit(QDialog):
             self.max_width = 20
 
         self.view.items.resizeEvent = self.resize_event
-        self.view.items.installEventFilter(self)
-
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.FocusIn:
-            for model_index in self.sel_indexes:
-                self.view.items.selectionMode().select(model_index, QItemSelectionModel.Select)
-            return -1
-        if event.type() == QEvent.FocusOut:
-            for model_index in self.view.items.selectionModel().selectedRows():
-                self.sel_indexes.append(QPersistentModelIndex(model_index))
-            return -1
-        return super(ItemEdit, self).eventFilter(obj, event)
 
     def get_rezult(self):
         return self.view.in_field.toPlainText()
-
-    def setup_view(self):
-        w = self.view.items.size().width()
-        col_no = w // self.max_width
-        self._setup_model(col_no)
 
     def resize_event(self, event):
         w = event.size().width()
@@ -73,6 +56,8 @@ class ItemEdit(QDialog):
                 txt = re.sub(self.view.items.model().data(jj), '', txt)
             if set(txt).issubset(' ,'):
                 txt = ''
+            else:
+                txt = txt.strip(' ,')
 
         idx = selected.indexes()
         if idx:
@@ -103,6 +88,17 @@ class ItemEdit(QDialog):
             self.view.items.horizontalHeader().resizeSection(i, self.max_width)
 
         self.view.items.selectionModel().selectionChanged.connect(self.selection_changed)
+        self.set_selection(col_no)
+
+    def set_selection(self, col_no):
+        print('|---> set_selection')
+        self.view.items.selectionModel().clearSelection()
+        self.view.in_field.setText('')
+        model = self.view.items.model()     # must be saved input
+        for idx in self.sel_indexes:
+            row_, col_ = divmod(idx, col_no)
+            index_ = model.index(row_, col_)
+            self.view.items.selectionModel().select(index_, QItemSelectionModel.Select)
 
 
 if __name__ == "__main__":
