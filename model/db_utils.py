@@ -18,6 +18,8 @@ Selects = {'TREE':
            'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;',
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
+           'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
+                                  '(select TagID from FileTag where FileID = ?);')),
            'TAGS_BY_NAME': 'select Tag, TagID from Tags where Tag in (:tag_names);',
            'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',

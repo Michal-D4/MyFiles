@@ -215,3 +215,21 @@ class TableModel(QAbstractTableModel):
                 return
             if role == Qt.UserRole:
                 self.__user_data[index.row()][index.column()] = value
+
+
+class TableModel2(TableModel):
+    def __init__(self, parent=None, *args):
+        super().__init__(parent, *args)
+
+    def data(self, index, role=Qt.DisplayRole):
+        return super().data(index, role)
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignRight
+
+    def append_row(self, row):
+        data_ = []
+        user_data = []
+        for r in row:
+            data_.append(r[0])
+            user_data.append(r[1])
+        super().append_row(tuple(data_), user_data)

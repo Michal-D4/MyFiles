@@ -117,7 +117,8 @@ class MyController():
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        edit_tags = ItemEdit(titles, tag_list)
+        sel_tags = self._dbu.select_other('FILE_TAGS', (file_id,))
+        edit_tags = ItemEdit(titles, tag_list, sel_tags)
 
         if edit_tags.exec_():
             res = edit_tags.get_rezult()
