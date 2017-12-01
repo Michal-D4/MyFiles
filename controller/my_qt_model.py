@@ -222,14 +222,14 @@ class TableModel2(TableModel):
         super().__init__(parent, *args)
 
     def data(self, index, role=Qt.DisplayRole):
-        return super().data(index, role)
         if role == Qt.TextAlignmentRole:
             return Qt.AlignRight
+        return super().data(index, role)
 
     def append_row(self, row):
         data_ = []
         user_data = []
         for r in row:
-            data_.append(r[0])
-            user_data.append(r[1])
+            data_.append(r)
+            # user_data.append(r[1])
         super().append_row(tuple(data_), user_data)

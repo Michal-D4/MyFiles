@@ -114,6 +114,10 @@ class MyController():
             MyController._show_message("Can't find file {}".format(full_file_name))
 
     def _edit_key_words(self):
+        curr_idx = self.view.filesList.currentIndex()
+        # current_file_id = (FileID, DirID, CommentID)
+        file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)[0]
+
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
@@ -121,17 +125,11 @@ class MyController():
         edit_tags = ItemEdit(titles, tag_list, sel_tags)
 
         if edit_tags.exec_():
-            res = edit_tags.get_rezult()
-            self.save_key_words(res)
+            res = edit_tags.get_result()
+            self.save_key_words(res, file_id)
 
-    def save_key_words(self, words):
-        curr_idx = self.view.filesList.currentIndex()
-
-        # current_file_id = (FileID, DirID, CommentID)
-        current_file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-
+    def save_key_words( self, words, file_id ):
         tags = words.split(', ')
-        # existed - list of tuples (Tag, TagID)
         existed = self._dbu.select_other('TAGS_BY_NAME', tags)
         e_ids = []
         e_tags = []
@@ -141,14 +139,14 @@ class MyController():
 
         for tag in tags:
             if not tag in e_tags:
-                tagId = self._dbu.insert_other('TAGS', (tag,))
-                iid = self._dbu.insert_other('TAG_FILE', (tagId, current_file_id[0]))
+                tag_id = self._dbu.insert_other('TAGS', (tag,))
+                iid = self._dbu.insert_other('TAG_FILE', (tag_id, file_id))
                 print('iid-1', iid)
             else:   # existed, check if tag connect to current file
                 tag_id = e_ids[e_tags.index(tag)]
-                cc = self._dbu.select_other['TAG_FILE', (tag_id, current_file_id[0])].fetchone()
+                cc = self._dbu.select_other['TAG_FILE', (tag_id, file_id)].fetchone()
                 if not cc:
-                    iid = self._dbu.insert_other('TAG_FILE', (tag_id, current_file_id[0]))
+                    iid = self._dbu.insert_other('TAG_FILE', (tag_id, file_id))
                     print('iid-2', iid)
 
     def _edit_authors(self):
