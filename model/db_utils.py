@@ -24,6 +24,7 @@ Selects = {'TREE':
            'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'FILE_TAGS': 'select Tag from Tags where TagID in (select TagID from FileTag where FileID = ?);',
+           'TAG_FILE': 'select * from FileTag where FileID = ? and TagID =?;',
            'FILE_AUTHORS': ' '.join(('select Author from Authors where AuthorID in',
                                      '(select AuthorID from FileAuthor where FileID = ?);')),
            'FILE_COMMENT': 'select Comment from Comments where CommentID = ?;',

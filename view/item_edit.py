@@ -17,6 +17,7 @@ class ItemEdit(QDialog):
         self.view.label_2.setText(titles[1])
         self.setWindowTitle(titles[2])
 
+        print(items)
         self.list_items = items
         self.sel_indexes = [self.list_items.index(item) for item in selected_items]
 
@@ -48,14 +49,14 @@ class ItemEdit(QDialog):
         :param deselected: QList<QModelIndex>
         :return: None
         """
-        new_sel = []
         txt = self.view.in_field.toPlainText()
         id2 = deselected.indexes()
         if id2:
             for jj in id2:
                 tt = self.view.items.model().data(jj)
-                txt = re.sub(tt, '', txt)
-                self.sel_indexes.remove(self.list_items.index(tt))
+                if tt:
+                    txt = re.sub(tt, '', txt)
+                    self.sel_indexes.remove(self.list_items.index(tt))
             if set(txt).issubset(' ,'):
                 txt = ''
             else:

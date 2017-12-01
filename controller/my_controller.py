@@ -121,30 +121,39 @@ class MyController():
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        sel_tags = self._dbu.select_other('FILE_TAGS', (file_id,))
-        edit_tags = ItemEdit(titles, tag_list, sel_tags)
+        print(tag_list)
+        sel_tags = self._dbu.select_other('FILE_TAGS', (file_id,)).fetchall()
+        print(sel_tags)
+        edit_tags = ItemEdit(titles,
+                             [tag[0] for tag in tag_list],
+                             [tag[0] for tag in sel_tags])
 
         if edit_tags.exec_():
+            print(edit_tags.accepted)
             res = edit_tags.get_result()
             self.save_key_words(res, file_id)
 
     def save_key_words( self, words, file_id ):
-        tags = words.split(', ')
-        existed = self._dbu.select_other('TAGS_BY_NAME', tags)
+        print('|---> save_key_words', words)
+        existed = self._dbu.select_other('TAGS_BY_NAME', (words,))
         e_ids = []
         e_tags = []
         for a in existed:
             e_ids.append(a[1])
             e_tags.append(a[0])
+        print('|---> save_key_words, e_tags:', e_tags)
 
+        tags = set(words.split(', '))
         for tag in tags:
+            print(' tag in tags:', tag, tag in e_tags)
             if not tag in e_tags:
                 tag_id = self._dbu.insert_other('TAGS', (tag,))
                 iid = self._dbu.insert_other('TAG_FILE', (tag_id, file_id))
                 print('iid-1', iid)
             else:   # existed, check if tag connect to current file
                 tag_id = e_ids[e_tags.index(tag)]
-                cc = self._dbu.select_other['TAG_FILE', (tag_id, file_id)].fetchone()
+                cc = self._dbu.select_other('TAG_FILE', (file_id, tag_id)).fetchone()
+                print(' cc:', cc)
                 if not cc:
                     iid = self._dbu.insert_other('TAG_FILE', (tag_id, file_id))
                     print('iid-2', iid)
@@ -201,30 +210,25 @@ class MyController():
             self.view.statusbar.showMessage('No data')
 
     def _populate_comment_field(self, data):
+        print('|---> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
-            tags = self._dbu.select_other("FILE_TAGS", (file_id,))
-            tgs = []
-            for tt in tags:
-                tgs.append(tt)
-            authors = self._dbu.select_other("FILE_AUTHORS", (file_id,))
-            auth = []
-            for aa in authors:
-                auth.append(aa[0])
+            tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
+            print('   ', tags)
+            authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
+            print('   ', authors)
+
             if comment_id:
-                comment = tuple(self._dbu.select_other("FILE_COMMENT", (comment_id,)))
-                comm = []
-                for cc in comment:
-                    comm.append(cc[0])
+                comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
             else:
-                comm = ('',)
+                comment = ('',)
             self.view.commentField.setText('\r\n'.join((
-                'Key words: {}'.format(', '.join(tgs)),
-                'Authors: {}'.format(', '.join(auth)),
-                comm[0])))
+                'Key words: {}'.format(', '.join([tag[0] for tag in tags])),
+                'Authors: {}'.format(', '.join([author[0] for author in authors])),
+                comment[0])))
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)
