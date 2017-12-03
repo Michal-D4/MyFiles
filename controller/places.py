@@ -97,7 +97,7 @@ class Places:
             place_info = self._get_place_name(root)     # (place, place state: MOUNTED or NOT_REMOVAL)
 
             if self.is_not_registered_place(place_info[0]):
-                self._dbu.update_other('UPDATE_PLACE_NAME', (place_info[0], self._curr_place[1][0]))
+                self._dbu.update_other('PLACE', (place_info[0], self._curr_place[1][0]))
                 self._curr_place = (self._curr_place[0],
                                     (self._curr_place[1][0], place_info[0],
                                      self._curr_place[1][2]), place_info[1])
@@ -219,7 +219,7 @@ class Places:
 
         self._view.blockSignals(False)
 
-        self._dbu.update_other('PLACES', (data[1], self._curr_place[0]))
+        self._dbu.update_other('PLACE_TITLE', (data[1], self._curr_place[1][0]))
 
     @staticmethod
     def _ask_rename_or_new():
