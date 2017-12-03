@@ -17,7 +17,6 @@ class ItemEdit(QDialog):
         self.view.label_2.setText(titles[1])
         self.setWindowTitle(titles[2])
 
-        print(items)
         self.list_items = items
         self.sel_indexes = [self.list_items.index(item) for item in selected_items]
 
@@ -25,15 +24,14 @@ class ItemEdit(QDialog):
         self.view.items.setModel(model)
 
         if self.list_items:
-            len_ = max(len(item) for item in items)
-            self.max_width = self.view.items.fontMetrics().boundingRect('m'*len_).width()
+            len_ = max([len(item) for item in items])
+            self.max_width = self.view.items.fontMetrics().boundingRect('W'*len_).width()
         else:
             self.max_width = 20
 
         self.view.items.resizeEvent = self.resize_event
 
     def get_result( self ):
-        print('|--> get_result:', self.view.in_field.toPlainText())
         return self.view.in_field.toPlainText()
 
     def resize_event(self, event):
@@ -71,7 +69,6 @@ class ItemEdit(QDialog):
                     self.sel_indexes.append(self.list_items.index(tt))
 
         txt = re.sub(',,', ',', txt)
-        print('|--> selection_changed', self.sel_indexes)
 
         self.view.in_field.setText(txt)
 
@@ -102,7 +99,6 @@ class ItemEdit(QDialog):
         tmp = self.sel_indexes.copy()
         self.sel_indexes.clear()
         for idx in tmp:
-            print('|--> set_selection', idx)
             row_, col_ = divmod(idx, col_no)
             index_ = model.index(row_, col_)
             self.view.items.selectionModel().select(index_, QItemSelectionModel.Select)
@@ -115,7 +111,7 @@ if __name__ == "__main__":
     sys._excepthook = sys.excepthook
 
 
-    def my_exception_hook ( exctype, value, traceback ):
+    def my_exception_hook (exctype, value, traceback):
         # Print the error and traceback
         print(exctype, value, traceback)
         # Call the normal Exception hook after
