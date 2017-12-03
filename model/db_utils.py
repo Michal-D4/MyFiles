@@ -9,7 +9,8 @@ Selects = {'TREE':
                           'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT * FROM x order by ParentID desc, Path;',
                 ') SELECT * FROM x order by ParentID desc, Path;'),
-           'PLACES': 'select * from Places;',   # PlaceId starts with 0, where as other IDs with 1
+           'PLACES': 'select * from Places;',
+           'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'IS_EXIST': 'select * from Places where Place = ?;',
            'EXT': ' '.join(('select Extension as title, ExtID+1000, GroupID',
                             'as ID from Extensions UNION select GroupName as title,',
@@ -20,13 +21,15 @@ Selects = {'TREE':
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
            'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
                                   '(select TagID from FileTag where FileID = ?);')),
-           'TAGS_BY_NAME': 'select Tag, TagID from Tags where Tag in (:tag_names);',
-           'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
-           'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
-           'FILE_TAGS': 'select Tag from Tags where TagID in (select TagID from FileTag where FileID = ?);',
+           'TAG_FILES': 'select * from FileTag where TagID=:tag_id;',
+           'TAGS_BY_NAME': 'select Tag, TagID from Tags where Tag in ("{}");',
            'TAG_FILE': 'select * from FileTag where FileID = ? and TagID =?;',
-           'FILE_AUTHORS': ' '.join(('select Author from Authors where AuthorID in',
+           'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
+           'FILE_AUTHORS': ' '.join(('select Author, AuthorID from Authors where AuthorID in',
                                      '(select AuthorID from FileAuthor where FileID = ?);')),
+           'AUTHOR_FILES': 'select * from FileAuthor where AuthorID=:author_id;',
+           'AUTHORS_BY_NAME': 'select Author, AuthorID from Authors where Author in ("{}");',
+           'AUTHOR_FILE': 'select * from FileAuthor where FileID = ? and AuthorID =?;',
            'FILE_COMMENT': 'select Comment from Comments where CommentID = ?;',
            'FILES_CURR_DIR': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
                                       'Pages, Size from Files where DirId = ?;'))
@@ -34,15 +37,20 @@ Selects = {'TREE':
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
-          'TAGS': 'insert into Tags (Tag) values (:tag);',
           'AUTHORS': 'insert into Authors (Author) values (:author);',
-          'TAG_FILE': 'insert into FileTag (TagID, FileID) values (:tag_id, :file_id)'}
+          'AUTHOR_FILE': 'insert into FileAuthor (AuthorID, FileID) values (:author_id, :file_id);',
+          'TAGS': 'insert into Tags (Tag) values (:tag);',
+          'TAG_FILE': 'insert into FileTag (TagID, FileID) values (:tag_id, :file_id);'}
 
-Update = {'PLACES': 'update Places set Title = ? where PlaceId = ?;',
-          'UPDATE_PLACE_NAME': 'update Places set Place = ? where PlaceId = ?;'}
+Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
+          'PLACE': 'update Places set Place = ? where PlaceId = ?;'}
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
-          'PLACES': 'delete from Places where PlaceId = ?;'}
+          'PLACES': 'delete from Places where PlaceId = ?;',
+          'AUTHOR_FILE': 'delete from FileAuthor where AuthorID=:author_id and FileID=:file_id;',
+          'AUTHOR': 'delete from Authors where AuthorID=:author_id;',
+          'TAG_FILE': 'delete from FileTag where TagID=:tag_id and FileID=:file_id;',
+          'TAG': 'delete from Tags where TagID=:tag_id;'}
 
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
@@ -80,25 +88,28 @@ class DBUtils:
 
     def select_other(self, sql, params=()):
         print('|---> select_other', sql, params)
-        print(Selects[sql])
         self.curs.execute(Selects[sql], params)
         return self.curs
 
+    def select_other2(self, sql, params=()):
+        print('|---> select_other2', sql, params)
+        print(Selects[sql].format(params))
+        self.curs.execute(Selects[sql].format(params))
+        return self.curs
+
     def insert_other(self, sql, data):
-        # print(Insert[sql], data)
+        print('|---> insert_other', sql, data)
         self.curs.execute(Insert[sql], data)
         jj = self.curs.lastrowid
         self.conn.commit()
         return jj
 
     def update_other(self, sql, data):
-        # print('DBUtils.update_other data:', data)
-        # print(Update[sql])
+        # print('|---> update_other:', sql, data)
         self.curs.execute(Update[sql], data)
         self.conn.commit()
 
     def delete_other(self, sql, data):
-        # print('DBUtils.delete_other data:', data)
-        # print(Delete[sql])
+        print('|---> delete_other:', sql, data)
         self.curs.execute(Delete[sql], data)
         self.conn.commit()

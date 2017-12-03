@@ -49,13 +49,19 @@ class MyController():
                     yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
+        print('|===> on_open_db', file_name, create)
         if create:
             self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                detect_types=DETECT_TYPES)
             create_db.create_all_objects(self._connection)
         else:
-            self._connection = sqlite3.connect(file_name, check_same_thread=False,
-                                               detect_types=DETECT_TYPES)
+            print('  |--> else', os.path.isfile(file_name))
+            if os.path.isfile(file_name):
+                self._connection = sqlite3.connect(file_name, check_same_thread=False,
+                                                   detect_types=DETECT_TYPES)
+            else:
+                MyController._show_message("Data base does not exist")
+                return
 
         self._dbu = DBUtils(self._connection)
         self._populate_all_widgets()
@@ -115,52 +121,80 @@ class MyController():
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
-        # current_file_id = (FileID, DirID, CommentID)
+        # file_id = (FileID, DirID, CommentID)
         file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)[0]
 
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        print(tag_list)
+        print('TAGS', tag_list)
         sel_tags = self._dbu.select_other('FILE_TAGS', (file_id,)).fetchall()
-        print(sel_tags)
+        print('FILE_TAGS', sel_tags)
         edit_tags = ItemEdit(titles,
                              [tag[0] for tag in tag_list],
                              [tag[0] for tag in sel_tags])
 
         if edit_tags.exec_():
-            print(edit_tags.accepted)
             res = edit_tags.get_result()
-            self.save_key_words(res, file_id)
+            sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'), ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
+            self.save_edited_items(new_items=res, old_items=sel_tags, file_id=file_id, sql_list=sql_list)
 
-    def save_key_words( self, words, file_id ):
-        print('|---> save_key_words', words)
-        existed = self._dbu.select_other('TAGS_BY_NAME', (words,))
-        e_ids = []
-        e_tags = []
-        for a in existed:
-            e_ids.append(a[1])
-            e_tags.append(a[0])
-        print('|---> save_key_words, e_tags:', e_tags)
+    def save_edited_items(self, new_items, old_items, file_id, sql_list):
+        old_words_set = set([tag[0] for tag in old_items])
+        print('|---> save_edited_items', new_items, old_words_set)
+        new_words_set = set(new_items.split(', '))
 
-        tags = set(words.split(', '))
-        for tag in tags:
-            print(' tag in tags:', tag, tag in e_tags)
-            if not tag in e_tags:
-                tag_id = self._dbu.insert_other('TAGS', (tag,))
-                iid = self._dbu.insert_other('TAG_FILE', (tag_id, file_id))
-                print('iid-1', iid)
-            else:   # existed, check if tag connect to current file
-                tag_id = e_ids[e_tags.index(tag)]
-                cc = self._dbu.select_other('TAG_FILE', (file_id, tag_id)).fetchone()
-                print(' cc:', cc)
-                if not cc:
-                    iid = self._dbu.insert_other('TAG_FILE', (tag_id, file_id))
-                    print('iid-2', iid)
+        to_del = old_words_set.difference(new_words_set)
+        to_del_ids = [tag[1] for tag in old_items if tag[0] in to_del]
+        print('   to_del {}   to_del_ids {}'.format(to_del, to_del_ids))
+        self.del_item_links(to_del_ids, file_id, sql_list[0])
+
+        old_words_set.add('')
+        to_add = new_words_set.difference(old_words_set)
+        print('   to_add', to_add)
+        self.add_item_links(to_add, file_id, sql_list[1])
+
+    def del_item_links(self, items2del, file_id, sqls):
+        for item in items2del:
+            self._dbu.delete_other(sqls[0], (item, file_id))
+            res = self._dbu.select_other(sqls[1], (item,)).fetchone()
+            if not res:
+                self._dbu.delete_other(sqls[2], (item,))
+
+    def add_item_links(self, items2add, file_id, sqls):
+        print('|---> add_item_links', items2add)
+        add_ids = self._dbu.select_other2(sqls[0], '","'.join(items2add)).fetchall()
+        sel_items = [item[0] for item in add_ids]
+        print('   sel_items ', sel_items)
+        not_in_ids = [item for item in items2add if not (item in sel_items)]
+        print('   not_in_ids', not_in_ids)
+
+        for item in not_in_ids:
+            item_id = self._dbu.insert_other(sqls[1], (item,))
+            self._dbu.insert_other(sqls[2], (item_id, file_id))
+
+        for item in add_ids:
+            self._dbu.insert_other(sqls[2], (item[1], file_id))
 
     def _edit_authors(self):
-        # todo - provide the list/table of existed and allow add new
-        pass
+        curr_idx = self.view.filesList.currentIndex()
+        # current_file_id = (FileID, DirID, CommentID)
+        file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)[0]
+
+        titles = ('Enter authors separated by commas',
+                  'Select authors from list', 'Apply authors')
+        authors = self._dbu.select_other('AUTHORS').fetchall()
+        sel_authors = self._dbu.select_other('FILE_AUTHORS', (file_id,)).fetchall()
+
+        edit_authors = ItemEdit(titles,
+                                [tag[0] for tag in authors],
+                                [tag[0] for tag in sel_authors])
+
+        if edit_authors.exec_():
+            res = edit_authors.get_result()
+            sql_list = (('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'),
+                        ('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
+            self.save_edited_items(new_items=res, old_items=sel_authors, file_id=file_id, sql_list=sql_list)
 
     def _edit_comment(self):
         # todo - edit comment
