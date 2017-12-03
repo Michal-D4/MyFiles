@@ -107,8 +107,8 @@ def create_all_objects(conn_param):
 def set_initial_place(conn_param):
     cursor = conn_param.cursor()
     loc = socket.gethostname()
-    cursor.execute('''insert into Places (PlaceId, Place, Title)    
-        values (:id, :place, :title)''', (0, loc, loc))
+    cursor.execute('''insert into Places (Place, Title)    
+        values (:place, :title)''', (loc, loc))
     conn_param.commit()
 
 
