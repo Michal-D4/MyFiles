@@ -36,10 +36,13 @@ class MyDBChoice(QDialog):
         self.init_data[1] = curr_row
 
     def add(self):
+        """
+        the program is called by click of 'Add' button of this dialog
+        :return:
+        """
         options = QFileDialog.Options(QFileDialog.HideNameFilterDetails |
                                       QFileDialog.DontConfirmOverwrite)
-        file_name, _ = QFileDialog.getSaveFileName(self, "Create DB", "",
-                                                  options=options)
+        file_name, _ = QFileDialog.getOpenFileName(self, "Create DB", "", options=options)
         if file_name:
             self.create_new_db(file_name)
 
@@ -56,13 +59,17 @@ class MyDBChoice(QDialog):
         super(MyDBChoice, self).accept()
 
     def new_db(self):
+        """
+        the program is called by click of 'New' button of this dialog
+        :return:
+        """
         options = QFileDialog.Options(QFileDialog.HideNameFilterDetails |
                                       QFileDialog.DontConfirmOverwrite)
         file_name, _ = QFileDialog.getSaveFileName(self, "Create DB", "",
                                                   options=options)
         if file_name:
-            if not file_name in self.init_data[2]:
-                self.create_new_db(file_name)
+            if not (file_name in self.init_data[2]):
+                self.create_db(file_name)
                 self.open_DB_signal.emit(file_name, True)
                 self.save_init_data()
                 super(MyDBChoice, self).accept()
@@ -70,17 +77,19 @@ class MyDBChoice(QDialog):
                 self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
 
     def create_new_db(self, file_name):
-        if not file_name in self.init_data[2]:
-            self.init_data[2].append(file_name)
-            item = QListWidgetItem(file_name)
-            self.ui_db_choice.listOfBDs.addItem(item)
-            self.ui_db_choice.listOfBDs.setCurrentItem(item)
-            self.ui_db_choice.okButton.setDisabled(False)
+        if not (file_name in self.init_data[2]):
+            self.create_db(file_name)
         else:
             self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
-            # self.init_data[1] = self.init_data[2].index(file_name)
 
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
+
+    def create_db(self, file_name):
+        self.init_data[2].append(file_name)
+        item = QListWidgetItem(file_name)
+        self.ui_db_choice.listOfBDs.addItem(item)
+        self.ui_db_choice.listOfBDs.setCurrentItem(item)
+        self.ui_db_choice.okButton.setDisabled(False)
 
     def emit_open_dialog(self):
         file_name = self.ui_db_choice.listOfBDs.currentItem().text()
