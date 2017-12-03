@@ -41,57 +41,57 @@ class TestLoadData2(unittest.TestCase):
         self.assertTupleEqual(res, (0, ''), msg='Found parent in the empty DB')
 
     def test_search__closest_parent_found(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs', 'id': '0',
                                  'placeId': self.load_db.place_id})
         res = self.load_db.search_closest_parent(r'f:\Docs\box')
         self.assertTupleEqual(res, (1, 'f:\\Docs'), msg='Not found when parent exist')
 
     def test_search__closest_parent_not_found(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs', 'id': '0',
                                  'placeId': self.load_db.place_id})
         res = self.load_db.search_closest_parent(r'f:\Doc\box')
         self.assertTupleEqual(res, (0, ''), msg='Found when parent not exist')
 
     def test_search_closest_parent_already_exist(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs', 'id': '0',
                                  'placeId': self.load_db.place_id})
         res = self.load_db.search_closest_parent(r'f:\Docs')
         self.assertTupleEqual(res, (1, 'f:\\Docs'), msg='Not found when the path exist')
 
     def test_parent_id_for_child(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs', 'id': '0',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box\cox', 'id': '1',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box\fox', 'id': '1',
                                  'placeId': self.load_db.place_id})
         res = self.load_db.parent_id_for_child(r'f:\Docs\box')
         self.assertEqual(res, 1, 'Not found but exist')
 
     def test_parent_id_for_child_not_exist(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Doc\box', 'id': '0',
                                  'placeId': self.load_db.place_id})
         res = self.load_db.parent_id_for_child(r'f:\Docs')
         self.assertEqual(res, -1, 'Not found but exist')
 
     def test_change_parent(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs', 'id': '0',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box\cox', 'id': '1',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box\fox', 'id': '1',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box', 'id': '1',
                                  'placeId': self.load_db.place_id})
 
@@ -106,13 +106,13 @@ class TestLoadData2(unittest.TestCase):
         self.assertTupleEqual(aa, test_data)
 
     def test_change_parent_special(self):
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box\cox', 'id': '0',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box\fox', 'id': '0',
                                  'placeId': self.load_db.place_id})
-        self.connection.execute(load_db_data.SQL_INSERT_DIR,
+        self.connection.execute(load_db_data.INSERT_DIR,
                                 {'path': r'f:\Docs\box', 'id': '0',
                                  'placeId': self.load_db.place_id})
 

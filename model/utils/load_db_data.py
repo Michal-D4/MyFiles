@@ -4,30 +4,30 @@ import os
 from model.helpers import *
 from controller.places import Places
 
-SQL_FIND_PART_PATH = '''select ParentID
+FIND_PART_PATH = '''select ParentID
     from Dirs where Path like :newPath and PlaceId = :place;'''
 
-SQL_FIND_EXACT_PATH = '''select DirID, Path
+FIND_EXACT_PATH = '''select DirID, Path
     from Dirs where Path = :newPath and PlaceId = :place;'''
 
-SQL_CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
+CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
  where ParentID = :currId and Path like :newPath and DirID != :newId;'''
 
-SQL_FIND_FILE = 'select * from Files where DirID = :dir_id and FileName = :file;'
+FIND_FILE = 'select * from Files where DirID = :dir_id and FileName = :file;'
 
-SQL_INSERT_DIR = '''insert into Dirs
+INSERT_DIR = '''insert into Dirs
     (Path, ParentID, PlaceId)
     values (:path, :id, :placeId);'''
 
-SQL_INSERT_FILE = '''insert into Files
+INSERT_FILE = '''insert into Files
     (DirID, FileName, ExtID, PlaceId, Size)
     values (:dir_id, :file, :ext_id, :placeId, 0);'''
 
-SQL_FIND_EXT = '''select ExtID
+FIND_EXT = '''select ExtID
     from Extensions where Extension = ?;'''
 
 # Groups will be created manually and then GroupID will be updated TODO
-SQL_INSERT_EXT = '''insert into Extensions
+INSERT_EXT = '''insert into Extensions
     (Extension, GroupID) values (:ext, 0);'''
 
 
@@ -84,11 +84,11 @@ class LoadDBData:
         """
         file = os.path.split(full_file_name)[1]
 
-        item = self.cursor.execute(SQL_FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
+        item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
         if not item:
             ext_id, ext = self.insert_extension(file)
 
-            self.cursor.execute(SQL_INSERT_FILE, {'dir_id': dir_id,
+            self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
                                                   'file': file,
                                                   'ext_id': ext_id,
                                                   'placeId': self.place_id})
@@ -96,11 +96,11 @@ class LoadDBData:
     def insert_extension(self, file):
         ext = get_file_extension(file)
         if ext:
-            item = self.cursor.execute(SQL_FIND_EXT, (ext,)).fetchone()
+            item = self.cursor.execute(FIND_EXT, (ext,)).fetchone()
             if item:
                 idx = item[0]
             else:
-                self.cursor.execute(SQL_INSERT_EXT, {'ext': ext})
+                self.cursor.execute(INSERT_EXT, {'ext': ext})
                 idx = self.cursor.lastrowid
         else:
             idx = 0
@@ -117,7 +117,7 @@ class LoadDBData:
         if parent_path == path:
             return idx
 
-        self.cursor.execute(SQL_INSERT_DIR, {'path': path, 'id': idx, 'placeId': self.place_id})
+        self.cursor.execute(INSERT_DIR, {'path': path, 'id': idx, 'placeId': self.place_id})
         idx = self.cursor.lastrowid
 
         self.change_parent(idx, path)
@@ -126,7 +126,7 @@ class LoadDBData:
     def change_parent(self, new_parent_id, path):
         old_parent_id = self.parent_id_for_child(path)
         if old_parent_id != -1:
-            self.cursor.execute(SQL_CHANGE_PARENT_ID, {'currId': old_parent_id,
+            self.cursor.execute(CHANGE_PARENT_ID, {'currId': old_parent_id,
                                                        'newId': new_parent_id,
                                                        'newPath': path + '%'})
 
@@ -137,7 +137,7 @@ class LoadDBData:
         :param path:
         :return: parent Id of first found child, -1 if not children
         '''
-        item = self.cursor.execute(SQL_FIND_PART_PATH, {'newPath': path + '%',
+        item = self.cursor.execute(FIND_PART_PATH, {'newPath': path + '%',
                                                         'place': self.place_id}).fetchone()
         if item:
             idx = item[0]
@@ -154,7 +154,7 @@ class LoadDBData:
         '''
         res = (0, '')
         while path:
-            item = self.cursor.execute(SQL_FIND_EXACT_PATH, (path, self.place_id)).fetchone()
+            item = self.cursor.execute(FIND_EXACT_PATH, (path, self.place_id)).fetchone()
             if item:
                 res = tuple(item)
                 break
