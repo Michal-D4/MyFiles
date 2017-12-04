@@ -336,7 +336,7 @@ class MyController():
             load_files = LoadFiles(self._connection, curr_place, _data)
             load_files.start()
 
-            thread = FileInfo(self._connection, curr_place[1][0])
+            thread = FileInfo(self._connection, self._cb_places)
             thread.start()
 
     def _scan_file_system(self):

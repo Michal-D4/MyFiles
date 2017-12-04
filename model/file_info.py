@@ -8,6 +8,7 @@ from PyPDF2 import PdfFileReader, utils
 
 from model.utils.load_db_data import LoadDBData
 from model.helpers import *
+from controller.places import Places
 
 SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
 
@@ -17,23 +18,25 @@ SQL_INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?)
 
 SQL_INSERT_COMMENT = 'insert into Comments (Comment) values (?);'
 
-SQL_FILES_WITHOUT_INFO = '''select f.FileID, f.FileName, d.Path 
-from Files f, Dirs d 
-where f.PlaceId = :place_id and f.Size = 0 and f.DirID = d.DirID;'''
-SQL_UPDATE_FILE = '''update Files set
-CommentID = :comm_id,
-Year = :year,
-Pages = :page,
-Size = :size
-where FileID = :file_id;'''
+SQL_FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
+                                   'from Files f, Dirs d',
+                                   'where f.PlaceId = :place_id and',
+                                   'f.Size = 0 and f.DirID = d.DirID;'))
+
+SQL_UPDATE_FILE = ' '.join(('update Files set',
+                            'CommentID = :comm_id,',
+                            'Year = :year,',
+                            'Pages = :page,',
+                            'Size = :size',
+                            'where FileID = :file_id;'))
 
 E = Event()
 
 class LoadFiles(Thread):
-    def __init__(self, conn, place_id, data_, group=None, target=None, name=None, args=(),
+    def __init__(self, conn, cur_place, data_, group=None, target=None, name=None, args=(),
                  kwargs=None, *, daemon=None):
         super().__init__(group, target, name, args, kwargs, daemon=daemon)
-        self.place_id = place_id
+        self.cur_place = cur_place
         self.conn = conn
         self.data = data_
 
@@ -41,7 +44,7 @@ class LoadFiles(Thread):
         super().run()
         start_time = datetime.datetime.now()
         # print('|===> LoadFiles start time', start_time)
-        files = LoadDBData(self.conn, self.place_id)
+        files = LoadDBData(self.conn, self.cur_place)
         files.load_data(self.data)
         end_time = datetime.datetime.now()
         # print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
@@ -58,9 +61,9 @@ class FileInfo(Thread):
         end_time = datetime.datetime.now()
         # print('|===> FileInfo end time', end_time, ' delta', end_time - start_time)
 
-    def __init__(self, conn, place_id):
+    def __init__(self, conn, place_inst):
         super().__init__()
-        self.place_id = place_id
+        self.places = place_inst
         self.conn = conn
         self.cursor = conn.cursor()
         self.file_info = []
@@ -158,8 +161,15 @@ class FileInfo(Thread):
             self.insert_author(file_id)
 
     def update_files(self):
-        curr = self.cursor.execute(SQL_FILES_WITHOUT_INFO, {'place_id': self.place_id})
-        file_list = list(curr)
+        cur_place = self.places.get_curr_place()
+        file_list = self.cursor.execute(SQL_FILES_WITHOUT_INFO,
+                                        {'place_id': cur_place[1][0]}).fetchall()
+        if cur_place[2] == Places.MOUNTED:
+            root = self.places.get_mount_point()
+            foo = lambda x: os.altsep.join((root, x))
+        else:
+            foo = lambda x: x
+
         for file_id, file, path in file_list:
-            file_name = os.path.join(path, file)
+            file_name = os.path.join(foo(path), file)
             self.update_file(file_id, file_name)
