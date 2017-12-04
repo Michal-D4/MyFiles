@@ -67,8 +67,9 @@ class LoadDBData:
         :param data: - iterable lines of file names with full path
         :return: None
         """
+        trantab = str.maketrans(os.sep, os.altsep)
         for line in data:
-            line = line.translate({92: 47})
+            line = line.translate(trantab)
             if self.place_status == Places.MOUNTED:
                 line = line.partition(os.altsep)[2]
             idx = self.insert_dir(line)
