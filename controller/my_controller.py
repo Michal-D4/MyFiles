@@ -135,15 +135,17 @@ class MyController():
 
         if edit_tags.exec_():
             res = edit_tags.get_result()
-            sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'), ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
-            self.save_edited_items(new_items=res, old_items=sel_tags, file_id=file_id, sql_list=sql_list)
+            sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'),
+                        ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
+            self.save_edited_items(new_items=res, old_items=sel_tags,
+                                   file_id=file_id, sql_list=sql_list)
 
             self._populate_tag_list()
             self._populate_comment_field((file_id, _, comment_id))
 
     def save_edited_items(self, new_items, old_items, file_id, sql_list):
         old_words_set = set([tag[0] for tag in old_items])
-        new_words_set = set(new_items.split(', '))
+        new_words_set = set([str.lstrip(item) for item in new_items.split(', ')])
 
         to_del = old_words_set.difference(new_words_set)
         to_del_ids = [tag[1] for tag in old_items if tag[0] in to_del]
@@ -161,9 +163,13 @@ class MyController():
                 self._dbu.delete_other(sqls[2], (item,))
 
     def add_item_links(self, items2add, file_id, sqls):
+        print('|---> add_item_links', items2add)
         add_ids = self._dbu.select_other2(sqls[0], '","'.join(items2add)).fetchall()
         sel_items = [item[0] for item in add_ids]
         not_in_ids = [item for item in items2add if not (item in sel_items)]
+        print('   add_ids   ', add_ids)
+        print('   sel_items ', sel_items)
+        print('   not_in_ids', not_in_ids)
 
         for item in not_in_ids:
             item_id = self._dbu.insert_other(sqls[1], (item,))
@@ -253,9 +259,9 @@ class MyController():
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
             tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
-            print('   ', tags)
+
             authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
-            print('   ', authors)
+
 
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
