@@ -121,8 +121,7 @@ class MyController():
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
-        # file_id = (FileID, DirID, CommentID)
-        file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)[0]
+        file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
 
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
@@ -139,19 +138,19 @@ class MyController():
             sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'), ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
             self.save_edited_items(new_items=res, old_items=sel_tags, file_id=file_id, sql_list=sql_list)
 
+            self._populate_tag_list()
+            self._populate_comment_field((file_id, _, comment_id))
+
     def save_edited_items(self, new_items, old_items, file_id, sql_list):
         old_words_set = set([tag[0] for tag in old_items])
-        print('|---> save_edited_items', new_items, old_words_set)
         new_words_set = set(new_items.split(', '))
 
         to_del = old_words_set.difference(new_words_set)
         to_del_ids = [tag[1] for tag in old_items if tag[0] in to_del]
-        print('   to_del {}   to_del_ids {}'.format(to_del, to_del_ids))
         self.del_item_links(to_del_ids, file_id, sql_list[0])
 
         old_words_set.add('')
         to_add = new_words_set.difference(old_words_set)
-        print('   to_add', to_add)
         self.add_item_links(to_add, file_id, sql_list[1])
 
     def del_item_links(self, items2del, file_id, sqls):
@@ -162,12 +161,9 @@ class MyController():
                 self._dbu.delete_other(sqls[2], (item,))
 
     def add_item_links(self, items2add, file_id, sqls):
-        print('|---> add_item_links', items2add)
         add_ids = self._dbu.select_other2(sqls[0], '","'.join(items2add)).fetchall()
         sel_items = [item[0] for item in add_ids]
-        print('   sel_items ', sel_items)
         not_in_ids = [item for item in items2add if not (item in sel_items)]
-        print('   not_in_ids', not_in_ids)
 
         for item in not_in_ids:
             item_id = self._dbu.insert_other(sqls[1], (item,))
@@ -177,9 +173,11 @@ class MyController():
             self._dbu.insert_other(sqls[2], (item[1], file_id))
 
     def _edit_authors(self):
+        """
+        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID)
+        """
         curr_idx = self.view.filesList.currentIndex()
-        # current_file_id = (FileID, DirID, CommentID)
-        file_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)[0]
+        file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
 
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
@@ -195,6 +193,9 @@ class MyController():
             sql_list = (('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'),
                         ('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
             self.save_edited_items(new_items=res, old_items=sel_authors, file_id=file_id, sql_list=sql_list)
+
+            self._populate_author_list()
+            self._populate_comment_field((file_id, _, comment_id))
 
     def _edit_comment(self):
         # todo - edit comment
@@ -227,10 +228,10 @@ class MyController():
         :param dir_idx:
         :return:
         """
+        model = TableModel()
+        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
         if dir_idx:
-            model = TableModel()
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
-            model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
             for ff in files:
                 # ff[:3] = [FileID, DirID, CommentID]
                 # ff[:3] = [FileName, Year, Pages, Size]
@@ -241,6 +242,7 @@ class MyController():
 
             self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
         else:
+            self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
     def _populate_comment_field(self, data):
@@ -282,6 +284,7 @@ class MyController():
         idx = model.index(0, 0)
         self.view.dirTree.setCurrentIndex(idx)
 
+        print('|---> _populate_directory_tree', model.data(idx, role=Qt.UserRole))
         self._populate_file_list(model.data(idx, role=Qt.UserRole))
 
         self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
