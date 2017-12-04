@@ -2,7 +2,7 @@
 
 import re
 from PyQt5.QtWidgets import QDialog
-from PyQt5.QtCore import QEvent, QPersistentModelIndex, QItemSelectionModel
+from PyQt5.QtCore import QItemSelectionModel
 from view.ui_items_edit import Ui_ItemChoice
 from controller.my_qt_model import TableModel2
 
@@ -95,7 +95,7 @@ class ItemEdit(QDialog):
     def set_selection(self, col_no):
         self.view.items.selectionModel().clearSelection()
         self.view.in_field.setText('')
-        model = self.view.items.model()     # must be saved input
+        model = self.view.items.model()
         tmp = self.sel_indexes.copy()
         self.sel_indexes.clear()
         for idx in tmp:
