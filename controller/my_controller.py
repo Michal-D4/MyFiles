@@ -84,6 +84,10 @@ class MyController():
             self._edit_key_words()
         elif sender == 'Edit authors':
             self._edit_authors()
+        elif sender == 'Edit title':
+            self._edit_title()
+        elif sender == 'Edit date':
+            self._edit_date()
         elif sender == 'Edit comment':
             self._edit_comment()
         elif sender == 'Delete':
@@ -121,7 +125,6 @@ class MyController():
         idx = self.view.dirTree.currentIndex()
         dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
         webbrowser.open(''.join(('file://', dir_[2])))
-        print('|--> _open_folder', dir_)
 
     def _open_file(self):
         idx = self.view.dirTree.currentIndex()
@@ -217,6 +220,14 @@ class MyController():
 
             self._populate_author_list()
             self._populate_comment_field((file_id, _, comment_id))
+
+    def _edit_date(self):
+        # todo - edit date
+        pass
+
+    def _edit_title(self):
+        # todo - edit title
+        pass
 
     def _edit_comment(self):
         # todo - edit comment
