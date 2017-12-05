@@ -2,6 +2,7 @@
 
 import sqlite3
 import os
+import webbrowser
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt, QModelIndex
@@ -89,6 +90,8 @@ class MyController():
             self._delete_file()
         elif sender == 'Open':
             self._open_file()
+        elif sender == 'Open folder':
+            self._open_folder()
         elif sender == 'advanced_file_list':
             self.advanced_file_list()
 
@@ -105,8 +108,20 @@ class MyController():
             print('|---> advanced_file_list', dir_)
 
     def _delete_file(self):
-        # todo - delete file from DB
-        pass
+        f_idx = self.view.filesList.currentIndex()
+        file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        self._dbu.delete_other('AUTHOR_BY_FILE', (file_id,))
+        self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_id,))
+        self._dbu.delete_other('TAG_BY_FILE', (file_id,))
+        self._dbu.delete_other('TAG_FILE_BY_FILE', (file_id,))
+        self._dbu.delete_other('COMMENT', (comment_id,))
+        self._dbu.delete_other('FILE', (file_id,))
+
+    def _open_folder(self):
+        idx = self.view.dirTree.currentIndex()
+        dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
+        webbrowser.open(''.join(('file://', dir_[2])))
+        print('|--> _open_folder', dir_)
 
     def _open_file(self):
         idx = self.view.dirTree.currentIndex()
@@ -268,9 +283,11 @@ class MyController():
             else:
                 comment = ('',)
             self.view.commentField.setText('\r\n'.join((
-                'Key words: {}'.format(', '.join([tag[0] for tag in tags])),
-                'Authors: {}'.format(', '.join([author[0] for author in authors])),
-                comment[0])))
+                '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.
+                    format(', '.join([tag[0] for tag in tags])),
+                '<p><a href="Edit authors">Authors</a>: {}</p>'.
+                    format(', '.join([author[0] for author in authors])),
+                comment[0], '</p></body></html>')))
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)

@@ -47,9 +47,17 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'PLACES': 'delete from Places where PlaceId = ?;',
+          'COMMENT': 'delete from Comments where CommentID = ?;',
+          'FILE': 'delete from Files where FileID = ?;',
           'AUTHOR_FILE': 'delete from FileAuthor where AuthorID=:author_id and FileID=:file_id;',
           'AUTHOR': 'delete from Authors where AuthorID=:author_id;',
+          'AUTHOR_BY_FILE': ' '.join(('delete from Authors where AuthorID in (',
+                                      'select AuthorID from FileAuthor where FileID=?);')),
+          'AUTHOR_FILE_BY_FILE': 'delete from FileAuthor where FileID=?;',
           'TAG_FILE': 'delete from FileTag where TagID=:tag_id and FileID=:file_id;',
+          'TAG_BY_FILE': ' '.join(('delete from Tags where TagID in (',
+                                   'select TagID from FileTag where FileID = ?);')),
+          'TAG_FILE_BY_FILE': 'delete from FileTag where FileID = ?;',
           'TAG': 'delete from Tags where TagID=:tag_id;'}
 
 class DBUtils:

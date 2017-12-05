@@ -93,7 +93,10 @@ class FileInfo(Thread):
     def _insert_comment(self):
         if len(self.file_info) > 2:
             try:
-                comm = 'Creation date {}\r\nTitle: {}'.format(self.file_info[4], self.file_info[5])
+                txt = '<p><a href="Edit date">Creation date</a>: {}</p>' \
+                      '<p><a href="Edit title"4>Title</a>: {}</p>' \
+                      '<p><a href="Edit comment">Comment</a>'
+                comm = txt.format(self.file_info[4], self.file_info[5])
             except IndexError:
                 print('IndexError ', len(self.file_info))
             self.cursor.execute(INSERT_COMMENT, (comm,))

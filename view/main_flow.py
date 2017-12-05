@@ -1,7 +1,7 @@
 # view/main_flow.py
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu, QTreeView
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QModelIndex
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QModelIndex, QUrl
 from PyQt5.QtGui import QMouseEvent
 
 from view.my_db_choice import MyDBChoice
@@ -19,8 +19,8 @@ class MainFlow(QMainWindow):
 
         self.restore_setting()
 
-        self.ui_main.actionOpenDB.triggered.connect(self.open_data_base)
-        self.ui_main.actionScanFiles.triggered.connect(self.scan_files)
+        self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
+        self.ui_main.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
         self.ui_main.actionGetFiles.triggered.connect(self.go)
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
@@ -30,15 +30,23 @@ class MainFlow(QMainWindow):
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui_main.filesList.customContextMenuRequested.connect(self._file_pop_menu)
 
-        self.ui_main.commentField.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.commentField.customContextMenuRequested.connect(self._comment_menu)
+        self.ui_main.commentField.anchorClicked.connect(self.ref_clicked)
 
         self.open_dialog = open_dialog
 
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
         self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line).width() for line in lines]
 
+    def ref_clicked(self, argv_1):
+        self.ui_main.commentField.setSource(QUrl())
+        self.change_data_signal.emit(argv_1.toString(), ())
+
     def resize_event(self, event):
+        """
+        Resize columns width of file list
+        :param event:
+        :return:
+        """
         self.ui_main.filesList.blockSignals(True)
         w = event.size().width()
         ww = [sum(self.widths)] + self.widths
@@ -48,21 +56,11 @@ class MainFlow(QMainWindow):
             self.ui_main.filesList.setColumnWidth(k, ww[k])
         self.ui_main.filesList.blockSignals(False)
 
-    def _comment_menu(self, pos):
-        if self.ui_main.filesList.currentIndex().isValid():
-            menu = QMenu(self)
-            edit_tags = menu.addAction('Edit key words')
-            edit_authors = menu.addAction('Edit authors')
-            edit_comment = menu.addAction('Edit comment')
-            action = menu.exec_(self.ui_main.commentField.mapToGlobal(pos))
-            if action:
-                print('|---> _comment_menu', action.text())
-                self.change_data_signal.emit(action.text(), ())
-
     def _file_pop_menu(self, pos):
         menu = QMenu(self)
         action1 = menu.addAction('Delete')
         action2 = menu.addAction('Open')
+        action3 = menu.addAction('Open folder')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
         if action:
             print('|---> _file_pop_menu', action.text())
@@ -95,21 +93,11 @@ class MainFlow(QMainWindow):
             self.ui_main.splitter_files.setStretchFactor(0, 5)
             self.ui_main.splitter_files.setStretchFactor(1, 2)
 
-    def scan_files(self):
-        self.scan_files_signal.emit()
-
     def go(self):
         # todo - implement file selection according selected ext., authors, tags, root
         print('go ====>')
         params = ()
         self.change_data_signal.emit('advanced_file_list', params)
-
-    def open_data_base(self):
-        """
-        Open DB with click button on toolbar
-        :return:
-        """
-        self.open_dialog.exec_()
 
     def first_open_data_base(self):
         """
