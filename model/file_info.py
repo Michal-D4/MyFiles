@@ -10,27 +10,30 @@ from model.utils.load_db_data import LoadDBData
 from model.helpers import *
 from controller.places import Places
 
-SQL_AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
+AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'
 
-SQL_INSERT_AUTHOR = 'insert into Authors (Author) values (?);'
+INSERT_AUTHOR = 'insert into Authors (Author) values (?);'
 
-SQL_INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
+FILE_AUTHOR = 'select * from FileAuthor where FileID=? and AuthorID=?'
 
-SQL_INSERT_COMMENT = 'insert into Comments (Comment) values (?);'
+INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
 
-SQL_FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
-                                   'from Files f, Dirs d',
-                                   'where f.PlaceId = :place_id and',
-                                   'f.Size = 0 and f.DirID = d.DirID;'))
+INSERT_COMMENT = 'insert into Comments (Comment) values (?);'
 
-SQL_UPDATE_FILE = ' '.join(('update Files set',
-                            'CommentID = :comm_id,',
-                            'Year = :year,',
-                            'Pages = :page,',
-                            'Size = :size',
-                            'where FileID = :file_id;'))
+FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
+                               'from Files f, Dirs d',
+                               'where f.PlaceId = :place_id and',
+                               'f.Size = 0 and f.DirID = d.DirID;'))
+
+UPDATE_FILE = ' '.join(('update Files set',
+                        'CommentID = :comm_id,',
+                        'Year = :year,',
+                        'Pages = :page,',
+                        'Size = :size',
+                        'where FileID = :file_id;'))
 
 E = Event()
+
 
 class LoadFiles(Thread):
     def __init__(self, conn, cur_place, data_, group=None, target=None, name=None, args=(),
@@ -69,16 +72,23 @@ class FileInfo(Thread):
         self.file_info = []
 
     def insert_author(self, file_id):
-        # todo need cycle in case of several authors
-        auth_idl = self.cursor.execute(SQL_AUTHOR_ID, (self.file_info[3],)).fetchone()
-        if not auth_idl:
-            self.cursor.execute(SQL_INSERT_AUTHOR, (self.file_info[3],))
+        authors = self.file_info[3].split(',')
+        print('|-> insert_author', authors, file_id)
+        for author in authors:
+            aut = author.strip()
+            auth_idl = self.cursor.execute(AUTHOR_ID, (aut,)).fetchone()
+            print('  ', aut, auth_idl)
+            if not auth_idl:
+                self.cursor.execute(INSERT_AUTHOR, (aut,))
+                self.conn.commit()
+                auth_id = self.cursor.lastrowid
+            else:
+                auth_id = auth_idl[0]
+                check = self.cursor.execute(FILE_AUTHOR, (file_id, auth_id))
+                if check:
+                    return
+            self.cursor.execute(INSERT_FILEAUTHOR, (file_id, auth_id))
             self.conn.commit()
-            auth_id = self.cursor.lastrowid
-        else:
-            auth_id = auth_idl[0]
-        self.cursor.execute(SQL_INSERT_FILEAUTHOR, (file_id, auth_id))
-        self.conn.commit()
 
     def _insert_comment(self):
         if len(self.file_info) > 2:
@@ -86,7 +96,7 @@ class FileInfo(Thread):
                 comm = 'Creation date {}\r\nTitle: {}'.format(self.file_info[4], self.file_info[5])
             except IndexError:
                 print('IndexError ', len(self.file_info))
-            self.cursor.execute(SQL_INSERT_COMMENT, (comm,))
+            self.cursor.execute(INSERT_COMMENT, (comm,))
             self.conn.commit()
             comm_id = self.cursor.lastrowid
             pages = self.file_info[2]
@@ -151,7 +161,7 @@ class FileInfo(Thread):
         self.get_file_info(full_file_name)
         comm_id, pages = self._insert_comment()
 
-        self.cursor.execute(SQL_UPDATE_FILE, {'comm_id': comm_id,
+        self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
                                               'year': self.file_info[1],
                                               'page': pages,
                                               'size': self.file_info[0],
@@ -162,7 +172,7 @@ class FileInfo(Thread):
 
     def update_files(self):
         cur_place = self.places.get_curr_place()
-        file_list = self.cursor.execute(SQL_FILES_WITHOUT_INFO,
+        file_list = self.cursor.execute(FILES_WITHOUT_INFO,
                                         {'place_id': cur_place[1][0]}).fetchall()
         if cur_place[2] == Places.MOUNTED:
             root = self.places.get_mount_point()
