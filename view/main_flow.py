@@ -25,6 +25,7 @@ class MainFlow(QMainWindow):
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.clicked.connect(self.file_changed)
+        self.ui_main.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('Open', ()))
         self.ui_main.filesList.resizeEvent = self.resize_event
 
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
