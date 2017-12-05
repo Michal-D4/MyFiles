@@ -25,8 +25,8 @@ class ItemEdit(QDialog):
 
         if self.list_items:
             len_ = max([len(item) for item in items])
-            len_ = len_ if len_ else 1
-            self.max_width = self.view.items.fontMetrics().boundingRect('m'*len_).width()
+            len_ = len_ if len_ > 1 else 2
+            self.max_width = self.view.items.fontMetrics().boundingRect('W'*len_).width()
         else:
             self.max_width = 20
 
