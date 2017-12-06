@@ -11,6 +11,7 @@ Selects = {'TREE':
                 ') SELECT * FROM x order by ParentID desc, Path;'),
            'PLACES': 'select * from Places;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
+           'PATH': 'select Path from Dirs where DirID = ?;',
            'IS_EXIST': 'select * from Places where Place = ?;',
            'EXT': ' '.join(('select Extension as title, ExtID+1000, GroupID',
                             'as ID from Extensions UNION select GroupName as title,',
@@ -30,12 +31,17 @@ Selects = {'TREE':
            'AUTHOR_FILES': 'select * from FileAuthor where AuthorID=:author_id;',
            'AUTHORS_BY_NAME': 'select Author, AuthorID from Authors where Author in ("{}");',
            'AUTHOR_FILE': 'select * from FileAuthor where FileID = ? and AuthorID =?;',
-           'FILE_COMMENT': 'select Comment, BookTitle, IssueDate from Comments where CommentID = ?;',
+           'FILE_COMMENT': ' '.join(('select Comment, BookTitle, IssueDate from',
+                                     'Comments where CommentID = ?;')),
            'FILES_CURR_DIR': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
-                                      'Pages, Size from Files where DirId = ?;'))
+                                      'Pages, Size from Files where DirId = ?;')),
+           'FAVORITES': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
+                                  'Pages, Size from Files where FileID in',
+                                  '(select FileID from Favorites);'))
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
+          'FAVORITES': 'insert into Favorites (FileID) values (?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'AUTHORS': 'insert into Authors (Author) values (:author);',
           'AUTHOR_FILE': 'insert into FileAuthor (AuthorID, FileID) values (:author_id, :file_id);',

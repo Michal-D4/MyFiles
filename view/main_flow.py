@@ -22,8 +22,8 @@ class MainFlow(QMainWindow):
         self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
         self.ui_main.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
         self.ui_main.actionGetFiles.triggered.connect(self.go)
-        self.ui_main.actionFavorites.triggered.connect(lambda: self.
-                                                       change_data_signal.emit('Favorites', ()))
+        self.ui_main.actionFavorites.triggered.connect(lambda:
+                                                       self.change_data_signal.emit('Favorites', ()))
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.clicked.connect(self.file_changed)
@@ -52,6 +52,9 @@ class MainFlow(QMainWindow):
 
         self.ui_main.authorsList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui_main.authorsList.customContextMenuRequested.connect(self._author_menu)
+
+        self.ui_main.dirTree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.dirTree.customContextMenuRequested.connect(self._dir_menu)
 
     def _file_menu(self, pos):
         menu = QMenu(self)
@@ -87,6 +90,14 @@ class MainFlow(QMainWindow):
         action = menu.exec_(self.ui_main.authorsList.mapToGlobal(pos))
         if action:
             act = 'Author {}'.format(action.text())
+            self.change_data_signal.emit(act, ())
+
+    def _dir_menu(self, pos):
+        menu = QMenu(self)
+        action1 = menu.addAction('Update tree')
+        action = menu.exec_(self.ui_main.dirTree.mapToGlobal(pos))
+        if action:
+            act = 'Dirs {}'.format(action.text())
             self.change_data_signal.emit(act, ())
 
     def ref_clicked(self, argv_1):

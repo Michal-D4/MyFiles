@@ -24,6 +24,7 @@ class MyController():
         self._dbu = None
         self._cb_places = None
         self.view = view.ui_main
+        self.favorites = False
 
     def get_places_view(self):
         return self.view.cb_places
@@ -50,13 +51,11 @@ class MyController():
                     yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
-        print('|===> on_open_db', file_name, create)
         if create:
             self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                detect_types=DETECT_TYPES)
             create_db.create_all_objects(self._connection)
         else:
-            print('  |--> else', os.path.isfile(file_name))
             if os.path.isfile(file_name):
                 self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                    detect_types=DETECT_TYPES)
@@ -100,6 +99,34 @@ class MyController():
             self._open_folder()
         elif sender == 'advanced_file_list':
             self.advanced_file_list()
+        elif sender == 'Favorites':
+            self.favorite_file_list()
+        elif sender == 'Author Remove unused':
+            self.author_remove_unused()
+        elif sender == 'Tag Remove unused':
+            self.tag_remove_unused()
+        elif sender == 'Ext Remove unused':
+            self.ext_remove_unused()
+        elif sender == 'Ext Create group':
+            self.ext_create_group()
+        elif sender == 'Dirs Update tree':
+            self._dir_update()
+
+    def _dir_update(self):
+        place_ = self._cb_places.get_curr_place()
+        self._populate_directory_tree(place_[1][0])
+
+    def favorite_file_list(self):
+        model = TableModel()
+        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
+        files = self._dbu.select_other('FAVORITES').fetchall()
+        if files:
+            self.favorites = True
+            self._show_files(files, model)
+            self.view.statusbar.showMessage('Favorite files')
+        else:
+            self.view.filesList.setModel(model)
+            self.view.statusbar.showMessage('No data')
 
     def advanced_file_list(self):
         # todo - select files
@@ -136,11 +163,11 @@ class MyController():
         webbrowser.open(''.join(('file://', dir_[2])))
 
     def _open_file(self):
-        idx = self.view.dirTree.currentIndex()
-        dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        full_file_name = os.path.join(dir_[2], file_name)
+        u_data = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        path = self._dbu.select_other('PATH', (u_data[1],)).fetchone()
+        full_file_name = os.path.join(path[0], file_name)
         if os.path.isfile(full_file_name):
             os.startfile(full_file_name)
         else:
@@ -153,9 +180,8 @@ class MyController():
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        print('TAGS', tag_list)
         sel_tags = self._dbu.select_other('FILE_TAGS', (file_id,)).fetchall()
-        print('FILE_TAGS', sel_tags)
+
         edit_tags = ItemEdit(titles,
                              [tag[0] for tag in tag_list],
                              [tag[0] for tag in sel_tags])
@@ -190,13 +216,9 @@ class MyController():
                 self._dbu.delete_other(sqls[2], (item,))
 
     def add_item_links(self, items2add, file_id, sqls):
-        print('|---> add_item_links', items2add)
         add_ids = self._dbu.select_other2(sqls[0], '","'.join(items2add)).fetchall()
         sel_items = [item[0] for item in add_ids]
         not_in_ids = [item for item in items2add if not (item in sel_items)]
-        print('   add_ids   ', add_ids)
-        print('   sel_items ', sel_items)
-        print('   not_in_ids', not_in_ids)
 
         for item in not_in_ids:
             item_id = self._dbu.insert_other(sqls[1], (item,))
@@ -276,25 +298,27 @@ class MyController():
         :param dir_idx:
         :return:
         """
+        self.favorites = False
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
         if dir_idx:
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
-            for ff in files:
-                # ff[:3] = [FileID, DirID, CommentID]
-                # ff[:3] = [FileName, Year, Pages, Size]
-                model.append_row(ff[3:], ff[:3])
-            self.view.filesList.setModel(model)
-
-            self.view.filesList.setAlternatingRowColors(True)
+            self._show_files(files, model)
 
             self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
         else:
             self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
+    def _show_files(self, files, model):
+        for ff in files:
+            # ff[:3] = [FileID, DirID, CommentID]
+            # ff[:3] = [FileName, Year, Pages, Size]
+            model.append_row(ff[3:], ff[:3])
+        self.view.filesList.setModel(model)
+        self.view.filesList.setAlternatingRowColors(True)
+
     def _populate_comment_field(self, data):
-        print('|---> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
@@ -337,7 +361,6 @@ class MyController():
         idx = model.index(0, 0)
         self.view.dirTree.setCurrentIndex(idx)
 
-        print('|---> _populate_directory_tree', model.data(idx, role=Qt.UserRole))
         self._populate_file_list(model.data(idx, role=Qt.UserRole))
 
         self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
