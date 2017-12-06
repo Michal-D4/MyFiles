@@ -30,7 +30,7 @@ Selects = {'TREE':
            'AUTHOR_FILES': 'select * from FileAuthor where AuthorID=:author_id;',
            'AUTHORS_BY_NAME': 'select Author, AuthorID from Authors where Author in ("{}");',
            'AUTHOR_FILE': 'select * from FileAuthor where FileID = ? and AuthorID =?;',
-           'FILE_COMMENT': 'select Comment from Comments where CommentID = ?;',
+           'FILE_COMMENT': 'select Comment, BookTitle, IssueDate from Comments where CommentID = ?;',
            'FILES_CURR_DIR': ' '.join(('select FileID, DirID, CommentID, FileName, Year,',
                                       'Pages, Size from Files where DirId = ?;'))
            }
@@ -43,7 +43,11 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'TAG_FILE': 'insert into FileTag (TagID, FileID) values (:tag_id, :file_id);'}
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
-          'PLACE': 'update Places set Place = ? where PlaceId = ?;'}
+          'PLACE': 'update Places set Place = ? where PlaceId = ?;',
+          'ISSUE_DATE': 'update Comments set IssueDate = ? where CommentID = ?;',
+          'BOOK_TITLE': 'update Comments set BookTitle = ? where CommentID = ?;',
+          'COMMENT': 'update Comments set Comment = ? where CommentID = ?;',
+          }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'PLACES': 'delete from Places where PlaceId = ?;',

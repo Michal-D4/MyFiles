@@ -219,17 +219,24 @@ class MyController():
             self._populate_author_list()
             self._populate_comment_field((file_id, _, comment_id))
 
+    def _edit_comment_item(self, to_update, item_no):
+        curr_idx = self.view.filesList.currentIndex()
+        file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
+        date_, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
+                                                 '', QLineEdit.Normal, comment[item_no])
+        if ok_pressed:
+            self._dbu.update_other(to_update, (date_, comment_id))
+            self._populate_comment_field((file_id, _, comment_id))
+
     def _edit_date(self):
-        # todo - edit date
-        pass
+        self._edit_comment_item('ISSUE_DATE', 2)
 
     def _edit_title(self):
-        # todo - edit title
-        pass
+        self._edit_comment_item('BOOK_TITLE', 1)
 
     def _edit_comment(self):
-        # todo - edit comment
-        pass
+        self._edit_comment_item('COMMENT', 0)
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -290,13 +297,16 @@ class MyController():
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
             else:
-                comment = ('',)
-            self.view.commentField.setText('\r\n'.join((
+                comment = ('','','')
+            self.view.commentField.setText(''.join((
                 '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.
                     format(', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'.
                     format(', '.join([author[0] for author in authors])),
-                comment[0], '</p></body></html>')))
+                '<p><a href="Edit date">Creation date</a>: {}</p>'.format(comment[2]),
+                '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
+                '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.
+                    format(comment[0]))))
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)
