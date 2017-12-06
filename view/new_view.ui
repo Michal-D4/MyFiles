@@ -402,13 +402,13 @@
    </hints>
   </connection>
   <connection>
-   <sender>btnGetFiles</sender>
+   <sender>btnFavorites</sender>
    <signal>clicked()</signal>
    <receiver>actionFavorites</receiver>
    <slot>trigger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>110</x>
+     <x>54</x>
      <y>23</y>
     </hint>
     <hint type="destinationlabel">
