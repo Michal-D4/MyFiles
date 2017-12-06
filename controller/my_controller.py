@@ -112,6 +112,41 @@ class MyController():
         elif sender == 'Dirs Update tree':
             self._dir_update()
 
+    def ext_create_group(self):
+        sel_model_idx = self.view.extList.selectedIndexes()
+        model = self.view.extList.model()
+        ids = []
+        for idx in sel_model_idx:
+            ids.append(model.data(idx, Qt.UserRole)[0])
+
+        if ids:
+            group_name, ok_pressed = QInputDialog.getText(self.view.extList,
+                                                          'Input group name',
+                                                          '', QLineEdit.Normal,
+                                                          '')
+            if ok_pressed:
+                gr_id = self._dbu.insert_other('EXT_GROUP', (group_name,))
+                all_id = self._collect_all_ext(ids)
+
+                for id in all_id:
+                    self._dbu.update_other('EXT_GROUP', (gr_id, id))
+
+                self._dbu.delete_other('UNUSED_EXT_GROUP', ())
+
+                self._populate_ext_list()
+
+    def _collect_all_ext(self, ids):
+        MAX_GROUP_ID = 1000
+        all_id = set()
+        for id in ids:
+            if id < MAX_GROUP_ID:
+                curr = self._dbu.select_other('EXT_ID_IN_GROUP', (id,))
+                for idd in curr:
+                    all_id.add(idd[0])
+            else:
+                all_id.add(id - MAX_GROUP_ID)
+        return all_id
+
     def _dir_update(self):
         place_ = self._cb_places.get_curr_place()
         self._populate_directory_tree(place_[1][0])
@@ -256,20 +291,20 @@ class MyController():
         curr_idx = self.view.filesList.currentIndex()
         file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
         comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
-        date_, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
+        date_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
                                                  '', QLineEdit.Normal, comment[item_no])
         if ok_pressed:
-            self._dbu.update_other(to_update, (date_, comment_id))
+            self._dbu.update_other(to_update[0], (date_, comment_id))
             self._populate_comment_field((file_id, _, comment_id))
 
     def _edit_date(self):
-        self._edit_comment_item('ISSUE_DATE', 2)
+        self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 2)
 
     def _edit_title(self):
-        self._edit_comment_item('BOOK_TITLE', 1)
+        self._edit_comment_item(('BOOK_TITLE', 'Input book title'), 1)
 
     def _edit_comment(self):
-        self._edit_comment_item('COMMENT', 0)
+        self._edit_comment_item(('COMMENT', 'Input comment'), 0)
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -338,7 +373,7 @@ class MyController():
                     format(', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'.
                     format(', '.join([author[0] for author in authors])),
-                '<p><a href="Edit date">Creation date</a>: {}</p>'.format(comment[2]),
+                '<p><a href="Edit date">Issue date</a>: {}</p>'.format(comment[2]),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.
                     format(comment[0]))))
@@ -462,3 +497,4 @@ class MyController():
         else:
             ext_ = ''
         return ext_
+
