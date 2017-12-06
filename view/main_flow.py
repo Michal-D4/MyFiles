@@ -30,6 +30,10 @@ class MainFlow(QMainWindow):
         self.ui_main.filesList.resizeEvent = self.resize_event
         self.ui_main.filesList.doubleClicked.connect(lambda: self.
                                                      change_data_signal.emit('Open', ()))
+        menu = QMenu(self)
+        menu.addAction('Selection options')
+        menu.addAction('Selection options 2')
+        self.ui_main.btnOption.setMenu(menu)
 
         self.setup_context_menu()
 
@@ -161,16 +165,16 @@ class MainFlow(QMainWindow):
             self.open_dialog.exec_()
         else:
             self.open_dialog.emit_open_dialog()
-        self.ui_main.dirTree.mousePressEvent = self.mousePressEvent
+        # self.ui_main.dirTree.mousePressEvent = self.mousePressEvent
 
-    def mousePressEvent(self, event: QMouseEvent):
-        """
-        Deselect all when click on empty place
-        :param event:
-        :return:
-        """
-        self.ui_main.dirTree.clearSelection()
-        QTreeView.mousePressEvent(self.ui_main.dirTree, event)
+    # def mousePressEvent(self, event: QMouseEvent):
+    #     """
+    #     Deselect all when click on empty place
+    #     :param event:
+    #     :return:
+    #     """
+    #     self.ui_main.dirTree.clearSelection()
+    #     QTreeView.mousePressEvent(self.ui_main.dirTree, event)
 
     def closeEvent(self, event):
         settings = QSettings('myorg', 'myapp')

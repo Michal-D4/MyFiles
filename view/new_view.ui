@@ -171,6 +171,9 @@
           <height>22</height>
          </size>
         </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
         <property name="autoRaise">
          <bool>true</bool>
         </property>
@@ -309,19 +312,6 @@
     <string>Get list of files</string>
    </property>
   </action>
-  <action name="actionsetUp">
-   <property name="icon">
-    <iconset>
-     <normalon>:/image/menu.png</normalon>
-    </iconset>
-   </property>
-   <property name="text">
-    <string>setUp</string>
-   </property>
-   <property name="toolTip">
-    <string>Options</string>
-   </property>
-  </action>
   <action name="actionFavorites">
    <property name="icon">
     <iconset>
@@ -377,22 +367,6 @@
    <hints>
     <hint type="sourcelabel">
      <x>84</x>
-     <y>19</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>btnOption</sender>
-   <signal>clicked()</signal>
-   <receiver>actionsetUp</receiver>
-   <slot>toggle()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>548</x>
      <y>19</y>
     </hint>
     <hint type="destinationlabel">
