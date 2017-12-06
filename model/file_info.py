@@ -18,7 +18,7 @@ FILE_AUTHOR = 'select * from FileAuthor where FileID=? and AuthorID=?'
 
 INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
 
-INSERT_COMMENT = 'insert into Comments (Comment) values (?);'
+INSERT_COMMENT = 'insert into Comments (IssueDate, BookTitle, Comment) values (?, ?, ?);'
 
 FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
                                'from Files f, Dirs d',
@@ -93,13 +93,11 @@ class FileInfo(Thread):
     def _insert_comment(self):
         if len(self.file_info) > 2:
             try:
-                txt = '<p><a href="Edit date">Creation date</a>: {}</p>' \
-                      '<p><a href="Edit title"4>Title</a>: {}</p>' \
-                      '<p><a href="Edit comment">Comment</a>'
-                comm = txt.format(self.file_info[4], self.file_info[5])
+                issue_date = self.file_info[4]
+                book_title = self.file_info[5]
             except IndexError:
                 print('IndexError ', len(self.file_info))
-            self.cursor.execute(INSERT_COMMENT, (comm,))
+            self.cursor.execute(INSERT_COMMENT, (issue_date, book_title, ''))
             self.conn.commit()
             comm_id = self.cursor.lastrowid
             pages = self.file_info[2]

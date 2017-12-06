@@ -13,7 +13,7 @@ ExtID INTEGER,
 PlaceId INTEGER,
 FileName TEXT,
 CommentID INTEGER,
-Year INTEGER,
+Year TEXT,
 Pages INTEGER,
 Size INTEGER,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID),
@@ -83,7 +83,9 @@ GroupName TEXT
     '''
 CREATE TABLE IF NOT EXISTS Comments (
 CommentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-Comment TEXT
+Comment TEXT,
+BookTitle TEXT,
+IssueDate TEXT
 ); ''',
     'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
