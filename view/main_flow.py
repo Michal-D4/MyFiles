@@ -22,11 +22,14 @@ class MainFlow(QMainWindow):
         self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
         self.ui_main.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
         self.ui_main.actionGetFiles.triggered.connect(self.go)
+        self.ui_main.actionFavorites.triggered.connect(lambda: self.
+                                                       change_data_signal.emit('Favorites', ()))
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.clicked.connect(self.file_changed)
         self.ui_main.filesList.resizeEvent = self.resize_event
-        self.ui_main.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('Open', ()))
+        self.ui_main.filesList.doubleClicked.connect(lambda: self.
+                                                     change_data_signal.emit('Open', ()))
 
         self.setup_context_menu()
 
@@ -39,7 +42,7 @@ class MainFlow(QMainWindow):
 
     def setup_context_menu ( self ):
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.filesList.customContextMenuRequested.connect(self._file_pop_menu)
+        self.ui_main.filesList.customContextMenuRequested.connect(self._file_menu)
 
         self.ui_main.extList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui_main.extList.customContextMenuRequested.connect(self._ext_menu)
@@ -50,14 +53,15 @@ class MainFlow(QMainWindow):
         self.ui_main.authorsList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui_main.authorsList.customContextMenuRequested.connect(self._author_menu)
 
-    def _file_pop_menu(self, pos):
+    def _file_menu(self, pos):
         menu = QMenu(self)
-        action1 = menu.addAction('Delete')
         action2 = menu.addAction('Open')
         action3 = menu.addAction('Open folder')
+        action1 = menu.addAction('Add to favorites')
+        action1 = menu.addAction('Delete')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
         if action:
-            print('|---> _file_pop_menu', action.text())
+            print('|---> _file_menu', action.text())
             self.change_data_signal.emit(action.text(), ())
 
     def _ext_menu(self, pos):

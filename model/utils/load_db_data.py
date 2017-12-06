@@ -26,7 +26,6 @@ INSERT_FILE = '''insert into Files
 FIND_EXT = '''select ExtID
     from Extensions where Extension = ?;'''
 
-# Groups will be created manually and then GroupID will be updated TODO
 INSERT_EXT = '''insert into Extensions
     (Extension, GroupID) values (:ext, 0);'''
 

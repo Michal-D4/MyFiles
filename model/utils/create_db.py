@@ -87,6 +87,7 @@ Comment TEXT,
 BookTitle TEXT,
 IssueDate TEXT
 ); ''',
+    'CREATE TABLE IF NOT EXISTS Favorites (FileID INTEGER NOT NULL);',
     'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
     'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(PlaceId, ExtID);',

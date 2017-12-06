@@ -92,6 +92,8 @@ class MyController():
             self._edit_comment()
         elif sender == 'Delete':
             self._delete_file()
+        elif sender == 'Add to favorites':
+            self._add_file_to_favorites()
         elif sender == 'Open':
             self._open_file()
         elif sender == 'Open folder':
@@ -111,6 +113,11 @@ class MyController():
             dir_ = self.view.dirTree.model().data(dd[0], Qt.UserRole)
             print('|---> advanced_file_list', dir_)
 
+    def _add_file_to_favorites(self):
+        f_idx = self.view.filesList.currentIndex()
+        file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        self._dbu.insert_other('FAVORITES', (file_id,))
+
     def _delete_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
@@ -118,6 +125,10 @@ class MyController():
         self._dbu.delete_other('TAG_FILE_BY_FILE', (file_id,))
         self._dbu.delete_other('COMMENT', (comment_id,))
         self._dbu.delete_other('FILE', (file_id,))
+
+        idx = self.view.dirTree.currentIndex()
+        dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
+        self._populate_file_list(dir_idx)
 
     def _open_folder(self):
         idx = self.view.dirTree.currentIndex()
