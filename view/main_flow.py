@@ -25,11 +25,10 @@ class MainFlow(QMainWindow):
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.clicked.connect(self.file_changed)
-        self.ui_main.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('Open', ()))
         self.ui_main.filesList.resizeEvent = self.resize_event
+        self.ui_main.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('Open', ()))
 
-        self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.filesList.customContextMenuRequested.connect(self._file_pop_menu)
+        self.setup_context_menu()
 
         self.ui_main.commentField.anchorClicked.connect(self.ref_clicked)
 
@@ -37,6 +36,54 @@ class MainFlow(QMainWindow):
 
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
         self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line).width() for line in lines]
+
+    def setup_context_menu ( self ):
+        self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.filesList.customContextMenuRequested.connect(self._file_pop_menu)
+
+        self.ui_main.extList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.extList.customContextMenuRequested.connect(self._ext_menu)
+
+        self.ui_main.tagsList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.tagsList.customContextMenuRequested.connect(self._tag_menu)
+
+        self.ui_main.authorsList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui_main.authorsList.customContextMenuRequested.connect(self._author_menu)
+
+    def _file_pop_menu(self, pos):
+        menu = QMenu(self)
+        action1 = menu.addAction('Delete')
+        action2 = menu.addAction('Open')
+        action3 = menu.addAction('Open folder')
+        action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
+        if action:
+            print('|---> _file_pop_menu', action.text())
+            self.change_data_signal.emit(action.text(), ())
+
+    def _ext_menu(self, pos):
+        menu = QMenu(self)
+        action1 = menu.addAction('Remove unused')
+        action2 = menu.addAction('Create group')
+        action = menu.exec_(self.ui_main.extList.mapToGlobal(pos))
+        if action:
+            act = 'Ext {}'.format(action.text())
+            self.change_data_signal.emit(act, ())
+
+    def _tag_menu(self, pos):
+        menu = QMenu(self)
+        action1 = menu.addAction('Remove unused')
+        action = menu.exec_(self.ui_main.tagsList.mapToGlobal(pos))
+        if action:
+            act = 'Tag {}'.format(action.text())
+            self.change_data_signal.emit(act, ())
+
+    def _author_menu(self, pos):
+        menu = QMenu(self)
+        action1 = menu.addAction('Remove unused')
+        action = menu.exec_(self.ui_main.authorsList.mapToGlobal(pos))
+        if action:
+            act = 'Author {}'.format(action.text())
+            self.change_data_signal.emit(act, ())
 
     def ref_clicked(self, argv_1):
         self.ui_main.commentField.setSource(QUrl())
@@ -56,16 +103,6 @@ class MainFlow(QMainWindow):
         for k in range(4):
             self.ui_main.filesList.setColumnWidth(k, ww[k])
         self.ui_main.filesList.blockSignals(False)
-
-    def _file_pop_menu(self, pos):
-        menu = QMenu(self)
-        action1 = menu.addAction('Delete')
-        action2 = menu.addAction('Open')
-        action3 = menu.addAction('Open folder')
-        action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
-        if action:
-            print('|---> _file_pop_menu', action.text())
-            self.change_data_signal.emit(action.text(), ())
 
     def file_changed(self, curr_idx: QModelIndex):
         idx_ = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
