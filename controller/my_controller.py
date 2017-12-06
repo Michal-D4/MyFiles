@@ -183,14 +183,18 @@ class MyController():
     def _delete_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
-        self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_id,))
-        self._dbu.delete_other('TAG_FILE_BY_FILE', (file_id,))
-        self._dbu.delete_other('COMMENT', (comment_id,))
-        self._dbu.delete_other('FILE', (file_id,))
+        if self.favorites:
+            self._dbu.delete_other('FAVORITES', (file_id,))
+            self.favorite_file_list()
+        else:
+            self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_id,))
+            self._dbu.delete_other('TAG_FILE_BY_FILE', (file_id,))
+            self._dbu.delete_other('COMMENT', (comment_id,))
+            self._dbu.delete_other('FILE', (file_id,))
 
-        idx = self.view.dirTree.currentIndex()
-        dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
-        self._populate_file_list(dir_idx)
+            idx = self.view.dirTree.currentIndex()
+            dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
+            self._populate_file_list(dir_idx)
 
     def _open_folder(self):
         idx = self.view.dirTree.currentIndex()
