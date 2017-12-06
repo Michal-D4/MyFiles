@@ -114,9 +114,7 @@ class MyController():
     def _delete_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
-        self._dbu.delete_other('AUTHOR_BY_FILE', (file_id,))
         self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_id,))
-        self._dbu.delete_other('TAG_BY_FILE', (file_id,))
         self._dbu.delete_other('TAG_FILE_BY_FILE', (file_id,))
         self._dbu.delete_other('COMMENT', (comment_id,))
         self._dbu.delete_other('FILE', (file_id,))
