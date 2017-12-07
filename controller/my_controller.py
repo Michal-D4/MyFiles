@@ -5,7 +5,7 @@ import os
 import webbrowser
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
-from PyQt5.QtCore import Qt, QModelIndex
+from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
@@ -292,14 +292,38 @@ class MyController():
             self._populate_comment_field((file_id, _, comment_id))
 
     def _edit_comment_item(self, to_update, item_no):
-        curr_idx = self.view.filesList.currentIndex()
-        file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-        comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
+        print('|--> _edit_comment_item', to_update, item_no)
+        file_id, _, comment_id, comment = self.check_existence()
+        print('   ', comment)
         date_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
                                                  '', QLineEdit.Normal, comment[item_no])
         if ok_pressed:
             self._dbu.update_other(to_update[0], (date_, comment_id))
             self._populate_comment_field((file_id, _, comment_id))
+
+    def check_existence( self ):
+        curr_idx = self.view.filesList.currentIndex()
+        file_id, dir_id, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
+        if not comment:
+            comment = ('', '', '')
+            comment_id = self._dbu.insert_other('COMMENT', comment)
+            self._dbu.update_other('FILE_COMMENT', (comment_id, file_id))
+            self._refresh_file_list(curr_idx)
+        return file_id, dir_id, comment_id, comment
+
+    def _refresh_file_list(self, curr_idx):
+        sel = self.view.filesList.selectionModel().selectedIndexes()
+        print(sel)
+        if self.favorites:
+            self.favorite_file_list()
+        else:
+            idx = self.view.dirTree.currentIndex()
+            dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
+            self._populate_file_list(dir_idx)
+
+        self.view.filesList.setCurrentIndex(curr_idx)
+        self.view.filesList.selectionModel().select(sel[0], QItemSelectionModel.Select)
 
     def _edit_date(self):
         self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 2)

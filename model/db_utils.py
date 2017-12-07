@@ -43,6 +43,7 @@ Selects = {'TREE':
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'FAVORITES': 'insert into Favorites (FileID) values (?);',
+          'COMMENT': 'insert into Comments (Comment, BookTitle, IssueDate) values (?, ?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',
           'AUTHORS': 'insert into Authors (Author) values (:author);',
@@ -56,6 +57,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'ISSUE_DATE': 'update Comments set IssueDate = ? where CommentID = ?;',
           'BOOK_TITLE': 'update Comments set BookTitle = ? where CommentID = ?;',
           'COMMENT': 'update Comments set Comment = ? where CommentID = ?;',
+          'FILE_COMMENT': 'update Files set CommentID = ? where FileID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
