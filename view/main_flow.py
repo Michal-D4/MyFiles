@@ -151,8 +151,6 @@ class MainFlow(QMainWindow):
             self.ui_main.splitter_files.setStretchFactor(1, 2)
 
     def go(self):
-        # todo - implement file selection according selected ext., authors, tags, root
-        print('go ====>')
         params = ()
         self.change_data_signal.emit('advanced_file_list', params)
 

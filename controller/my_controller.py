@@ -14,6 +14,7 @@ from model.utils import create_db
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
 from view.item_edit import ItemEdit
+from view.sel_opt import SelOpt
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
@@ -164,16 +165,15 @@ class MyController():
             self.view.statusbar.showMessage('No data')
 
     def advanced_file_list(self):
-        # todo - select files
         # extensions - or
         # tags       - and
         # authors    - or
         # dir        - tree, level
         # date ???   - after
-        dd = self.view.dirTree.selectionModel().selectedRows()  # list of indexes
-        if dd:
-            dir_ = self.view.dirTree.model().data(dd[0], Qt.UserRole)
-            print('|---> advanced_file_list', dir_)
+        opt = SelOpt(self)
+        opt.exec_()
+        res = opt.get_result()
+        print('|--> advanced_file_list', res)
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
@@ -489,7 +489,7 @@ class MyController():
             thread.start()
 
     def _scan_file_system(self):
-        ext_ = self._get_selected_extensions()
+        ext_ = self.get_selected_items(self.view.extList)
         ext_item, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
@@ -527,12 +527,15 @@ class MyController():
         box.addButton('Ok', QMessageBox.AcceptRole)
         box.exec_()
 
-    def _get_selected_extensions(self):
-        extensions = self.view.extList.selectedIndexes()
-        if extensions:
-            model = self.view.extList.model()
-            ext_ = ', '.join(model.data(i, Qt.DisplayRole) for i in extensions)
+    @staticmethod
+    def get_selected_items(view):
+        idxs = view.selectedIndexes()
+        if idxs:
+            print('|--> get_selected_items', idxs[0].row())
+            model = view.model()
+            items_str = ', '.join(model.data(i, Qt.DisplayRole) for i in idxs)
         else:
-            ext_ = ''
-        return ext_
+            items_str = ''
+        return items_str
+
 
