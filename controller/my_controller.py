@@ -165,11 +165,15 @@ class MyController():
             self.view.statusbar.showMessage('No data')
 
     def advanced_file_list(self):
-        # extensions - or
-        # tags       - and
-        # authors    - or
-        # dir        - tree, level
-        # date ???   - after
+        """
+        Show files according optional conditions
+        1) folder and nested sub-folders up to n-th level
+        2) list of file extensions
+        3) list of key words (match all/mutch any)
+        4) list of authors
+        5) date of file/book creation - after/before
+        :return:
+        """
         opt = SelOpt(self)
         opt.exec_()
         res = opt.get_result()

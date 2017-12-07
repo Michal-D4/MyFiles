@@ -177,7 +177,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>190</y>
+     <y>200</y>
      <width>371</width>
      <height>16</height>
     </rect>
@@ -190,7 +190,7 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>210</y>
+     <y>220</y>
      <width>141</width>
      <height>17</height>
     </rect>
@@ -206,20 +206,20 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>230</y>
+     <y>240</y>
      <width>321</width>
      <height>20</height>
     </rect>
    </property>
   </widget>
-  <widget class="QRadioButton" name="authorAll">
+  <widget class="QRadioButton" name="tagAll">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>260</y>
+     <y>180</y>
      <width>82</width>
      <height>17</height>
     </rect>
@@ -234,14 +234,14 @@
     <string notr="true">grAuthors</string>
    </attribute>
   </widget>
-  <widget class="QRadioButton" name="authorAny">
+  <widget class="QRadioButton" name="tagAny">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="geometry">
     <rect>
      <x>180</x>
-     <y>260</y>
+     <y>180</y>
      <width>82</width>
      <height>17</height>
     </rect>
@@ -257,7 +257,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>280</y>
+     <y>270</y>
      <width>371</width>
      <height>16</height>
     </rect>
@@ -270,7 +270,7 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>300</y>
+     <y>290</y>
      <width>70</width>
      <height>17</height>
     </rect>
@@ -286,7 +286,7 @@
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>320</y>
+     <y>310</y>
      <width>82</width>
      <height>17</height>
     </rect>
@@ -308,7 +308,7 @@
    <property name="geometry">
     <rect>
      <x>160</x>
-     <y>320</y>
+     <y>310</y>
      <width>82</width>
      <height>17</height>
     </rect>
@@ -327,7 +327,7 @@
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>340</y>
+     <y>330</y>
      <width>82</width>
      <height>17</height>
     </rect>
@@ -349,7 +349,7 @@
    <property name="geometry">
     <rect>
      <x>160</x>
-     <y>340</y>
+     <y>330</y>
      <width>131</width>
      <height>17</height>
     </rect>
@@ -368,7 +368,7 @@
    <property name="geometry">
     <rect>
      <x>260</x>
-     <y>300</y>
+     <y>290</y>
      <width>113</width>
      <height>20</height>
     </rect>
@@ -378,7 +378,7 @@
    <property name="geometry">
     <rect>
      <x>170</x>
-     <y>300</y>
+     <y>290</y>
      <width>81</width>
      <height>16</height>
     </rect>

@@ -1,5 +1,7 @@
 # view/sel_opt.py
 
+from collections import namedtuple
+
 from PyQt5.QtWidgets import QDialog
 from view.ui_sel_opt import Ui_SelOpt
 # from controller.my_controller import MyController
@@ -26,8 +28,6 @@ class SelOpt(QDialog):
     def author_toggle(self):
         state = self.ui.chAuthor.isChecked()
         self.ui.eAuthors.setEnabled(state)
-        self.ui.authorAll.setEnabled(state)
-        self.ui.authorAny.setEnabled(state)
         if state and not self.ui.eAuthors.text():
             self.ui.eAuthors.setText(self.ctrl.get_selected_items(self.ctrl.view.authorsList))
         else:
@@ -62,13 +62,29 @@ class SelOpt(QDialog):
             self.ui.eExt.setText('')
 
     def tag_togle(self):
-        if self.ui.chTags.isChecked():
-            self.ui.eTags.setEnabled(True)
+        state = self.ui.chTags.isChecked()
+        self.ui.tagAll.setEnabled(state)
+        self.ui.tagAny.setEnabled(state)
+        self.ui.eTags.setEnabled(state)
+        if state:
             self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.view.tagsList))
         else:
-            self.ui.eTags.setEnabled(False)
             self.ui.eTags.setText('')
 
     def get_result(self):
-        return 'result'
+        # result = namedtuple('result', ['folder', ['path', 'level'],
+        #                                'extension', 'tags', ['all', 'list'],
+        #                                'authors', 'date', ['book', 'after']])
+        result = namedtuple('result', ['dir', 'extension', 'tags', 'authors', 'date'])
+        res = result(dir=(self.ui.chDirs.isChecked(), self.ui.sbLevel.text()),
+                     extension=(self.ui.chExt.isChecked() and
+                                self.ui.eExt.text().strip() != ''),
+                     tags=((self.ui.chTags.isChecked() and
+                            self.ui.eTags.text().strip() != ''),
+                           self.ui.tagAll.isChecked()),
+                     authors=(self.ui.chAuthor.isChecked() and
+                              self.ui.eAuthors.text().strip() != ''),
+                     date=(self.ui.chDate.isChecked(), self.ui.eDate.text(),
+                           self.ui.dateFile.isChecked(), self.ui.dateAfter.isChecked()))
+        return res
 
