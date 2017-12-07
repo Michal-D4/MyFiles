@@ -204,13 +204,23 @@ class MyController():
     def _open_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        u_data = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
-        path = self._dbu.select_other('PATH', (u_data[1],)).fetchone()
-        full_file_name = os.path.join(path[0], file_name)
-        if os.path.isfile(full_file_name):
-            os.startfile(full_file_name)
-        else:
-            MyController._show_message("Can't find file {}".format(full_file_name))
+        file_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        if f_idx.column() == 0:
+            path = self._dbu.select_other('PATH', (file_id,)).fetchone()
+            full_file_name = os.path.join(path[0], file_name)
+            if os.path.isfile(full_file_name):
+                os.startfile(full_file_name)
+            else:
+                MyController._show_message("Can't find file {}".format(full_file_name))
+        elif f_idx.column() == 2:
+            print('|---> _open_file', file_name)
+            if not file_name:
+                file_name = 0
+            pages, ok_pressed = QInputDialog.getInt(self.view.extList, 'Input page number',
+                                                    '', QLineEdit.Normal, file_name)
+            if ok_pressed:
+                self._dbu.update_other('PAGES', (pages, file_id))
+                self._refresh_file_list(f_idx)
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
@@ -292,16 +302,18 @@ class MyController():
             self._populate_comment_field((file_id, _, comment_id))
 
     def _edit_comment_item(self, to_update, item_no):
-        print('|--> _edit_comment_item', to_update, item_no)
         file_id, _, comment_id, comment = self.check_existence()
-        print('   ', comment)
         date_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
                                                  '', QLineEdit.Normal, comment[item_no])
         if ok_pressed:
             self._dbu.update_other(to_update[0], (date_, comment_id))
             self._populate_comment_field((file_id, _, comment_id))
 
-    def check_existence( self ):
+    def check_existence(self):
+        """
+        Check if comment record already created for filr
+        :return: (file_id, dir_id, comment_id, (comment, book title, issue date))
+        """
         curr_idx = self.view.filesList.currentIndex()
         file_id, dir_id, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
         comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
@@ -313,17 +325,16 @@ class MyController():
         return file_id, dir_id, comment_id, comment
 
     def _refresh_file_list(self, curr_idx):
-        sel = self.view.filesList.selectionModel().selectedIndexes()
-        print(sel)
         if self.favorites:
             self.favorite_file_list()
         else:
             idx = self.view.dirTree.currentIndex()
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
+            print('|---> _refresh_file_list', dir_idx)
             self._populate_file_list(dir_idx)
 
         self.view.filesList.setCurrentIndex(curr_idx)
-        self.view.filesList.selectionModel().select(sel[0], QItemSelectionModel.Select)
+        self.view.filesList.selectionModel().select(curr_idx, QItemSelectionModel.Select)
 
     def _edit_date(self):
         self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 2)
@@ -377,9 +388,11 @@ class MyController():
         for ff in files:
             # ff[:3] = [FileID, DirID, CommentID]
             # ff[:3] = [FileName, Year, Pages, Size]
+            print('   ', ff[3:], ff[:3])
             model.append_row(ff[3:], ff[:3])
+
         self.view.filesList.setModel(model)
-        self.view.filesList.setAlternatingRowColors(True)
+        # self.view.filesList.setAlternatingRowColors(True)
 
     def _populate_comment_field(self, data):
         file_id = data[0]
