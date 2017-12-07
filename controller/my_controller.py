@@ -204,16 +204,15 @@ class MyController():
     def _open_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        file_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        file_id, dir_id, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
         if f_idx.column() == 0:
-            path = self._dbu.select_other('PATH', (file_id,)).fetchone()
+            path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
             full_file_name = os.path.join(path[0], file_name)
             if os.path.isfile(full_file_name):
                 os.startfile(full_file_name)
             else:
                 MyController._show_message("Can't find file {}".format(full_file_name))
         elif f_idx.column() == 2:
-            print('|---> _open_file', file_name)
             if not file_name:
                 file_name = 0
             pages, ok_pressed = QInputDialog.getInt(self.view.extList, 'Input page number',
@@ -330,11 +329,11 @@ class MyController():
         else:
             idx = self.view.dirTree.currentIndex()
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
-            print('|---> _refresh_file_list', dir_idx)
             self._populate_file_list(dir_idx)
 
         self.view.filesList.setCurrentIndex(curr_idx)
-        self.view.filesList.selectionModel().select(curr_idx, QItemSelectionModel.Select)
+        f_idx = self.view.filesList.model().index(curr_idx.row(), 0)
+        self.view.filesList.selectionModel().select(f_idx, QItemSelectionModel.Select)
 
     def _edit_date(self):
         self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 2)
@@ -388,11 +387,9 @@ class MyController():
         for ff in files:
             # ff[:3] = [FileID, DirID, CommentID]
             # ff[:3] = [FileName, Year, Pages, Size]
-            print('   ', ff[3:], ff[:3])
             model.append_row(ff[3:], ff[:3])
 
         self.view.filesList.setModel(model)
-        # self.view.filesList.setAlternatingRowColors(True)
 
     def _populate_comment_field(self, data):
         file_id = data[0]
