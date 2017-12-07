@@ -125,7 +125,7 @@ class TestMyController(unittest.TestCase):
     #     mock_LoadDBData.return_value.load_data.assert_called_with('_read_from_file')
 
     @patch('controller.my_controller.Places', spec_set=Places)
-    @patch.object(my_controller.MyController, '_get_selected_extensions')
+    @patch.object(my_controller.MyController, 'get_selected_items')
     @patch('controller.my_controller.QFileDialog')
     @patch('controller.my_controller.QInputDialog')
     @patch.object(my_controller.MyController, '_yield_files')
@@ -137,7 +137,7 @@ class TestMyController(unittest.TestCase):
         mock_yield_files.return_value = ('file_list',)
 
         res = self.controller._scan_file_system()  # QInputDialog => Cancel
-        mock_get_selected_extensions.assert_has_calls([call._get_selected_extensions(), ])
+        mock_get_selected_extensions.assert_has_calls([call.get_selected_items(), ])
         mock_QFileDialog.getExistingDirectory.assert_not_called()
         self.assertEqual(res, ())
 

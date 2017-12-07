@@ -83,8 +83,8 @@ class TestMyControllerViewDbu(unittest.TestCase):
         self.mock_view.extList.model.return_value = mock_model
         mock_model.data.side_effect = ('item1', 'item2')
 
-        res = self.controller._get_selected_extensions()
+        res = self.controller.get_selected_items()
         self.assertEqual(res, 'item1, item2', msg='Selected item1 and item2')
 
-        res = self.controller._get_selected_extensions()
+        res = self.controller.get_selected_items()
         self.assertEqual(res, '', msg='No selection. But returns!!!')
