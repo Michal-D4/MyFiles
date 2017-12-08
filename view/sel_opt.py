@@ -16,10 +16,6 @@ class SelOpt(QDialog):
 
         self.ctrl = controller
 
-        self.ext = ''
-        self.tags = ''
-        self.authors = ''
-
         self.ui.chAuthor.stateChanged.connect(self.author_toggle)
         self.ui.chDate.stateChanged.connect(self.date_toggle)
         self.ui.chDirs.stateChanged.connect(self.dir_toggle)
@@ -75,16 +71,16 @@ class SelOpt(QDialog):
 
     def get_result(self):
         result = namedtuple('result', 'dir extension tags authors date')
-        dir = namedtuple('dir', 'use list')
+        dir_ = namedtuple('dir', 'use list')
         extension = namedtuple('extension', 'use list')
         tags = namedtuple('tags', 'use match_all list')
         authors = namedtuple('authors', 'use list')
         doc_date = namedtuple('not_older', 'use date file_date')
-        ext_ids = self._get_exts()
-        dir_ids = self._get_dirs()
+        ext_ids = self._get_ext_ids()
+        dir_ids = self._get_dir_ids()
         tag_ids = self._get_items_id(self.ctrl.view.tagsList)
         author_ids = self._get_items_id(self.ctrl.view.authorsList)
-        res = result(dir=dir(use=self.ui.chDirs.isChecked(), list=dir_ids),
+        res = result(dir=dir_(use=self.ui.chDirs.isChecked(), list=dir_ids),
                      extension=extension(use=self.ui.chExt.isChecked(),
                                          list=ext_ids),
                      tags=tags(use=self.ui.chTags.isChecked(),
@@ -97,19 +93,19 @@ class SelOpt(QDialog):
                                    file_date=self.ui.dateFile.isChecked()))
         return res
 
-    def  _get_dirs(self):
+    def _get_dir_ids(self):
         if self.ui.chDirs.isChecked():
             lvl = int(self.ui.sbLevel.text())
             idx = self.ctrl.view.dirTree.currentIndex()
             root_id = int(self.ctrl.view.dirTree.model().data(idx, Qt.UserRole)[0])
-            place_id = self.ctrl._cb_places.get_curr_place()[1][0]
+            place_id = self.ctrl.get_place_instance().get_curr_place()[1][0]
 
-            ids = ','.join([str(id[0]) for id in
-                                self.ctrl._dbu.dir_ids_select(root_id, lvl, place_id)])
+            ids = ','.join([str(id_[0]) for id_ in
+                            self.ctrl.get_db_utils().dir_ids_select(root_id, lvl, place_id)])
             return ids
         return None
 
-    def _get_exts(self):
+    def _get_ext_ids( self ):
         if self.ui.chExt.isChecked():
             sel_idx = self.ctrl.view.extList.selectedIndexes()
             model = self.ctrl.view.extList.model()
@@ -125,14 +121,14 @@ class SelOpt(QDialog):
                     idx += self._ext_in_group(id[0])
 
             idx.sort()
-            return ','.join([str(id) for id in idx])
+            return ','.join([str(id_) for id_ in idx])
         return None
 
     def _ext_in_group(self, gr_id):
-        curr = self.ctrl._dbu.select_other('EXT_ID_IN_GROUP', (gr_id,))
+        curr = self.ctrl.get_db_utils().select_other('EXT_ID_IN_GROUP', (gr_id,))
         idx = []
-        for id in curr:
-            idx.append(id[0])
+        for id_ in curr:
+            idx.append(id_[0])
 
         return idx
 
@@ -145,7 +141,7 @@ class SelOpt(QDialog):
                 aux.append(model.data(id_, Qt.UserRole))
 
             aux.sort()
-            return ','.join([str(id) for id in aux])
+            return ','.join([str(id_) for id_ in aux])
 
         return None
 

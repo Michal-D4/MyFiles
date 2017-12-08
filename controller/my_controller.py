@@ -34,6 +34,9 @@ class MyController():
     def get_db_utils(self):
         return self._dbu
 
+    def get_place_instance(self):
+        return self._cb_places
+
     @staticmethod
     def _yield_files(root, extensions):
         """

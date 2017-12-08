@@ -16,7 +16,7 @@ Selects = {'TREE':
                 ' '.join(('UNION ALL SELECT t.DirID, t.Path, t.ParentID,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID')),
-                'and lvl <= {}) SELECT * FROM x order by ParentID desc, Path;',
+                'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
            'PLACES': 'select * from Places;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
