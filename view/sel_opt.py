@@ -23,7 +23,7 @@ class SelOpt(QDialog):
         self.ui.chDate.stateChanged.connect(self.date_toggle)
         self.ui.chDirs.stateChanged.connect(self.dir_toggle)
         self.ui.chExt.stateChanged.connect(self.ext_toggle)
-        self.ui.chTags.stateChanged.connect(self.tag_togle)
+        self.ui.chTags.stateChanged.connect(self.tag_toggle)
 
     def author_toggle(self):
         state = self.ui.chAuthor.isChecked()
@@ -36,12 +36,13 @@ class SelOpt(QDialog):
     def date_toggle(self):
         state = self.ui.chDate.isChecked()
         self.ui.eDate.setEnabled(state)
-        self.ui.dateAfter.setEnabled(state)
-        self.ui.dateBefore.setEnabled(state)
         self.ui.dateBook.setEnabled(state)
         self.ui.dateFile.setEnabled(state)
 
-        if not state:
+        if state:
+            if not self.ui.eDate.text():
+                self.ui.eDate.setText('')
+        else:
             self.ui.eDate.setText('')
 
     def dir_toggle(self):
@@ -61,7 +62,7 @@ class SelOpt(QDialog):
             self.ui.eExt.setEnabled(False)
             self.ui.eExt.setText('')
 
-    def tag_togle(self):
+    def tag_toggle( self ):
         state = self.ui.chTags.isChecked()
         self.ui.tagAll.setEnabled(state)
         self.ui.tagAny.setEnabled(state)
@@ -72,19 +73,23 @@ class SelOpt(QDialog):
             self.ui.eTags.setText('')
 
     def get_result(self):
-        # result = namedtuple('result', ['folder', ['path', 'level'],
-        #                                'extension', 'tags', ['all', 'list'],
-        #                                'authors', 'date', ['book', 'after']])
-        result = namedtuple('result', ['dir', 'extension', 'tags', 'authors', 'date'])
-        res = result(dir=(self.ui.chDirs.isChecked(), self.ui.sbLevel.text()),
-                     extension=(self.ui.chExt.isChecked() and
-                                self.ui.eExt.text().strip() != ''),
-                     tags=((self.ui.chTags.isChecked() and
-                            self.ui.eTags.text().strip() != ''),
-                           self.ui.tagAll.isChecked()),
-                     authors=(self.ui.chAuthor.isChecked() and
-                              self.ui.eAuthors.text().strip() != ''),
-                     date=(self.ui.chDate.isChecked(), self.ui.eDate.text(),
-                           self.ui.dateFile.isChecked(), self.ui.dateAfter.isChecked()))
+        result = namedtuple('result', 'dir extension tags authors date')
+        dir = namedtuple('dir', 'use level')
+        extension = namedtuple('extension', 'use list')
+        tags = namedtuple('tags', 'use match_all list')
+        authors = namedtuple('authors', 'use list')
+        doc_date = namedtuple('not_older', 'use date file_date')
+        res = result(dir=dir(use=self.ui.chDirs.isChecked(),
+                             level=self.ui.sbLevel.text()),
+                     extension=extension(use=self.ui.chExt.isChecked(),
+                                         list=self.ui.eExt.text()),
+                     tags=tags(use=self.ui.chTags.isChecked(),
+                               list=self.ui.eTags.text(),
+                               match_all=self.ui.tagAll.isChecked()),
+                     authors=authors(use=self.ui.chAuthor.isChecked(),
+                                     list=self.ui.eAuthors.text()),
+                     date=doc_date(use=self.ui.chDate.isChecked(),
+                                   date=self.ui.eDate.text(),
+                                   file_date=self.ui.dateFile.isChecked()))
         return res
 

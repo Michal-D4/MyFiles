@@ -510,7 +510,7 @@ class MyController():
         with open(file_name, 'rb') as a_file:
             line = next(a_file)
             if not self._cb_places.get_curr_place()[1][1] in line:
-                # todo : in case of 'other place' check if place defined in the first line of file
+                # do : in case of 'other place' check if place defined in the first line of file
                 # 1) if not defined - possible action:
                 #    a)  show message and stop action
                 #    b)  ???
