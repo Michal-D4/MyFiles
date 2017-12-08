@@ -9,6 +9,15 @@ Selects = {'TREE':
                           'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT * FROM x order by ParentID desc, Path;',
                 ') SELECT * FROM x order by ParentID desc, Path;'),
+           'DIR_IDS':
+               ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
+                'FROM Dirs WHERE DirID = {} and PlaceId = {}',
+                'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
+                ' '.join(('UNION ALL SELECT t.DirID, t.Path, t.ParentID,',
+                          'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
+                          'ON t.ParentID = x.DirID')),
+                'and lvl <= {}) SELECT * FROM x order by ParentID desc, Path;',
+                ') SELECT DirID FROM x order by DirID;'),
            'PLACES': 'select * from Places;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'PATH': 'select Path from Dirs where DirID = ?;',
@@ -88,6 +97,7 @@ class DBUtils:
         Select tree of directories starting from dir_id up to level
         :param dir_id: - starting directory, 0 - from root
         :param level: - max level of tree, 0 - all levels
+        :param place_id:
         :return: cursor of directories
         """
         sql = DBUtils.generate_sql(dir_id, level, place_id)
@@ -96,9 +106,23 @@ class DBUtils:
 
         return self.curs
 
+    def dir_ids_select(self, dir_id, level, place_id):
+        """
+        Select tree of directories starting from dir_id up to level
+        :param dir_id: - starting directory, 0 - from root
+        :param level: - max level of tree, 0 - all levels
+        :param place_id:
+        :return: list of directories ids
+        """
+        sql = DBUtils.generate_sql(dir_id, level, place_id, sql='DIR_IDS')
+
+        self.curs.execute(sql)
+
+        return self.curs.fetchall()
+
     @staticmethod
-    def generate_sql(dir_id, level, place_id):
-        tree_sql = Selects['TREE']
+    def generate_sql(dir_id, level, place_id, sql='TREE'):
+        tree_sql = Selects[sql]
         tmp = (tree_sql[0], tree_sql[1].format(dir_id, place_id),
                tree_sql[2].format(dir_id, place_id), tree_sql[3],
                tree_sql[4].format(level), tree_sql[5])

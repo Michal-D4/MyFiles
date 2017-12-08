@@ -26,6 +26,7 @@ class MyController():
         self._cb_places = None
         self.view = view.ui_main
         self.favorites = False
+        self._opt = SelOpt(self)
 
     def get_places_view(self):
         return self.view.cb_places
@@ -100,6 +101,8 @@ class MyController():
             self._open_folder()
         elif sender == 'advanced_file_list':
             self.advanced_file_list()
+        elif sender == 'get_sel_files':
+            self.get_sel_files()
         elif sender == 'Favorites':
             self.favorite_file_list()
         elif sender == 'Author Remove unused':
@@ -174,10 +177,13 @@ class MyController():
         5) date of file/book creation - after/before
         :return:
         """
-        opt = SelOpt(self)
-        opt.exec_()
-        res = opt.get_result()
-        print('|--> advanced_file_list', res)
+        if self._opt.exec_():
+            res = self._opt.get_result()
+            print('|--> ', res)
+
+    def get_sel_files(self):
+        res = self._opt.get_result()
+        print('|--> ', res)
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()

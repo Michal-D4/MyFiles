@@ -21,19 +21,26 @@ class MainFlow(QMainWindow):
 
         self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
         self.ui_main.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
-        self.ui_main.actionGetFiles.triggered.connect(self.go)
+        self.ui_main.actionGetFiles.triggered.connect(lambda:
+                                                      self.change_data_signal.emit('get_sel_files', ()))
         self.ui_main.actionFavorites.triggered.connect(lambda:
                                                        self.change_data_signal.emit('Favorites', ()))
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.clicked.connect(self.file_changed)
         self.ui_main.filesList.resizeEvent = self.resize_event
-        self.ui_main.filesList.doubleClicked.connect(lambda: self.
-                                                     change_data_signal.emit('Open', ()))
+        self.ui_main.filesList.doubleClicked.connect(lambda:
+                                                     self.change_data_signal.emit('Open', ()))
         menu = QMenu(self)
-        menu.addAction('Selection options')
-        menu.addAction('Selection options 2')
+        opt1 = menu.addAction('options 1')
+        opt2 = menu.addAction('options 2')
         self.ui_main.btnOption.setMenu(menu)
+
+        menu2 = QMenu(self)
+        sel_opt = menu2.addAction('Selection options')
+        self.ui_main.btnGetFiles.setMenu(menu2)
+
+        sel_opt.triggered.connect(lambda: self.change_data_signal.emit('advanced_file_list', ()))
 
         self.setup_context_menu()
 
@@ -149,10 +156,6 @@ class MainFlow(QMainWindow):
 
             self.ui_main.splitter_files.setStretchFactor(0, 5)
             self.ui_main.splitter_files.setStretchFactor(1, 2)
-
-    def go(self):
-        params = ()
-        self.change_data_signal.emit('advanced_file_list', params)
 
     def first_open_data_base(self):
         """

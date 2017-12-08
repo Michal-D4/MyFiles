@@ -3,6 +3,7 @@
 from collections import namedtuple
 
 from PyQt5.QtWidgets import QDialog
+from PyQt5.QtCore import Qt
 from view.ui_sel_opt import Ui_SelOpt
 # from controller.my_controller import MyController
 
@@ -41,7 +42,7 @@ class SelOpt(QDialog):
 
         if state:
             if not self.ui.eDate.text():
-                self.ui.eDate.setText('')
+                self.ui.eDate.setText('5')
         else:
             self.ui.eDate.setText('')
 
@@ -62,7 +63,7 @@ class SelOpt(QDialog):
             self.ui.eExt.setEnabled(False)
             self.ui.eExt.setText('')
 
-    def tag_toggle( self ):
+    def tag_toggle(self):
         state = self.ui.chTags.isChecked()
         self.ui.tagAll.setEnabled(state)
         self.ui.tagAny.setEnabled(state)
@@ -74,22 +75,77 @@ class SelOpt(QDialog):
 
     def get_result(self):
         result = namedtuple('result', 'dir extension tags authors date')
-        dir = namedtuple('dir', 'use level')
+        dir = namedtuple('dir', 'use list')
         extension = namedtuple('extension', 'use list')
         tags = namedtuple('tags', 'use match_all list')
         authors = namedtuple('authors', 'use list')
         doc_date = namedtuple('not_older', 'use date file_date')
-        res = result(dir=dir(use=self.ui.chDirs.isChecked(),
-                             level=self.ui.sbLevel.text()),
+        ext_ids = self._get_exts()
+        dir_ids = self._get_dirs()
+        tag_ids = self._get_items_id(self.ctrl.view.tagsList)
+        author_ids = self._get_items_id(self.ctrl.view.authorsList)
+        res = result(dir=dir(use=self.ui.chDirs.isChecked(), list=dir_ids),
                      extension=extension(use=self.ui.chExt.isChecked(),
-                                         list=self.ui.eExt.text()),
+                                         list=ext_ids),
                      tags=tags(use=self.ui.chTags.isChecked(),
-                               list=self.ui.eTags.text(),
+                               list=tag_ids,
                                match_all=self.ui.tagAll.isChecked()),
                      authors=authors(use=self.ui.chAuthor.isChecked(),
-                                     list=self.ui.eAuthors.text()),
+                                     list=author_ids),
                      date=doc_date(use=self.ui.chDate.isChecked(),
                                    date=self.ui.eDate.text(),
                                    file_date=self.ui.dateFile.isChecked()))
         return res
+
+    def  _get_dirs(self):
+        if self.ui.chDirs.isChecked():
+            lvl = int(self.ui.sbLevel.text())
+            idx = self.ctrl.view.dirTree.currentIndex()
+            root_id = int(self.ctrl.view.dirTree.model().data(idx, Qt.UserRole)[0])
+            place_id = self.ctrl._cb_places.get_curr_place()[1][0]
+
+            ids = ','.join([str(id[0]) for id in
+                                self.ctrl._dbu.dir_ids_select(root_id, lvl, place_id)])
+            return ids
+        return None
+
+    def _get_exts(self):
+        if self.ui.chExt.isChecked():
+            sel_idx = self.ctrl.view.extList.selectedIndexes()
+            model = self.ctrl.view.extList.model()
+            aux = []
+            for id_ in sel_idx:
+                aux.append(model.data(id_, Qt.UserRole))
+
+            idx = []
+            for id in aux:
+                if id[0] > 1000:
+                    idx.append(id[0]-1000)
+                else:
+                    idx += self._ext_in_group(id[0])
+
+            idx.sort()
+            return ','.join([str(id) for id in idx])
+        return None
+
+    def _ext_in_group(self, gr_id):
+        curr = self.ctrl._dbu.select_other('EXT_ID_IN_GROUP', (gr_id,))
+        idx = []
+        for id in curr:
+            idx.append(id[0])
+
+        return idx
+
+    def _get_items_id(self, view):
+        if self.ui.chTags.isChecked():
+            sel_idx = view.selectedIndexes()
+            model = view.model()
+            aux = []
+            for id_ in sel_idx:
+                aux.append(model.data(id_, Qt.UserRole))
+
+            aux.sort()
+            return ','.join([str(id) for id in aux])
+
+        return None
 

@@ -123,10 +123,13 @@
    <property name="text">
     <string>use selected extinsions</string>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QLineEdit" name="eExt">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
@@ -162,10 +165,13 @@
    <property name="text">
     <string>use selected key words</string>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QLineEdit" name="eTags">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
@@ -217,7 +223,7 @@
   </widget>
   <widget class="QRadioButton" name="tagAll">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
@@ -239,7 +245,7 @@
   </widget>
   <widget class="QRadioButton" name="tagAny">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
@@ -427,7 +433,6 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="grDate1"/>
   <buttongroup name="grAuthors"/>
   <buttongroup name="grDate2"/>
  </buttongroups>
