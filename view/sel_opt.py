@@ -78,8 +78,8 @@ class SelOpt(QDialog):
         doc_date = namedtuple('not_older', 'use date file_date')
         ext_ids = self._get_ext_ids()
         dir_ids = self._get_dir_ids()
-        tag_ids = self._get_items_id(self.ctrl.view.tagsList)
-        author_ids = self._get_items_id(self.ctrl.view.authorsList)
+        tag_ids = self._get_tags_id()
+        author_ids = self._get_authors_id()
         res = result(dir=dir_(use=self.ui.chDirs.isChecked(), list=dir_ids),
                      extension=extension(use=self.ui.chExt.isChecked(),
                                          list=ext_ids),
@@ -132,16 +132,39 @@ class SelOpt(QDialog):
 
         return idx
 
-    def _get_items_id(self, view):
+    def _get_tags_id(self):
         if self.ui.chTags.isChecked():
-            sel_idx = view.selectedIndexes()
-            model = view.model()
-            aux = []
-            for id_ in sel_idx:
-                aux.append(model.data(id_, Qt.UserRole))
+            tags = self._get_items_id(self.ctrl.view.tagsList)
+            print('----> selected tags |{}|'.format(tags))
 
-            aux.sort()
-            return ','.join([str(id_) for id_ in aux])
+            if tags:
+                if self.ui.tagAll.isChecked():
+                    num = len(tags.split(','))
+                    res = self.ctrl.get_db_utils().select_other2('DIR_TAGS_ALL',
+                                                                 (tags, num)).fetchall()
+                else:
+                    res = self.ctrl.get_db_utils().select_other2('FILE_IDS_TAGS',
+                                                                 (tags,)).fetchall()
+
+                return ','.join(str(ix[0]) for ix in res)
+
+            return ''
 
         return None
+
+    def _get_authors_id(self):
+        if self.ui.chAuthor.isChecked():
+            return self._get_items_id(self.ctrl.view.authorsList)
+
+        return None
+
+    @staticmethod
+    def _get_items_id(view):
+        sel_idx = view.selectedIndexes()
+        model = view.model()
+        aux = []
+        for id_ in sel_idx:
+            aux.append(model.data(id_, Qt.UserRole))
+        aux.sort()
+        return ','.join([str(id_) for id_ in aux])
 

@@ -18,6 +18,8 @@ Selects = {'TREE':
                           'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
+           'DIR_TAGS_ALL': ' '.join(('select FileID from FileTag where TagID in ({})',
+                                     'group by FileID having count(*) = {};')),
            'PLACES': 'select * from Places;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'PATH': 'select Path from Dirs where DirID = ?;',
@@ -35,6 +37,7 @@ Selects = {'TREE':
            'TAG_FILES': 'select * from FileTag where TagID=:tag_id;',
            'TAGS_BY_NAME': 'select Tag, TagID from Tags where Tag in ("{}");',
            'TAG_FILE': 'select * from FileTag where FileID = ? and TagID =?;',
+           'FILE_IDS_TAGS': 'select FileID from FileTag where TagID in ({}) order by FileID;',
            'AUTHORS': 'select Author, AuthorID from Authors order by Author;',
            'FILE_AUTHORS': ' '.join(('select Author, AuthorID from Authors where AuthorID in',
                                      '(select AuthorID from FileAuthor where FileID = ?);')),
@@ -141,8 +144,8 @@ class DBUtils:
 
     def select_other2(self, sql, params=()):
         print('|---> select_other2', sql, params)
-        print(Selects[sql].format(params))
-        self.curs.execute(Selects[sql].format(params))
+        print(Selects[sql].format(*params))
+        self.curs.execute(Selects[sql].format(*params))
         return self.curs
 
     def insert_other(self, sql, data):
