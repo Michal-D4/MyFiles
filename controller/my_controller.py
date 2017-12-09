@@ -277,7 +277,7 @@ class MyController():
                 self._dbu.delete_other(sqls[2], (item,))
 
     def add_item_links(self, items2add, file_id, sqls):
-        add_ids = self._dbu.select_other2(sqls[0], '","'.join(items2add)).fetchall()
+        add_ids = self._dbu.select_other2(sqls[0], ('","'.join(items2add),)).fetchall()
         sel_items = [item[0] for item in add_ids]
         not_in_ids = [item for item in items2add if not (item in sel_items)]
 
