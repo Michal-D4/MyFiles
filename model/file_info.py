@@ -18,7 +18,7 @@ FILE_AUTHOR = 'select * from FileAuthor where FileID=? and AuthorID=?'
 
 INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
 
-INSERT_COMMENT = 'insert into Comments (IssueDate, BookTitle, Comment) values (?, ?, ?);'
+INSERT_COMMENT = 'insert into Comments (BookTitle, Comment) values (?, ?);'
 
 FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
                                'from Files f, Dirs d',
@@ -29,7 +29,8 @@ UPDATE_FILE = ' '.join(('update Files set',
                         'CommentID = :comm_id,',
                         'Year = :year,',
                         'Pages = :page,',
-                        'Size = :size',
+                        'Size = :size,',
+                        'IssueDate = :issue_date',
                         'where FileID = :file_id;'))
 
 E = Event()
@@ -97,14 +98,15 @@ class FileInfo(Thread):
                 book_title = self.file_info[5]
             except IndexError:
                 print('IndexError ', len(self.file_info))
-            self.cursor.execute(INSERT_COMMENT, (issue_date, book_title, ''))
+            self.cursor.execute(INSERT_COMMENT, (book_title, ''))
             self.conn.commit()
             comm_id = self.cursor.lastrowid
             pages = self.file_info[2]
         else:
             comm_id = 0
             pages = ''
-        return comm_id, pages
+            issue_date = ''
+        return comm_id, pages, issue_date
 
     def get_file_info(self, full_file_name):
         """
@@ -160,13 +162,14 @@ class FileInfo(Thread):
         :return: None
         """
         self.get_file_info(full_file_name)
-        comm_id, pages = self._insert_comment()
+        comm_id, pages, issue_date = self._insert_comment()
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
-                                              'year': self.file_info[1],
-                                              'page': pages,
-                                              'size': self.file_info[0],
-                                              'file_id': file_id})
+                                          'year': self.file_info[1],
+                                          'page': pages,
+                                          'size': self.file_info[0],
+                                          'issue_date': issue_date,
+                                          'file_id': file_id})
         self.conn.commit()
         if len(self.file_info) > 3 and self.file_info[3]:
             self.insert_author(file_id)

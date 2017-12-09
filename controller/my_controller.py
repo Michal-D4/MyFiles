@@ -3,6 +3,7 @@
 import sqlite3
 import os
 import webbrowser
+from collections import namedtuple
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel
@@ -217,7 +218,7 @@ class MyController():
     def _open_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        file_id, dir_id, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
         if f_idx.column() == 0:
             path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
             full_file_name = os.path.join(path[0], file_name)
@@ -236,12 +237,12 @@ class MyController():
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
-        file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
 
         titles = ('Enter new tags separated by commas',
                   'Select tags from list', 'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        sel_tags = self._dbu.select_other('FILE_TAGS', (file_id,)).fetchall()
+        sel_tags = self._dbu.select_other('FILE_TAGS', (u_data[0],)).fetchall()
 
         edit_tags = ItemEdit(titles,
                              [tag[0] for tag in tag_list],
@@ -252,10 +253,10 @@ class MyController():
             sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'),
                         ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
             self.save_edited_items(new_items=res, old_items=sel_tags,
-                                   file_id=file_id, sql_list=sql_list)
+                                   file_id=u_data[0], sql_list=sql_list)
 
             self._populate_tag_list()
-            self._populate_comment_field((file_id, _, comment_id))
+            self._populate_comment_field(u_data)
 
     def save_edited_items(self, new_items, old_items, file_id, sql_list):
         old_words_set = set([tag[0] for tag in old_items])
@@ -290,15 +291,15 @@ class MyController():
 
     def _edit_authors(self):
         """
-        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID)
+        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, IssueDate)
         """
         curr_idx = self.view.filesList.currentIndex()
-        file_id, _, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole) # file_id, _, comment_id, _
 
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
         authors = self._dbu.select_other('AUTHORS').fetchall()
-        sel_authors = self._dbu.select_other('FILE_AUTHORS', (file_id,)).fetchall()
+        sel_authors = self._dbu.select_other('FILE_AUTHORS', (u_data[0],)).fetchall()
 
         edit_authors = ItemEdit(titles,
                                 [tag[0] for tag in authors],
@@ -308,33 +309,39 @@ class MyController():
             res = edit_authors.get_result()
             sql_list = (('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'),
                         ('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
-            self.save_edited_items(new_items=res, old_items=sel_authors, file_id=file_id, sql_list=sql_list)
+            self.save_edited_items(new_items=res, old_items=sel_authors,
+                                   file_id=u_data[0], sql_list=sql_list)
 
             self._populate_author_list()
-            self._populate_comment_field((file_id, _, comment_id))
+            self._populate_comment_field(u_data)
 
     def _edit_comment_item(self, to_update, item_no):
-        file_id, _, comment_id, comment = self.check_existence()
-        date_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
-                                                 '', QLineEdit.Normal, comment[item_no])
+        checked = self.check_existence()
+        print('==-> ', to_update, checked, item_no, getattr(checked, item_no))
+        data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
+                                                 '', QLineEdit.Normal, getattr(checked, item_no))
+        print('---> ', data_)
         if ok_pressed:
-            self._dbu.update_other(to_update[0], (date_, comment_id))
-            self._populate_comment_field((file_id, _, comment_id))
+            self._dbu.update_other(to_update[0], (data_, checked.comment_id))
+            self._populate_comment_field(checked[:4]) # file_id, dir_id, comment_id, issue_date
 
     def check_existence(self):
         """
-        Check if comment record already created for filr
-        :return: (file_id, dir_id, comment_id, (comment, book title, issue date))
+        Check if comment record already created for file
+        :return: (file_id, dir_id, comment_id, issue_date, comment, book_title)
         """
+        u_type = namedtuple('file_comment',
+                            'file_id dir_id comment_id issue_date comment book_title')
         curr_idx = self.view.filesList.currentIndex()
-        file_id, dir_id, comment_id = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-        comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
+        #  user_data = (file_id, dir_id, comment_id, issue_date)
+        user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
         if not comment:
-            comment = ('', '', '')
+            comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
-            self._dbu.update_other('FILE_COMMENT', (comment_id, file_id))
-            self._refresh_file_list(curr_idx)
-        return file_id, dir_id, comment_id, comment
+            self._dbu.update_other('FILE_COMMENT', (comment_id, user_data[0]))
+            self._refresh_file_list(curr_idx)   # need, to have comment_id in model
+        return u_type._make(user_data + comment)
 
     def _refresh_file_list(self, curr_idx):
         if self.favorites:
@@ -349,13 +356,13 @@ class MyController():
         self.view.filesList.selectionModel().select(f_idx, QItemSelectionModel.Select)
 
     def _edit_date(self):
-        self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 2)
+        self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 'issue_date')
 
     def _edit_title(self):
-        self._edit_comment_item(('BOOK_TITLE', 'Input book title'), 1)
+        self._edit_comment_item(('BOOK_TITLE', 'Input book title'), 'book_title')
 
     def _edit_comment(self):
-        self._edit_comment_item(('COMMENT', 'Input comment'), 0)
+        self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -398,13 +405,14 @@ class MyController():
 
     def _show_files(self, files, model):
         for ff in files:
-            # ff[:3] = [FileID, DirID, CommentID]
-            # ff[:3] = [FileName, Year, Pages, Size]
-            model.append_row(ff[3:], ff[:3])
+            # ff[:4] = [FileName, Year, Pages, Size]
+            # ff[4:] = [FileID, DirID, CommentID, IssueDate]
+            model.append_row(ff[:4], ff[4:])
 
         self.view.filesList.setModel(model)
 
     def _populate_comment_field(self, data):
+        print('|--> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
@@ -414,17 +422,16 @@ class MyController():
 
             authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
 
-
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
             else:
-                comment = ('','','')
+                comment = ('','')
             self.view.commentField.setText(''.join((
                 '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.
                     format(', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'.
                     format(', '.join([author[0] for author in authors])),
-                '<p><a href="Edit date">Issue date</a>: {}</p>'.format(comment[2]),
+                '<p><a href="Edit date">Issue date</a>: {}</p>'.format(data[3]),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.
                     format(comment[0]))))

@@ -16,6 +16,7 @@ CommentID INTEGER,
 Year TEXT,
 Pages INTEGER,
 Size INTEGER,
+IssueDate TEXT,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID),
 FOREIGN KEY(CommentID) REFERENCES Comments(CommentID),
 FOREIGN KEY(ExtID) REFERENCES Extensions(ExtID)
@@ -43,8 +44,8 @@ Tag TEXT
     ''',
     '''
 CREATE TABLE IF NOT EXISTS FileTag (
- FileID INTEGER NOT NULL,
- TagID INTEGER NOT NULL
+FileID INTEGER NOT NULL,
+TagID INTEGER NOT NULL
 );
     ''',
     'CREATE UNIQUE INDEX IF NOT EXISTS FileTagIdx1 ON FileTag(FileID, TagID);',
@@ -84,14 +85,15 @@ GroupName TEXT
 CREATE TABLE IF NOT EXISTS Comments (
 CommentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Comment TEXT,
-BookTitle TEXT,
-IssueDate TEXT
+BookTitle TEXT
 ); ''',
     'CREATE TABLE IF NOT EXISTS Favorites (FileID INTEGER NOT NULL);',
     'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
     'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(PlaceId, ExtID);',
-    'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(PlaceId, DirID);'
+    'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(PlaceId, DirID);',
+    'CREATE INDEX IF NOT EXISTS Files_Year ON Files(PlaceId, Year);',
+    'CREATE INDEX IF NOT EXISTS Files_IssueDate ON Files(PlaceId, IssueDate);'
 )
 
 
