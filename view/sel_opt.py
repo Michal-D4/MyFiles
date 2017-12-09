@@ -135,8 +135,6 @@ class SelOpt(QDialog):
     def _get_tags_id(self):
         if self.ui.chTags.isChecked():
             tags = self._get_items_id(self.ctrl.view.tagsList)
-            print('----> selected tags |{}|'.format(tags))
-
             if tags:
                 if self.ui.tagAll.isChecked():
                     num = len(tags.split(','))
@@ -145,7 +143,6 @@ class SelOpt(QDialog):
                 else:
                     res = self.ctrl.get_db_utils().select_other2('FILE_IDS_TAGS',
                                                                  (tags,)).fetchall()
-
                 return ','.join(str(ix[0]) for ix in res)
 
             return ''
