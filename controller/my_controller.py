@@ -21,12 +21,15 @@ DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
 
 class MyController():
+
+    FOLDER, FAVORITE, ADVANCE = range(3)
+
     def __init__(self, view):
         self._connection = None
         self._dbu = None
         self._cb_places = None
         self.view = view.ui_main
-        self.favorites = False
+        self.file_list_source = MyController.FOLDER
         self._opt = SelOpt(self)
 
     def get_places_view(self):
@@ -120,6 +123,15 @@ class MyController():
         elif sender == 'Dirs Update tree':
             self._dir_update()
 
+    def author_remove_unused(self):
+        pass
+
+    def tag_remove_unused(self):
+        pass
+
+    def ext_remove_unused(self):
+        pass
+
     def ext_create_group(self):
         sel_model_idx = self.view.extList.selectedIndexes()
         model = self.view.extList.model()
@@ -165,7 +177,7 @@ class MyController():
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
-            self.favorites = True
+            self.file_list_source = MyController.FAVORITE
             self._show_files(files, model)
             self.view.statusbar.showMessage('Favorite files')
         else:
@@ -183,12 +195,17 @@ class MyController():
         :return:
         """
         if self._opt.exec_():
-            res = self._opt.get_result()
-            print('|--> ', res)
+            self.get_sel_files()
 
     def get_sel_files(self):
+        self.file_list_source = MyController.ADVANCE
         res = self._opt.get_result()
         print('|--> ', res)
+        model = TableModel()
+        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
+        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place()[1][0]).fetchall()
+        print(curs)
+        self._show_files(curs, model)
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
@@ -197,19 +214,22 @@ class MyController():
 
     def _delete_file(self):
         f_idx = self.view.filesList.currentIndex()
-        file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
-        if self.favorites:
-            self._dbu.delete_other('FAVORITES', (file_id,))
+        u_data = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        if self.file_list_source == MyController.FAVORITE:
+            self._dbu.delete_other('FAVORITES', (u_data[0],))
             self.favorite_file_list()
-        else:
-            self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_id,))
-            self._dbu.delete_other('TAG_FILE_BY_FILE', (file_id,))
-            self._dbu.delete_other('COMMENT', (comment_id,))
-            self._dbu.delete_other('FILE', (file_id,))
+            return
 
+        self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
+        self._dbu.delete_other('TAG_FILE_BY_FILE', (u_data[0],))
+        self._dbu.delete_other('COMMENT', (u_data[2],))
+        self._dbu.delete_other('FILE', (u_data[0],))
+        if self.file_list_source == MyController.FOLDER:
             idx = self.view.dirTree.currentIndex()
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
+        else:
+            self.get_sel_files()
 
     def _open_folder(self):
         idx = self.view.dirTree.currentIndex()
@@ -345,12 +365,14 @@ class MyController():
         return u_type._make(user_data + comment)
 
     def _refresh_file_list(self, curr_idx):
-        if self.favorites:
+        if self.file_list_source == MyController.FAVORITE:
             self.favorite_file_list()
-        else:
+        elif self.file_list_source == MyController.FOLDER:
             idx = self.view.dirTree.currentIndex()
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
+        else:
+            self.get_sel_files()
 
         self.view.filesList.setCurrentIndex(curr_idx)
         f_idx = self.view.filesList.model().index(curr_idx.row(), 0)
@@ -392,7 +414,7 @@ class MyController():
         :param dir_idx:
         :return:
         """
-        self.favorites = False
+        self.file_list_source = MyController.FOLDER
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
         if dir_idx:

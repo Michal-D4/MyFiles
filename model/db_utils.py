@@ -1,4 +1,5 @@
 # model/db_utils.py
+import datetime
 
 Selects = {'TREE':
                ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
@@ -18,6 +19,16 @@ Selects = {'TREE':
                           'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
+           'ADV_SELECT':
+                (
+                    'and DirID in ({})',
+                    'and ExtID in ({})',
+                    'and FileID in ({})',
+                    'and FileDate > {}',
+                    'and IssueDate > {}',
+                    ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
+                              'CommentID, IssueDate from Files where PlaceId = {}'))
+                 ),
            'DIR_TAGS_ALL': ' '.join(('select FileID from FileTag where TagID in ({})',
                                      'group by FileID having count(*) = {};')),
            'PLACES': 'select * from Places;',
@@ -93,6 +104,67 @@ class DBUtils:
     def __init__(self, connection):
         self.conn = connection
         self.curs = connection.cursor()
+
+    def advanced_selection(self, param, cur_place_id):
+        print('|---> advanced_selection', param)
+        # 0 param.dir.use = True
+        # 1 param.extension.use = True
+        # 2 param.tags.use = True
+        # 3 param.authors.use = True
+        # 4 param.date.use = True
+        # 4 param.date.file_date = True
+        # 4 param.date.date = '2017-12-09'
+
+        #0 DirID     dir=dir             (use=True, list='10,11,12'),
+        #1 ExtID     extension=extension (use=True, list='1,3,4'),
+        #2 FileID    tags=tags           (use=True, match_all=True, list='1,2'),
+        #2 FileID    authors=authors     (use=True, list='3,18,19'),
+        #3 FileDate  date=not_older      (use=True, date='5', file_date=True))
+        #4 IssueDate date=not_older      (use=True, date='5', file_date=False))
+
+        sql = self.generate_adv_sql(cur_place_id, param)
+        print(sql)
+
+        self.curs.execute(sql)
+        return self.curs
+
+    @staticmethod
+    def generate_adv_sql(cur_place_id, param):
+        print(Selects['ADV_SELECT'])
+        print('cur_place_id:', cur_place_id)
+        print(param)
+        sql_l = [Selects['ADV_SELECT'][5].format(cur_place_id)]
+
+        if param.dir.use:
+            sql_l.append(Selects['ADV_SELECT'][0].format(param.dir.list))
+
+        if param.extension.use and param.extension.list:
+            sql_l.append(Selects['ADV_SELECT'][1].format(param.extension.list))
+
+        if param.tags.use and param.authors.use:
+            t1 = set(param.tags.list.split(','))
+            t2 = set(param.authors.list.split(','))
+            tmp = t1.intersection(t2)
+            if tmp:
+                sql_l.append(Selects['ADV_SELECT'][2].format(','.join(tmp)))
+
+        if param.tags.use and param.tags.list:
+            sql_l.append(Selects['ADV_SELECT'][2].format(param.tags.list))
+
+        if param.authors.use and param.authors.list:
+            sql_l.append(Selects['ADV_SELECT'][2].format(param.authors.list))
+
+        if param.date.use:
+            tt = datetime.date.today()
+            tt = tt.replace(year=tt.year - int(param.date.date))
+            if param.date.file_date:
+                sql_l.append(Selects['ADV_SELECT'][3].format(tt))
+            else:
+                sql_l.append(Selects['ADV_SELECT'][4].format(tt))
+        if len(sql_l) > 1:
+            sql_l.append(';')
+            sql = ' '.join([clause for clause in sql_l])
+        return sql
 
     def dir_tree_select(self, dir_id, level, place_id):
         """
