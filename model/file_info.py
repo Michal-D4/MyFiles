@@ -46,11 +46,11 @@ class LoadFiles(Thread):
 
     def run(self):
         super().run()
-        start_time = datetime.datetime.now()
+        # start_time = datetime.datetime.now()
         # print('|===> LoadFiles start time', start_time)
         files = LoadDBData(self.conn, self.cur_place)
         files.load_data(self.data)
-        end_time = datetime.datetime.now()
+        # end_time = datetime.datetime.now()
         # print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
         E.set()
 
