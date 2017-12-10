@@ -158,6 +158,7 @@ class MyController():
     def _dir_update(self):
         place_ = self._cb_places.get_curr_place()
         self._populate_directory_tree(place_[1][0])
+        self._populate_ext_list()
 
     def favorite_file_list(self):
         model = TableModel()
