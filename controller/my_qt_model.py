@@ -1,5 +1,6 @@
 # controller/my_qt_model.py
 
+from collections import Iterable
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractTableModel
 
 
@@ -177,8 +178,13 @@ class TableModel(QAbstractTableModel):
                 return Qt.AlignRight
 
     def append_row(self, row, user_data=None):
-        if not isinstance(row, tuple):
-            row = (row,)
+        if isinstance(row, str) or not isinstance(row, Iterable):
+            row = (str(row),)
+        else:
+            rr = []
+            for r in row:
+                rr.append(str(r))
+            row = tuple(rr)
 
         self.__data.append(row)
         self.__user_data.append(user_data)
