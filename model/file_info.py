@@ -27,7 +27,7 @@ FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
 
 UPDATE_FILE = ' '.join(('update Files set',
                         'CommentID = :comm_id,',
-                        'Year = :year,',
+                        'FileDate = :year,',
                         'Pages = :page,',
                         'Size = :size,',
                         'IssueDate = :issue_date',

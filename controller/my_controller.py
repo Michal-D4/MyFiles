@@ -405,7 +405,7 @@ class MyController():
 
     def _show_files(self, files, model):
         for ff in files:
-            # ff[:4] = [FileName, Year, Pages, Size]
+            # ff[:4] = [FileName, FileDate, Pages, Size]
             # ff[4:] = [FileID, DirID, CommentID, IssueDate]
             model.append_row(ff[:4], ff[4:])
 

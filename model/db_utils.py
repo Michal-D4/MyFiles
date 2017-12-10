@@ -45,9 +45,9 @@ Selects = {'TREE':
            'AUTHORS_BY_NAME': 'select Author, AuthorID from Authors where Author in ("{}");',
            'AUTHOR_FILE': 'select * from FileAuthor where FileID = ? and AuthorID =?;',
            'FILE_COMMENT': 'select Comment, BookTitle from Comments where CommentID = ?;',
-           'FILES_CURR_DIR': ' '.join(('select FileName, Year, Pages, Size, FileID, DirID,',
+           'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
                                       'CommentID, IssueDate from Files where DirId = ?;')),
-           'FAVORITES': ' '.join(('select FileName, Year, Pages, Size, FileID,',
+           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, FileID,',
                                   'DirID, CommentID, IssueDate from Files where FileID in',
                                   '(select FileID from Favorites);'))
            }

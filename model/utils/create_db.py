@@ -13,10 +13,10 @@ ExtID INTEGER,
 PlaceId INTEGER,
 FileName TEXT,
 CommentID INTEGER,
-Year TEXT,
+FileDate DATE,
 Pages INTEGER,
 Size INTEGER,
-IssueDate TEXT,
+IssueDate DATE,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID),
 FOREIGN KEY(CommentID) REFERENCES Comments(CommentID),
 FOREIGN KEY(ExtID) REFERENCES Extensions(ExtID)
@@ -92,7 +92,7 @@ BookTitle TEXT
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
     'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(PlaceId, ExtID);',
     'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(PlaceId, DirID);',
-    'CREATE INDEX IF NOT EXISTS Files_Year ON Files(PlaceId, Year);',
+    'CREATE INDEX IF NOT EXISTS Files_Date ON Files(PlaceId, FileDate);',
     'CREATE INDEX IF NOT EXISTS Files_IssueDate ON Files(PlaceId, IssueDate);'
 )
 
