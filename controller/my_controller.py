@@ -211,7 +211,7 @@ class MyController():
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
-        file_id, _, comment_id = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        file_id, _, comment_id, _ = self.view.filesList.model().data(f_idx, Qt.UserRole)
         self._dbu.insert_other('FAVORITES', (file_id,))
 
     def _delete_file(self):
@@ -461,7 +461,11 @@ class MyController():
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.
                     format(comment[0]))))
 
-            # todo show path in statusbar here
+            if not self.file_list_source == MyController.FOLDER:
+                f_idx = self.view.filesList.currentIndex()
+                file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+                path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
+                self.view.statusbar.showMessage(path[0])
 
     def _populate_all_widgets(self):
         self._cb_places = Places(self)
