@@ -151,7 +151,7 @@ class TestMyController(unittest.TestCase):
         mock_yield_files.assert_called_once_with('root', 'pdf')
         self.assertEqual(res, ('file_list',))
 
-    @patch.object(my_controller.MyController, '_show_message')
+    @patch.object(my_controller.MyController, 'show_message')
     @patch('controller.my_controller.QFileDialog', spec_set=QFileDialog)
     @patch('controller.my_controller.Places', spec_set=Places)
     def test__read_from_file(self, mock_places, mock_file_dialog, mock_show_message):

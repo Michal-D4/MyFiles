@@ -116,7 +116,7 @@
     <rect>
      <x>20</x>
      <y>80</y>
-     <width>141</width>
+     <width>201</width>
      <height>17</height>
     </rect>
    </property>
@@ -124,20 +124,7 @@
     <string>use selected extinsions</string>
    </property>
    <property name="checked">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="eExt">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>100</y>
-     <width>331</width>
-     <height>20</height>
-    </rect>
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="Line" name="line_2">
@@ -166,20 +153,7 @@
     <string>use selected key words</string>
    </property>
    <property name="checked">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="eTags">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>160</y>
-     <width>331</width>
-     <height>20</height>
-    </rect>
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="Line" name="line_3">
@@ -206,19 +180,6 @@
    </property>
    <property name="text">
     <string>use selected authors</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="eAuthors">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>250</y>
-     <width>331</width>
-     <height>20</height>
-    </rect>
    </property>
   </widget>
   <widget class="QRadioButton" name="tagAll">
@@ -396,6 +357,54 @@
     <string>years</string>
    </property>
   </widget>
+  <widget class="QLabel" name="eExt">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>100</y>
+     <width>331</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLabel { background-color : rgb(255, 255, 127); color : blue; }</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="eTags">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>160</y>
+     <width>331</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLabel { background-color : rgb(255, 255, 127); color : blue; }</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="eAuthors">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>250</y>
+     <width>331</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLabel { background-color : rgb(255, 255, 127); color : blue; }</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
@@ -433,7 +442,7 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="grAuthors"/>
   <buttongroup name="grDate2"/>
+  <buttongroup name="grAuthors"/>
  </buttongroups>
 </ui>

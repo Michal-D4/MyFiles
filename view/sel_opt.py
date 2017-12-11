@@ -2,10 +2,10 @@
 
 from collections import namedtuple
 
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtCore import Qt
 from view.ui_sel_opt import Ui_SelOpt
-# from controller.my_controller import MyController
+# from controller.my_controller import MyController # ImportError: cannot import name 'MyController'
 
 
 class SelOpt(QDialog):
@@ -16,6 +16,9 @@ class SelOpt(QDialog):
 
         self.ctrl = controller
 
+        # self.ext_toggle()
+        # self.tag_toggle()
+
         self.ui.chAuthor.stateChanged.connect(self.author_toggle)
         self.ui.chDate.stateChanged.connect(self.date_toggle)
         self.ui.chDirs.stateChanged.connect(self.dir_toggle)
@@ -23,10 +26,11 @@ class SelOpt(QDialog):
         self.ui.chTags.stateChanged.connect(self.tag_toggle)
 
     def author_toggle(self):
-        state = self.ui.chAuthor.isChecked()
-        self.ui.eAuthors.setEnabled(state)
-        if state and not self.ui.eAuthors.text():
+        if self.ui.chAuthor.isChecked():
             self.ui.eAuthors.setText(self.ctrl.get_selected_items(self.ctrl.view.authorsList))
+            if not self.ui.eAuthors.text():
+                self.ctrl.show_message("No authors selected")
+                self.ui.chAuthor.setChecked(False)
         else:
             self.ui.eAuthors.setText('')
 
@@ -53,21 +57,25 @@ class SelOpt(QDialog):
 
     def ext_toggle(self):
         if self.ui.chExt.isChecked():
-            self.ui.eExt.setEnabled(True)
             self.ui.eExt.setText(self.ctrl.get_selected_items(self.ctrl.view.extList))
+            if not self.ui.eExt.text():
+                self.ctrl.show_message("No extensions selected")
+                self.ui.chExt.setChecked(False)
         else:
-            self.ui.eExt.setEnabled(False)
             self.ui.eExt.setText('')
 
     def tag_toggle(self):
         state = self.ui.chTags.isChecked()
-        self.ui.tagAll.setEnabled(state)
-        self.ui.tagAny.setEnabled(state)
-        self.ui.eTags.setEnabled(state)
         if state:
             self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.view.tagsList))
+            if not self.ui.eTags.text():
+                self.ctrl.show_message("No key words selected")
+                self.ui.chTags.setChecked(False)
         else:
             self.ui.eTags.setText('')
+
+        self.ui.tagAll.setEnabled(state)
+        self.ui.tagAny.setEnabled(state)
 
     def get_result(self):
         result = namedtuple('result', 'dir extension tags authors date')
@@ -76,10 +84,12 @@ class SelOpt(QDialog):
         tags = namedtuple('tags', 'use match_all list')
         authors = namedtuple('authors', 'use list')
         doc_date = namedtuple('not_older', 'use date file_date')
-        ext_ids = self._get_ext_ids()
+
         dir_ids = self._get_dir_ids()
+        ext_ids = self._get_ext_ids()
         tag_ids = self._get_tags_id()
         author_ids = self._get_authors_id()
+
         res = result(dir=dir_(use=self.ui.chDirs.isChecked(), list=dir_ids),
                      extension=extension(use=self.ui.chExt.isChecked(),
                                          list=ext_ids),

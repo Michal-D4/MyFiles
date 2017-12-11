@@ -98,6 +98,7 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'TAG_FILE_BY_FILE': 'delete from FileTag where FileID = ?;',
           'TAG': 'delete from Tags where TagID=:tag_id;'}
 
+
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
 
@@ -133,6 +134,7 @@ class DBUtils:
         print(Selects['ADV_SELECT'])
         print('cur_place_id:', cur_place_id)
         print(param)
+        sql = ''
         sql_l = [Selects['ADV_SELECT'][5].format(cur_place_id)]
 
         if param.dir.use:

@@ -69,7 +69,7 @@ class MyController():
                 self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                    detect_types=DETECT_TYPES)
             else:
-                MyController._show_message("Data base does not exist")
+                MyController.show_message("Data base does not exist")
                 return
 
         self._dbu = DBUtils(self._connection)
@@ -198,14 +198,16 @@ class MyController():
             self.get_sel_files()
 
     def get_sel_files(self):
-        self.file_list_source = MyController.ADVANCE
         res = self._opt.get_result()
-        print('|--> ', res)
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
+
         curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place()[1][0]).fetchall()
-        print(curs)
-        self._show_files(curs, model)
+        if curs:
+            self._show_files(curs, model)
+            self.file_list_source = MyController.ADVANCE
+        else:
+            MyController.show_message("Nothing found. Change you choices.")
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
@@ -246,7 +248,7 @@ class MyController():
             if os.path.isfile(full_file_name):
                 os.startfile(full_file_name)
             else:
-                MyController._show_message("Can't find file {}".format(full_file_name))
+                MyController.show_message("Can't find file {}".format(full_file_name))
         elif f_idx.column() == 2:
             if not file_name:
                 file_name = 0
@@ -459,6 +461,8 @@ class MyController():
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.
                     format(comment[0]))))
 
+            # todo show path in statusbar here
+
     def _populate_all_widgets(self):
         self._cb_places = Places(self)
         self._cb_places.populate_cb_places()
@@ -556,14 +560,14 @@ class MyController():
                 # 2) if defined - possible action:
                 #    a)  - switch to place in file
                 #    b)  - create new place
-                MyController._show_message("The file {} doesn't have data from current place!".
-                                           format(file_name))
+                MyController.show_message("The file {} doesn't have data from current place!".
+                                          format(file_name))
                 a_file = ()
             return a_file
         return ()
 
     @staticmethod
-    def _show_message(message, message_type=QMessageBox.Critical):
+    def show_message( message, message_type=QMessageBox.Critical ):
         box = QMessageBox()
         box.setIcon(message_type)
         box.setText(message)
