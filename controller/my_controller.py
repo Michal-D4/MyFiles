@@ -402,7 +402,7 @@ class MyController():
     def _populate_tag_list(self):
         tag_list = self._dbu.select_other('TAGS')
         model = TableModel()
-        model.setHeaderData(0, Qt.Horizontal, ("Key words",))
+        model.setHeaderData(0, Qt.Horizontal, ("Tags",))
         for tag, id in tag_list:
             model.append_row(tag, id)
         self.view.tagsList.setModel(model)
