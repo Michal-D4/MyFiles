@@ -27,8 +27,9 @@ Selects = {'TREE':
                     'and FileDate > {}',
                     'and IssueDate > {}',
                     ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
-                              'CommentID, IssueDate from Files where PlaceId = {}'))
-                 ),
+                              'CommentID, IssueDate from Files where PlaceId = {}')),
+                    'order by FileName;'
+                ),
            'DIR_TAGS_ALL': ' '.join(('select FileID from FileTag where TagID in ({})',
                                      'group by FileID having count(*) = {};')),
            'PLACES': 'select * from Places;',
@@ -170,7 +171,7 @@ class DBUtils:
             else:
                 sql_l.append(Selects['ADV_SELECT'][4].format(tt))
         if len(sql_l) > 1:
-            sql_l.append(';')
+            sql_l.append(Selects['ADV_SELECT'][6])
             sql = ' '.join([clause for clause in sql_l])
         return sql
 
