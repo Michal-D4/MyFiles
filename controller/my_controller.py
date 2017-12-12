@@ -250,7 +250,10 @@ class MyController():
             path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
             full_file_name = os.path.join(path[0], file_name)
             if os.path.isfile(full_file_name):
-                os.startfile(full_file_name)
+                try:
+                    os.startfile(full_file_name)
+                except OSError:
+                    pass
             else:
                 MyController.show_message("Can't find file {}".format(full_file_name))
         elif f_idx.column() == 2:
