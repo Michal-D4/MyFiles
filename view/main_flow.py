@@ -27,7 +27,6 @@ class MainFlow(QMainWindow):
                                                        self.change_data_signal.emit('Favorites', ()))
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
-        self.ui_main.filesList.clicked.connect(self.file_changed)
         self.ui_main.filesList.resizeEvent = self.resize_event
         self.ui_main.filesList.doubleClicked.connect(lambda:
                                                      self.change_data_signal.emit('Open', ()))
@@ -129,10 +128,6 @@ class MainFlow(QMainWindow):
         for k in range(4):
             self.ui_main.filesList.setColumnWidth(k, ww[k])
         self.ui_main.filesList.blockSignals(False)
-
-    def file_changed(self, curr_idx: QModelIndex):
-        idx_ = self.ui_main.filesList.model().data(curr_idx, Qt.UserRole)
-        self.change_data_signal.emit('commentField', idx_)
 
     def change_place(self, idx):
         self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))

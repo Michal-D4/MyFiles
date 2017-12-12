@@ -124,13 +124,17 @@ class MyController():
             self._dir_update()
 
     def author_remove_unused(self):
-        pass
+        self._dbu.delete_other('UNUSED_AUTHORS', ())
+        self._populate_author_list()
 
     def tag_remove_unused(self):
-        pass
+        self._dbu.delete_other('UNUSED_TAGS', ())
+        self._populate_tag_list()
 
     def ext_remove_unused(self):
-        pass
+        self._dbu.delete_other('UNUSED_EXT', ())
+        self._dbu.delete_other('UNUSED_EXT_GROUP', ())
+        self._populate_ext_list()
 
     def ext_create_group(self):
         sel_model_idx = self.view.extList.selectedIndexes()
@@ -435,6 +439,14 @@ class MyController():
             model.append_row(ff[:4], ff[4:])
 
         self.view.filesList.setModel(model)
+        self.view.filesList.selectionModel().currentRowChanged.connect(self._file_changed)
+        index_ = model.index(0, 0)
+        self.view.filesList.setCurrentIndex(index_)
+        self.view.filesList.activateWindow()
+
+    def _file_changed(self, curr_idx, prev_idx):
+        data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
+        self._populate_comment_field(data)
 
     def _populate_comment_field(self, data):
         print('|--> _populate_comment_field', data)
