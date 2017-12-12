@@ -144,33 +144,34 @@ class DBUtils:
         sql = ''
         sql_l = [Selects['ADV_SELECT'][5].format(cur_place_id)]
 
-        if param.dir.use:
+        if param.dir.use:   # select files by directory tree
             sql_l.append(Selects['ADV_SELECT'][0].format(param.dir.list))
 
         if param.extension.use and param.extension.list:
             sql_l.append(Selects['ADV_SELECT'][1].format(param.extension.list))
 
-        if param.tags.use and param.authors.use:
+        if param.tags.use and param.authors.use:    # by tags and authors
             t1 = set(param.tags.list.split(','))
             t2 = set(param.authors.list.split(','))
             tmp = t1.intersection(t2)
             if tmp:
                 sql_l.append(Selects['ADV_SELECT'][2].format(','.join(tmp)))
 
-        if param.tags.use and param.tags.list:
+        elif param.tags.use and param.tags.list:    # tags, authors not used
             sql_l.append(Selects['ADV_SELECT'][2].format(param.tags.list))
 
-        if param.authors.use and param.authors.list:
+        elif param.authors.use and param.authors.list:  # authors, tags not used
             sql_l.append(Selects['ADV_SELECT'][2].format(param.authors.list))
 
-        if param.date.use:
+        if param.date.use:      # by date
             tt = datetime.date.today()
             tt = tt.replace(year=tt.year - int(param.date.date))
-            if param.date.file_date:
+            if param.date.file_date:    # date of file
                 sql_l.append(Selects['ADV_SELECT'][3].format(tt))
-            else:
+            else:                       # date of book issue
                 sql_l.append(Selects['ADV_SELECT'][4].format(tt))
-        if len(sql_l) > 1:
+
+        if len(sql_l) > 1:      # check if at least one condition applied
             sql_l.append(Selects['ADV_SELECT'][6])
             sql = ' '.join([clause for clause in sql_l])
         return sql
