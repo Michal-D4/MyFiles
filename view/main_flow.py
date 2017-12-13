@@ -29,7 +29,8 @@ class MainFlow(QMainWindow):
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.resizeEvent = self.resize_event
         self.ui_main.filesList.doubleClicked.connect(lambda:
-                                                     self.change_data_signal.emit('Open', ()))
+                                                     self.change_data_signal.
+                                                     emit('File_doubleClicked', ()))
         menu = QMenu(self)
         opt1 = menu.addAction('options 1')
         opt2 = menu.addAction('options 2')
