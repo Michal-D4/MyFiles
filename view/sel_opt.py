@@ -5,6 +5,7 @@ from collections import namedtuple
 from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtCore import Qt
 from view.ui_sel_opt import Ui_SelOpt
+from model.db_utils import PLUS_EXT_ID
 # from controller.my_controller import MyController # ImportError: cannot import name 'MyController'
 
 
@@ -125,8 +126,8 @@ class SelOpt(QDialog):
 
             idx = []
             for id in aux:
-                if id[0] > 1000:
-                    idx.append(id[0]-1000)
+                if id[0] > PLUS_EXT_ID:
+                    idx.append(id[0]-PLUS_EXT_ID)
                 else:
                     idx += self._ext_in_group(id[0])
 
