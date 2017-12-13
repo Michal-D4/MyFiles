@@ -65,10 +65,16 @@ class Places:
             self._view.addItems((x[2] for x in self._places))
 
             loc = socket.gethostname()
-            idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
+            try:
+                idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
+            except StopIteration:
+                idx = 0
 
-            self._curr_place = (idx, self._places[idx], Places.NOT_REMOVAL)
-            self._view.setCurrentIndex(idx)
+            if idx:
+                self._curr_place = (idx, self._places[idx], Places.NOT_REMOVAL)
+                self._view.setCurrentIndex(idx)
+            else:
+                self._curr_place = (0, (0, None, None), Places.NOT_DEFINED)
 
         self._view.blockSignals(False)
 
