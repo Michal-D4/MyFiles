@@ -2,11 +2,10 @@
 
 from collections import namedtuple
 
-from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import Qt
 from view.ui_sel_opt import Ui_SelOpt
 from model.db_utils import PLUS_EXT_ID
-# from controller.my_controller import MyController # ImportError: cannot import name 'MyController'
 
 
 class SelOpt(QDialog):
@@ -16,9 +15,6 @@ class SelOpt(QDialog):
         self.ui.setupUi(self)
 
         self.ctrl = controller
-
-        # self.ext_toggle()
-        # self.tag_toggle()
 
         self.ui.chAuthor.stateChanged.connect(self.author_toggle)
         self.ui.chDate.stateChanged.connect(self.date_toggle)
@@ -125,11 +121,11 @@ class SelOpt(QDialog):
                 aux.append(model.data(id_, Qt.UserRole))
 
             idx = []
-            for id in aux:
-                if id[0] > PLUS_EXT_ID:
-                    idx.append(id[0]-PLUS_EXT_ID)
+            for id_ in aux:
+                if id_[0] > PLUS_EXT_ID:
+                    idx.append(id_[0]-PLUS_EXT_ID)
                 else:
-                    idx += self._ext_in_group(id[0])
+                    idx += self._ext_in_group(id_[0])
 
             idx.sort()
             return ','.join([str(id_) for id_ in idx])

@@ -6,7 +6,6 @@ import ctypes
 import os
 
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
-from view.main_flow import MainFlow
 
 
 class Places:
@@ -100,7 +99,7 @@ class Places:
         :return: True / False
         """
         if self.get_disk_state() == self.NOT_DEFINED:
-            place_info = self._get_place_name(root)     # (place, place state: MOUNTED or NOT_REMOVAL)
+            place_info = self.get_place_name(root)
 
             if self.is_not_registered_place(place_info[0]):
                 self._dbu.update_other('PLACE', (place_info[0], self._curr_place[1][0]))
@@ -112,7 +111,7 @@ class Places:
 
         return False
 
-    def _get_place_name(self, root):
+    def get_place_name(self, root):
         """
         :param root: any path, used only volume - mount point
         :return: label of disk if removal, otherwise - computer name

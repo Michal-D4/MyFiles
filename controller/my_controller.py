@@ -7,7 +7,6 @@ from collections import namedtuple
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox, QFontDialog
 from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel
-from PyQt5.QtGui import QFont
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
@@ -129,9 +128,8 @@ class MyController():
             self._change_font()
 
     def _change_font(self):
-        # font, ok = QFontDialog.getFont(QFont(self.fontLabel.text()), self)
-        font, ok = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
-        if ok:
+        font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
+        if ok_:
             self.view.dirTree.setFont(font)
             self.view.extList.setFont(font)
             self.view.filesList.setFont(font)
@@ -168,8 +166,8 @@ class MyController():
                 gr_id = self._dbu.insert_other('EXT_GROUP', (group_name,))
                 all_id = self._collect_all_ext(ids)
 
-                for id in all_id:
-                    self._dbu.update_other('EXT_GROUP', (gr_id, id))
+                for id_ in all_id:
+                    self._dbu.update_other('EXT_GROUP', (gr_id, id_))
 
                 self._dbu.delete_other('UNUSED_EXT_GROUP', ())
 
@@ -177,13 +175,13 @@ class MyController():
 
     def _collect_all_ext(self, ids):
         all_id = set()
-        for id in ids:
-            if id < PLUS_EXT_ID:
-                curr = self._dbu.select_other('EXT_ID_IN_GROUP', (id,))
+        for id_ in ids:
+            if id_ < PLUS_EXT_ID:
+                curr = self._dbu.select_other('EXT_ID_IN_GROUP', (id_,))
                 for idd in curr:
                     all_id.add(idd[0])
             else:
-                all_id.add(id - PLUS_EXT_ID)
+                all_id.add(id_ - PLUS_EXT_ID)
         return all_id
 
     def _dir_update(self):
@@ -230,7 +228,7 @@ class MyController():
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
-        file_id, _, comment_id, _ = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        file_id, _, _, _ = self.view.filesList.model().data(f_idx, Qt.UserRole)
         self._dbu.insert_other('FAVORITES', (file_id,))
 
     def _delete_file(self):
@@ -279,7 +277,7 @@ class MyController():
     def _open_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        _, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
         self._open_file2(dir_id, file_name)
 
     def _open_file2(self, dir_id, file_name):
@@ -339,7 +337,7 @@ class MyController():
     def add_item_links(self, items2add, file_id, sqls):
         add_ids = self._dbu.select_other2(sqls[0], ('","'.join(items2add),)).fetchall()
         sel_items = [item[0] for item in add_ids]
-        not_in_ids = [item for item in items2add if not (item in sel_items)]
+        not_in_ids = [item for item in items2add if not item in sel_items]
 
         for item in not_in_ids:
             item_id = self._dbu.insert_other(sqls[1], (item,))
@@ -435,16 +433,16 @@ class MyController():
         tag_list = self._dbu.select_other('TAGS')
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, ("Tags",))
-        for tag, id in tag_list:
-            model.append_row(tag, id)
+        for tag, id_ in tag_list:
+            model.append_row(tag, id_)
         self.view.tagsList.setModel(model)
 
     def _populate_author_list(self):
         author_list = self._dbu.select_other('AUTHORS')
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, "Authors")
-        for author, id in author_list:
-            model.append_row(author, id)
+        for author, id_ in author_list:
+            model.append_row(author, id_)
         self.view.authorsList.setModel(model)
 
     def _populate_file_list(self, dir_idx):
@@ -459,7 +457,8 @@ class MyController():
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
 
-            self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2], model.rowCount(QModelIndex())))
+            self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2],
+                                                             model.rowCount(QModelIndex())))
         else:
             self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
@@ -476,7 +475,7 @@ class MyController():
         self.view.filesList.setCurrentIndex(index_)
         self.view.filesList.activateWindow()
 
-    def _file_changed(self, curr_idx, prev_idx):
+    def _file_changed(self, curr_idx, _):
         data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
         self._populate_comment_field(data)
 
@@ -494,7 +493,7 @@ class MyController():
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
             else:
-                comment = ('','')
+                comment = ('', '')
             self.view.commentField.setText(''.join((
                 '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.
                     format(', '.join([tag[0] for tag in tags])),
@@ -550,7 +549,7 @@ class MyController():
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
         return dirs
 
-    def sel_changed(self, sel1, sel2):
+    def sel_changed(self, sel1, _):
         """
         Changed selection in dirTree
         :param sel1: QList<QModelIndex>
@@ -616,7 +615,7 @@ class MyController():
         return ()
 
     @staticmethod
-    def show_message( message, message_type=QMessageBox.Critical ):
+    def show_message(message, message_type=QMessageBox.Critical):
         box = QMessageBox()
         box.setIcon(message_type)
         box.setText(message)
@@ -649,4 +648,3 @@ class MyController():
             res.sort()
             return ', '.join(res)
         return ''
-

@@ -225,7 +225,7 @@ class TestPlaces(unittest.TestCase):
         self.assertEqual(res, '')
 
     @patch.object(Places, 'is_not_registered_place')
-    @patch.object(Places, '_get_place_name')
+    @patch.object(Places, 'get_place_name')
     @patch.object(Places, 'get_disk_state')
     @patch('controller.places.psutil.os.path', spec_set=psutil.os.path)
     def test_update_disk_info( self, mock_os_pass, mock_disk_state,
@@ -286,10 +286,10 @@ class TestPlaces(unittest.TestCase):
         mock_is_removable.side_effect = (True, False)
         mock__get_vol_name.return_value = 'Disk_label'
 
-        res = self.tested_places._get_place_name('any')      # is_removable -> True
+        res = self.tested_places.get_place_name('any')      # is_removable -> True
         self.assertEqual(res, 'Disk_label', msg='Removal disk with label, but not!!!')
 
-        res = self.tested_places._get_place_name('any_2')    # is_removable -> False
+        res = self.tested_places.get_place_name('any_2')    # is_removable -> False
         self.assertEqual(res, 'computer_name',
                          msg='Local hard disk - identified by computer name, but not!!!')
 

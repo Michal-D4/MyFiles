@@ -2,7 +2,6 @@
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl
-from PyQt5.QtGui import QMouseEvent
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
@@ -52,7 +51,7 @@ class MainFlow(QMainWindow):
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
         self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line).width() for line in lines]
 
-    def setup_context_menu ( self ):
+    def setup_context_menu(self):
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui_main.filesList.customContextMenuRequested.connect(self._file_menu)
 
@@ -70,19 +69,18 @@ class MainFlow(QMainWindow):
 
     def _file_menu(self, pos):
         menu = QMenu(self)
-        action2 = menu.addAction('Open')
-        action3 = menu.addAction('Open folder')
-        action1 = menu.addAction('Add to favorites')
-        action1 = menu.addAction('Delete')
+        menu.addAction('Open')
+        menu.addAction('Open folder')
+        menu.addAction('Add to favorites')
+        menu.addAction('Delete')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
         if action:
-            print('|---> _file_menu', action.text())
             self.change_data_signal.emit(action.text(), ())
 
     def _ext_menu(self, pos):
         menu = QMenu(self)
-        action1 = menu.addAction('Remove unused')
-        action2 = menu.addAction('Create group')
+        menu.addAction('Remove unused')
+        menu.addAction('Create group')
         action = menu.exec_(self.ui_main.extList.mapToGlobal(pos))
         if action:
             act = 'Ext {}'.format(action.text())
@@ -90,7 +88,7 @@ class MainFlow(QMainWindow):
 
     def _tag_menu(self, pos):
         menu = QMenu(self)
-        action1 = menu.addAction('Remove unused')
+        menu.addAction('Remove unused')
         action = menu.exec_(self.ui_main.tagsList.mapToGlobal(pos))
         if action:
             act = 'Tag {}'.format(action.text())
@@ -98,7 +96,7 @@ class MainFlow(QMainWindow):
 
     def _author_menu(self, pos):
         menu = QMenu(self)
-        action1 = menu.addAction('Remove unused')
+        menu.addAction('Remove unused')
         action = menu.exec_(self.ui_main.authorsList.mapToGlobal(pos))
         if action:
             act = 'Author {}'.format(action.text())
@@ -106,7 +104,7 @@ class MainFlow(QMainWindow):
 
     def _dir_menu(self, pos):
         menu = QMenu(self)
-        action1 = menu.addAction('Update tree')
+        menu.addAction('Update tree')
         action = menu.exec_(self.ui_main.dirTree.mapToGlobal(pos))
         if action:
             act = 'Dirs {}'.format(action.text())

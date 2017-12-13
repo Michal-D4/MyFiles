@@ -37,9 +37,8 @@ E = Event()
 
 
 class LoadFiles(Thread):
-    def __init__(self, conn, cur_place, data_, group=None, target=None, name=None, args=(),
-                 kwargs=None, *, daemon=None):
-        super().__init__(group, target, name, args, kwargs, daemon=daemon)
+    def __init__(self, conn, cur_place, data_):
+        super().__init__()
         self.cur_place = cur_place
         self.conn = conn
         self.data = data_
@@ -59,10 +58,10 @@ class FileInfo(Thread):
     def run(self):
         super().run()
         E.wait()
-        start_time = datetime.datetime.now()
+        # start_time = datetime.datetime.now()
         # print('|===> FileInfo start time', start_time)
         self.update_files()
-        end_time = datetime.datetime.now()
+        # end_time = datetime.datetime.now()
         # print('|===> FileInfo end time', end_time, ' delta', end_time - start_time)
 
     def __init__(self, conn, place_inst):
@@ -180,10 +179,10 @@ class FileInfo(Thread):
                                         {'place_id': cur_place[1][0]}).fetchall()
         if cur_place[2] == Places.MOUNTED:
             root = self.places.get_mount_point()
-            foo = lambda x: os.altsep.join((root, x))
+            full_path = lambda x: os.altsep.join((root, x))
         else:
-            foo = lambda x: x
+            full_path = lambda x: x
 
         for file_id, file, path in file_list:
-            file_name = os.path.join(foo(path), file)
+            file_name = os.path.join(full_path(path), file)
             self.update_file(file_id, file_name)
