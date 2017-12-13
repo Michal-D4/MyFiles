@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
-from model.db_utils import DBUtils
+from model.db_utils import DBUtils, PLUS_EXT_ID
 from model.utils import create_db
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
@@ -22,7 +22,7 @@ DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
 class MyController():
 
-    FOLDER, FAVORITE, ADVANCE = range(3)
+    FOLDER, FAVORITE, ADVANCE = (1, 2, 4)
 
     def __init__(self, view):
         self._connection = None
@@ -102,6 +102,8 @@ class MyController():
             self._delete_file()
         elif sender == 'Add to favorites':
             self._add_file_to_favorites()
+        elif sender == 'File_doubleClicked':
+            self._double_click_file()
         elif sender == 'Open':
             self._open_file()
         elif sender == 'Open folder':
@@ -160,15 +162,14 @@ class MyController():
                 self._populate_ext_list()
 
     def _collect_all_ext(self, ids):
-        MAX_GROUP_ID = 1000
         all_id = set()
         for id in ids:
-            if id < MAX_GROUP_ID:
+            if id < PLUS_EXT_ID:
                 curr = self._dbu.select_other('EXT_ID_IN_GROUP', (id,))
                 for idd in curr:
                     all_id.add(idd[0])
             else:
-                all_id.add(id - MAX_GROUP_ID)
+                all_id.add(id - PLUS_EXT_ID)
         return all_id
 
     def _dir_update(self):
@@ -238,15 +239,37 @@ class MyController():
             self.get_sel_files()
 
     def _open_folder(self):
-        idx = self.view.dirTree.currentIndex()
-        dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
-        webbrowser.open(''.join(('file://', dir_[2])))
+        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
+            idx = self.view.dirTree.currentIndex()
+            dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
+            webbrowser.open(''.join(('file://', dir_[2])))
+
+    def _double_click_file(self):
+        f_idx = self.view.filesList.currentIndex()
+        file_name = self.view.filesList.model().data(f_idx)
+        file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        if f_idx.column() == 0:
+            self._open_file2(dir_id, file_name)
+        elif f_idx.column() == 2:
+            self._update_pages(f_idx, file_id, file_name)
+
+    def _update_pages(self, f_idx, file_id, page_number):
+        if not page_number:
+            page_number = 0
+        pages, ok_pressed = QInputDialog.getInt(self.view.extList, 'Input page number',
+                                                '', QLineEdit.Normal, page_number)
+        if ok_pressed:
+            self._dbu.update_other('PAGES', (pages, file_id))
+            self._refresh_file_list(f_idx)
 
     def _open_file(self):
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
         file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
-        if f_idx.column() == 0:
+        self._open_file2(dir_id, file_name)
+
+    def _open_file2(self, dir_id, file_name):
+        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
             full_file_name = os.path.join(path[0], file_name)
             if os.path.isfile(full_file_name):
@@ -256,14 +279,6 @@ class MyController():
                     pass
             else:
                 MyController.show_message("Can't find file {}".format(full_file_name))
-        elif f_idx.column() == 2:
-            if not file_name:
-                file_name = 0
-            pages, ok_pressed = QInputDialog.getInt(self.view.extList, 'Input page number',
-                                                    '', QLineEdit.Normal, file_name)
-            if ok_pressed:
-                self._dbu.update_other('PAGES', (pages, file_id))
-                self._refresh_file_list(f_idx)
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
@@ -510,13 +525,14 @@ class MyController():
         :param place_id:
         :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
         """
-        root = self._cb_places.get_mount_point()
-        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
         dirs = []
-        for rr in dir_tree:         # DirID, Path, ParentID, level
-            if self._cb_places.get_disk_state() == Places.NOT_REMOVAL:
+        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
+        if self._cb_places.get_disk_state() == Places.NOT_REMOVAL:
+            for rr in dir_tree:
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
-            else:
+        else:
+            root = self._cb_places.get_mount_point()
+            for rr in dir_tree:
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
         return dirs
 
@@ -555,7 +571,7 @@ class MyController():
             thread.start()
 
     def _scan_file_system(self):
-        ext_ = self.get_selected_items(self.view.extList)
+        ext_ = self._get_selected_ext()
         ext_item, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
@@ -597,11 +613,26 @@ class MyController():
     def get_selected_items(view):
         idxs = view.selectedIndexes()
         if idxs:
-            print('|--> get_selected_items', idxs[0].row())
             model = view.model()
             items_str = ', '.join(model.data(i, Qt.DisplayRole) for i in idxs)
         else:
             items_str = ''
         return items_str
 
+    def _get_selected_ext(self):
+        idxs = self.view.extList.selectedIndexes()
+        res = set()
+        if idxs:
+            model = self.view.extList.model()
+            for i in idxs:
+                tt = model.data(i, Qt.UserRole)
+                if tt[0] > PLUS_EXT_ID:
+                    res.add(model.data(i, Qt.DisplayRole))
+                else:
+                    ext_ = self._dbu.select_other('EXT_IN_GROUP', (tt[0],)).fetchall()
+                    res.update([ee[0] for ee in ext_])
+            res = list(res)
+            res.sort()
+            return ', '.join(res)
+        return ''
 
