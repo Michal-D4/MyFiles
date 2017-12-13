@@ -1,7 +1,7 @@
 # view/main_flow.py
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QComboBox, QMenu, QTreeView
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QModelIndex, QUrl
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl
 from PyQt5.QtGui import QMouseEvent
 
 from view.my_db_choice import MyDBChoice
@@ -32,9 +32,10 @@ class MainFlow(QMainWindow):
                                                      self.change_data_signal.
                                                      emit('File_doubleClicked', ()))
         menu = QMenu(self)
-        opt1 = menu.addAction('options 1')
+        change_font = menu.addAction('Change Font')
         opt2 = menu.addAction('options 2')
         self.ui_main.btnOption.setMenu(menu)
+        change_font.triggered.connect(lambda: self.change_data_signal.emit('change_font', ()))
 
         menu2 = QMenu(self)
         sel_opt = menu2.addAction('Selection options')
@@ -162,16 +163,6 @@ class MainFlow(QMainWindow):
             self.open_dialog.exec_()
         else:
             self.open_dialog.emit_open_dialog()
-        # self.ui_main.dirTree.mousePressEvent = self.mousePressEvent
-
-    # def mousePressEvent(self, event: QMouseEvent):
-    #     """
-    #     Deselect all when click on empty place
-    #     :param event:
-    #     :return:
-    #     """
-    #     self.ui_main.dirTree.clearSelection()
-    #     QTreeView.mousePressEvent(self.ui_main.dirTree, event)
 
     def closeEvent(self, event):
         settings = QSettings('myorg', 'myapp')

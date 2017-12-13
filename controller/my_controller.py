@@ -5,8 +5,9 @@ import os
 import webbrowser
 from collections import namedtuple
 
-from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox, QFontDialog
 from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel
+from PyQt5.QtGui import QFont
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
@@ -124,6 +125,19 @@ class MyController():
             self.ext_create_group()
         elif sender == 'Dirs Update tree':
             self._dir_update()
+        elif sender == 'change_font':
+            self._change_font()
+
+    def _change_font(self):
+        # font, ok = QFontDialog.getFont(QFont(self.fontLabel.text()), self)
+        font, ok = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
+        if ok:
+            self.view.dirTree.setFont(font)
+            self.view.extList.setFont(font)
+            self.view.filesList.setFont(font)
+            self.view.tagsList.setFont(font)
+            self.view.authorsList.setFont(font)
+            self.view.commentField.setFont(font)
 
     def author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
