@@ -1,6 +1,8 @@
 # model/db_utils.py
 import datetime
 
+PLUS_EXT_ID = 1000
+
 Selects = {'TREE':
                ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
@@ -36,12 +38,13 @@ Selects = {'TREE':
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'PATH': 'select Path from Dirs where DirID = ?;',
            'IS_EXIST': 'select * from Places where Place = ?;',
-           'EXT': ' '.join(('select Extension as title, ExtID+1000, GroupID',
+           'EXT': ' '.join(('select Extension as title, ExtID+{}, GroupID'.format(PLUS_EXT_ID),
                             'as ID from Extensions UNION select GroupName as title,',
                             'GroupID, 0 as ID from ExtGroups',
                             'order by ID desc, title;')),
            'HAS_EXT': 'select count(*) from Extensions where Extension = ?;',
            'EXT_ID_IN_GROUP': 'select ExtID from Extensions where GroupID = ?;',
+           'EXT_IN_GROUP': 'select Extension from Extensions where GroupID = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;',
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
            'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
@@ -106,8 +109,10 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'TAG': 'delete from Tags where TagID=:tag_id;'}
 
 
+
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
+
 
     def __init__(self, connection):
         self.conn = connection
