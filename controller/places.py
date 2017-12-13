@@ -10,7 +10,7 @@ from view.main_flow import MainFlow
 
 
 class Places:
-    NOT_REMOVAL, NOT_DEFINED, MOUNTED, NOT_MOUNTED = range(4)
+    NOT_REMOVAL, NOT_DEFINED, MOUNTED, NOT_MOUNTED = (1, 2, 4, 8)
 
     def __init__(self, parent):
         self.controller = parent
@@ -59,8 +59,8 @@ class Places:
     def populate_cb_places(self):
         self._view.blockSignals(True)
         self._view.clear()
-        plc = self._dbu.select_other('PLACES')
-        self._places = list(plc)
+        plc = self._dbu.select_other('PLACES').fetchall()
+        self._places = plc
         if self._places:
             self._view.addItems((x[2] for x in self._places))
 
@@ -68,9 +68,9 @@ class Places:
             try:
                 idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
             except StopIteration:
-                idx = 0
+                idx = -1
 
-            if idx:
+            if idx >= 0:
                 self._curr_place = (idx, self._places[idx], Places.NOT_REMOVAL)
                 self._view.setCurrentIndex(idx)
             else:
