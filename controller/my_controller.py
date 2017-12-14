@@ -112,9 +112,13 @@ class MyController():
     def _scan_for_tags(self):
         # todo scan tags in file names, titles and comments
         ext_idx = MyController._selected_db_indexes(self.view.extList)
-        files = self._dbu.select_other2('FILE_NAME+TITLE', ','.join(ext_idx))
+        all_id = self._collect_all_ext(ext_idx)
+
+        files = self._dbu.select_other2('FILE_NAME+TITLE',
+                                        ','.join([str(i) for i in all_id])).fetchall()
+        print('|--> _scan_for_tags', files)
         sel_tag = self.get_selected_items(self.view.tagsList)
-        print('|--> _scan_for_tags', ','.join(ext_idx), sel_tag)
+        print('|--> _scan_for_tags', ','.join([str(i) for i in all_id]), sel_tag)
 
     def _change_font(self):
         font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
@@ -141,7 +145,7 @@ class MyController():
 
     def _ext_create_group(self):
         ids = self._selected_db_indexes(self.view.extList)
-
+        print('|--> ext_create_group', ids)
         if ids:
             group_name, ok_pressed = QInputDialog.getText(self.view.extList,
                                                           'Input group name',
@@ -164,7 +168,7 @@ class MyController():
         model = view.model()
         ids = []
         for idx in sel_model_idx:
-            ids.append(str(model.data(idx, Qt.UserRole)[0]))
+            ids.append(model.data(idx, Qt.UserRole)[0])
         return ids
 
     def _collect_all_ext(self, ids):
