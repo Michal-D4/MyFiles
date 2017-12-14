@@ -72,6 +72,7 @@ class FileInfo(Thread):
         self.file_info = []
 
     def insert_author(self, file_id):
+        # todo split also by 'and', '&'
         authors = self.file_info[3].split(',')
         print('|-> insert_author', authors, file_id)
         for author in authors:
