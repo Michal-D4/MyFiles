@@ -145,10 +145,10 @@ class SelOpt(QDialog):
             if tags:
                 if self.ui.tagAll.isChecked():
                     num = len(tags.split(','))
-                    res = self.ctrl.get_db_utils().select_other2('DIR_TAGS_ALL',
+                    res = self.ctrl.get_db_utils().select_other2('FILE_IDS_ALL_TAG',
                                                                  (tags, num)).fetchall()
                 else:
-                    res = self.ctrl.get_db_utils().select_other2('FILE_IDS_TAGS',
+                    res = self.ctrl.get_db_utils().select_other2('FILE_IDS_ANY_TAG',
                                                                  (tags,)).fetchall()
                 return ','.join(str(ix[0]) for ix in res)
 
@@ -158,7 +158,10 @@ class SelOpt(QDialog):
 
     def _get_authors_id(self):
         if self.ui.chAuthor.isChecked():
-            return self._get_items_id(self.ctrl.view.authorsList)
+            auth_ids = self._get_items_id(self.ctrl.view.authorsList)
+            file_ids = self.ctrl.get_db_utils().select_other2('FILE_IDS_AUTHORS',
+                                                              (auth_ids,)).fetchall()
+            return ','.join(str(ix[0]) for ix in file_ids)
 
         return None
 
