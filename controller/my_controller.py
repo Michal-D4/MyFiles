@@ -31,12 +31,11 @@ class MyController():
         self._dbu = DBUtils()
         self._cb_places = Places(self)
         self._opt = SelOpt(self)
-        self.set_on_data_methods()
+        self._on_data_methods = self.set_on_data_methods()
 
     def set_on_data_methods(self):
         return {'cb_places': self._cb_places.about_change_place,
                 'dirTree': self._populate_directory_tree,
-                'commentField': self._populate_comment_field,
                 'Edit key words': self._edit_key_words,
                 'Edit authors': self._edit_authors,
                 'Edit title': self._edit_title,
@@ -47,19 +46,17 @@ class MyController():
                 'File_doubleClicked': self._double_click_file,
                 'Open': self._open_file,
                 'Open folder': self._open_folder,
-                'advanced_file_list': self.advanced_file_list,
+                'advanced_file_list': self._advanced_file_list,
                 'get_sel_files': self.get_sel_files,
-                'Favorites': self.favorite_file_list,
-                'Author Remove unused': self.author_remove_unused,
-                'Tag Remove unused': self.tag_remove_unused,
-                'Ext Remove unused': self.ext_remove_unused,
-                'Ext Create group': self.ext_create_group,
+                'Favorites': self._favorite_file_list,
+                'Author Remove unused': self._author_remove_unused,
+                'Tag Remove unused': self._tag_remove_unused,
+                'Ext Remove unused': self._ext_remove_unused,
+                'Ext Create group': self._ext_create_group,
                 'Dirs Update tree': self._dir_update,
                 'change_font': self._change_font,
                 'Tag Scan in names': self._scan_for_tags
                 }
-
-
 
     def get_places_view(self):
         return self.view.cb_places
@@ -104,63 +101,18 @@ class MyController():
         self._dbu.set_connection(self._connection)
         self._populate_all_widgets()
 
-    def on_change_data(self, sender, data):
+    def on_change_data(self, action):
         '''
-        handle of changing data in widgets
-        :param sender: - widget name (consider the widget itself)
-        :param data:   - widget specific data
+        run methods for change_data_signal
+        :param action:
         :return:
         '''
-        if sender == 'cb_places':
-            self._cb_places.about_change_place(data)
-        elif sender == 'dirTree':
-            self._populate_directory_tree(data[0])
-        elif sender == 'commentField':
-            self._populate_comment_field(data)
-        elif sender == 'Edit key words':
-            self._edit_key_words()
-        elif sender == 'Edit authors':
-            self._edit_authors()
-        elif sender == 'Edit title':
-            self._edit_title()
-        elif sender == 'Edit date':
-            self._edit_date()
-        elif sender == 'Edit comment':
-            self._edit_comment()
-        elif sender == 'Delete':
-            self._delete_file()
-        elif sender == 'Add to favorites':
-            self._add_file_to_favorites()
-        elif sender == 'File_doubleClicked':
-            self._double_click_file()
-        elif sender == 'Open':
-            self._open_file()
-        elif sender == 'Open folder':
-            self._open_folder()
-        elif sender == 'advanced_file_list':
-            self.advanced_file_list()
-        elif sender == 'get_sel_files':
-            self.get_sel_files()
-        elif sender == 'Favorites':
-            self.favorite_file_list()
-        elif sender == 'Author Remove unused':
-            self.author_remove_unused()
-        elif sender == 'Tag Remove unused':
-            self.tag_remove_unused()
-        elif sender == 'Ext Remove unused':
-            self.ext_remove_unused()
-        elif sender == 'Ext Create group':
-            self.ext_create_group()
-        elif sender == 'Dirs Update tree':
-            self._dir_update()
-        elif sender == 'change_font':
-            self._change_font()
-        elif sender == 'Tag Scan in names':
-            self._scan_for_tags()
+        self._on_data_methods[action]()
 
     def _scan_for_tags(self):
+        # todo scan tags in file names, titles and comments
         ext_idx = MyController._selected_db_indexes(self.view.extList)
-        files = self._dbu.delete_other2('FILE_NAME+TITLE', ','.join(ext_idx))
+        files = self._dbu.select_other2('FILE_NAME+TITLE', ','.join(ext_idx))
         sel_tag = self.get_selected_items(self.view.tagsList)
         print('|--> _scan_for_tags', ','.join(ext_idx), sel_tag)
 
@@ -174,20 +126,20 @@ class MyController():
             self.view.authorsList.setFont(font)
             self.view.commentField.setFont(font)
 
-    def author_remove_unused(self):
+    def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
         self._populate_author_list()
 
-    def tag_remove_unused(self):
+    def _tag_remove_unused(self):
         self._dbu.delete_other('UNUSED_TAGS', ())
         self._populate_tag_list()
 
-    def ext_remove_unused(self):
+    def _ext_remove_unused(self):
         self._dbu.delete_other('UNUSED_EXT', ())
         self._dbu.delete_other('UNUSED_EXT_GROUP', ())
         self._populate_ext_list()
 
-    def ext_create_group(self):
+    def _ext_create_group(self):
         ids = self._selected_db_indexes(self.view.extList)
 
         if ids:
@@ -227,11 +179,10 @@ class MyController():
         return all_id
 
     def _dir_update(self):
-        place_ = self._cb_places.get_curr_place()
-        self._populate_directory_tree(place_[1][0])
+        self._populate_directory_tree()
         self._populate_ext_list()
 
-    def favorite_file_list(self):
+    def _favorite_file_list(self):
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
         files = self._dbu.select_other('FAVORITES').fetchall()
@@ -243,7 +194,7 @@ class MyController():
             self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
-    def advanced_file_list(self):
+    def _advanced_file_list(self):
         """
         Show files according optional conditions
         1) folder and nested sub-folders up to n-th level
@@ -258,6 +209,7 @@ class MyController():
 
     def get_sel_files(self):
         res = self._opt.get_result()
+        print('|--> get_sel_files', res)
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
 
@@ -278,7 +230,7 @@ class MyController():
         u_data = self.view.filesList.model().data(f_idx, Qt.UserRole)
         if self.file_list_source == MyController.FAVORITE:
             self._dbu.delete_other('FAVORITES', (u_data[0],))
-            self.favorite_file_list()
+            self._favorite_file_list()
             return
 
         self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
@@ -444,7 +396,7 @@ class MyController():
 
     def _refresh_file_list(self, curr_idx):
         if self.file_list_source == MyController.FAVORITE:
-            self.favorite_file_list()
+            self._favorite_file_list()
         elif self.file_list_source == MyController.FOLDER:
             idx = self.view.dirTree.currentIndex()
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
@@ -522,7 +474,6 @@ class MyController():
         self._populate_comment_field(data)
 
     def _populate_comment_field(self, data):
-        print('|--> _populate_comment_field', data)
         file_id = data[0]
         comment_id = data[2]
         if file_id:
@@ -554,13 +505,13 @@ class MyController():
 
     def _populate_all_widgets(self):
         self._cb_places.populate_cb_places()
-        self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
+        self._populate_directory_tree()
         self._populate_ext_list()
         self._populate_tag_list()
         self._populate_author_list()
 
-    def _populate_directory_tree(self, place_id):
-        dirs = self._get_dirs(place_id)
+    def _populate_directory_tree(self):
+        dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
 
         model = TreeModel(dirs)
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
