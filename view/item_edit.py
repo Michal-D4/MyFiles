@@ -23,21 +23,34 @@ class ItemEdit(QDialog):
         model = TableModel2(parent=self.view.items)
         self.view.items.setModel(model)
 
-        if self.list_items:
-            len_ = max([len(item) for item in items])
-            len_ = len_ if len_ > 1 else 2
-            self.max_width = self.view.items.fontMetrics().boundingRect('W'*len_).width()
-        else:
-            self.max_width = 20
+        self.calc_column_width()
 
         self.view.items.resizeEvent = self.resize_event
+
+    def calc_column_width(self):
+        if self.list_items:
+            len_ = 0
+            i_max = 0
+            for i in range(len(self.list_items)):
+                if len(self.list_items[i]) > len_:
+                    len_ = len(self.list_items[i])
+                    i_max = i
+
+            self.max_width = self.view.items.fontMetrics(). \
+                                 boundingRect(self.list_items[i_max]).width() + 20
+        else:
+            self.max_width = 20
 
     def get_result( self ):
         return self.view.in_field.toPlainText()
 
     def resize_event(self, event):
         w = event.size().width()
+        if w < self.max_width:
+            self.max_width = w // 2 - 20
         col_no = w // self.max_width
+        col_no = max(1, col_no)
+        col_no = min(col_no, 10)
         if col_no != self.view.items.model().columnCount():
             self._setup_model(col_no)
 
@@ -130,9 +143,7 @@ if __name__ == "__main__":
     ItemChoice = ItemEdit(labels, table_items, sel_items)
     ItemChoice.resize(500, 300)
 
-    # ItemChoice.setup_view()
-
     ItemChoice.show()
-    print(ItemChoice.get_result())
     sys.exit(app.exec_())
+
 
