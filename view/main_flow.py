@@ -89,6 +89,7 @@ class MainFlow(QMainWindow):
     def _tag_menu(self, pos):
         menu = QMenu(self)
         menu.addAction('Remove unused')
+        menu.addAction('Scan in names')
         action = menu.exec_(self.ui_main.tagsList.mapToGlobal(pos))
         if action:
             act = 'Tag {}'.format(action.text())
