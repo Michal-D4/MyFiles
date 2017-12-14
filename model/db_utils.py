@@ -46,6 +46,9 @@ Selects = {'TREE':
            'EXT_ID_IN_GROUP': 'select ExtID from Extensions where GroupID = ?;',
            'EXT_IN_GROUP': 'select Extension from Extensions where GroupID = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;',
+           'FILE_NAME+TITLE': ' '.join(('select A.FileName || B.BookTitle ||  B.Comment',
+                                        'A.FileID from Files A, Comments B where',
+                                        'B.CommentID = A.CommentID and A.ExtID in ({});')),
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
            'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
                                   '(select TagID from FileTag where FileID = ?);')),
@@ -114,7 +117,11 @@ class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
 
 
-    def __init__(self, connection):
+    def __init__(self):
+        self.conn = None
+        self.curs = None
+
+    def set_connection(self, connection):
         self.conn = connection
         self.curs = connection.cursor()
 

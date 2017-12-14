@@ -26,7 +26,8 @@ class TestDDBUtils(unittest.TestCase):
         load_db = load_db_data.LoadDBData(self.connection, ('place', 'title'))
         load_db.load_data(LOAD_DATA)
 
-        self.dbu = DBUtils(self.connection)
+        self.dbu = DBUtils()
+        self.dbu.set_connection(self.connection)
 
     def tearDown(self):
         self.connection.close()
