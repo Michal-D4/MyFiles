@@ -8,7 +8,7 @@ from view.ui_new_view import Ui_MainWindow
 
 
 class MainFlow(QMainWindow):
-    change_data_signal = pyqtSignal(str, tuple)   # str - name of Widget, tuple - data
+    change_data_signal = pyqtSignal(str)   # str - name of action
     scan_files_signal = pyqtSignal()
 
     def __init__(self, parent=None, open_dialog=MyDBChoice):
@@ -19,28 +19,33 @@ class MainFlow(QMainWindow):
         self.restore_setting()
 
         self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
-        self.ui_main.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
+        self.ui_main.actionScanFiles.triggered.connect(lambda: self.
+                                                       scan_files_signal.emit())
         self.ui_main.actionGetFiles.triggered.connect(lambda:
-                                                      self.change_data_signal.emit('get_sel_files', ()))
+                                                      self.change_data_signal.
+                                                      emit('get_sel_files'))
         self.ui_main.actionFavorites.triggered.connect(lambda:
-                                                       self.change_data_signal.emit('Favorites', ()))
+                                                       self.change_data_signal.
+                                                       emit('Favorites'))
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui_main.filesList.resizeEvent = self.resize_event
         self.ui_main.filesList.doubleClicked.connect(lambda:
                                                      self.change_data_signal.
-                                                     emit('File_doubleClicked', ()))
+                                                     emit('File_doubleClicked'))
         menu = QMenu(self)
         change_font = menu.addAction('Change Font')
         opt2 = menu.addAction('options 2')
         self.ui_main.btnOption.setMenu(menu)
-        change_font.triggered.connect(lambda: self.change_data_signal.emit('change_font', ()))
+        change_font.triggered.connect(lambda: self.change_data_signal.
+                                      emit('change_font'))
 
         menu2 = QMenu(self)
         sel_opt = menu2.addAction('Selection options')
         self.ui_main.btnGetFiles.setMenu(menu2)
 
-        sel_opt.triggered.connect(lambda: self.change_data_signal.emit('advanced_file_list', ()))
+        sel_opt.triggered.connect(lambda: self.change_data_signal.
+                                  emit('advanced_file_list'))
 
         self.setup_context_menu()
 
@@ -49,7 +54,8 @@ class MainFlow(QMainWindow):
         self.open_dialog = open_dialog
 
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
-        self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line).width() for line in lines]
+        self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line)
+                           .width() for line in lines]
 
     def setup_context_menu(self):
         self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -75,7 +81,7 @@ class MainFlow(QMainWindow):
         menu.addAction('Delete')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
         if action:
-            self.change_data_signal.emit(action.text(), ())
+            self.change_data_signal.emit(action.text())
 
     def _ext_menu(self, pos):
         menu = QMenu(self)
@@ -84,7 +90,7 @@ class MainFlow(QMainWindow):
         action = menu.exec_(self.ui_main.extList.mapToGlobal(pos))
         if action:
             act = 'Ext {}'.format(action.text())
-            self.change_data_signal.emit(act, ())
+            self.change_data_signal.emit(act)
 
     def _tag_menu(self, pos):
         menu = QMenu(self)
@@ -93,7 +99,7 @@ class MainFlow(QMainWindow):
         action = menu.exec_(self.ui_main.tagsList.mapToGlobal(pos))
         if action:
             act = 'Tag {}'.format(action.text())
-            self.change_data_signal.emit(act, ())
+            self.change_data_signal.emit(act)
 
     def _author_menu(self, pos):
         menu = QMenu(self)
@@ -101,7 +107,7 @@ class MainFlow(QMainWindow):
         action = menu.exec_(self.ui_main.authorsList.mapToGlobal(pos))
         if action:
             act = 'Author {}'.format(action.text())
-            self.change_data_signal.emit(act, ())
+            self.change_data_signal.emit(act)
 
     def _dir_menu(self, pos):
         menu = QMenu(self)
@@ -109,11 +115,11 @@ class MainFlow(QMainWindow):
         action = menu.exec_(self.ui_main.dirTree.mapToGlobal(pos))
         if action:
             act = 'Dirs {}'.format(action.text())
-            self.change_data_signal.emit(act, ())
+            self.change_data_signal.emit(act)
 
     def ref_clicked(self, argv_1):
         self.ui_main.commentField.setSource(QUrl())
-        self.change_data_signal.emit(argv_1.toString(), ())
+        self.change_data_signal.emit(argv_1.toString())
 
     def resize_event(self, event):
         """
@@ -131,7 +137,7 @@ class MainFlow(QMainWindow):
         self.ui_main.filesList.blockSignals(False)
 
     def change_place(self, idx):
-        self.change_data_signal.emit('cb_places', (idx, self.ui_main.cb_places.currentText()))
+        self.change_data_signal.emit('cb_places')
 
     def restore_setting(self):
         settings = QSettings('myorg', 'myapp')

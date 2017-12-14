@@ -77,19 +77,20 @@ class Places:
 
         self._view.blockSignals(False)
 
-    def about_change_place(self, data):
+    def about_change_place(self):
         """
         :param data: tuple (index in view, current text in view)
         :return: None
         """
         prev_id = self._curr_place[0]
         idx = self._view.currentIndex()
-        if data[0] >= len(self._places):
-            self._add_place(data)
+        place_title = self._view.currentText()
+        if idx >= len(self._places):
+            self._add_place((idx, place_title))
         else:
-            self._change_place(data)
+            self._change_place((idx, place_title))
         if prev_id != self._curr_place[0]:
-            self.controller.on_change_data('dirTree', (self._curr_place[1][0],))
+            self.controller.on_change_data('dirTree')
 
     def update_place_name(self, root):
         """

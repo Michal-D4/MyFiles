@@ -71,7 +71,7 @@ class TestMyControllerViewDbu(unittest.TestCase):
 
         mock_get_dirs.return_value = []
 
-        self.controller._populate_directory_tree(0)
+        self.controller._populate_directory_tree()
         mock_get_dirs.assert_called_once_with(0)
         mock_model.assert_called_once()
         self.mock_view.dirTree.setModel.assert_called_once_with(mock_model.return_value)
