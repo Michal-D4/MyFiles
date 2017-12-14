@@ -26,11 +26,40 @@ class MyController():
 
     def __init__(self, view):
         self._connection = None
-        self._dbu = None
-        self._cb_places = None
         self.view = view.ui_main
         self.file_list_source = MyController.FOLDER
+        self._dbu = DBUtils()
+        self._cb_places = Places(self)
         self._opt = SelOpt(self)
+        self.set_on_data_methods()
+
+    def set_on_data_methods(self):
+        return {'cb_places': self._cb_places.about_change_place,
+                'dirTree': self._populate_directory_tree,
+                'commentField': self._populate_comment_field,
+                'Edit key words': self._edit_key_words,
+                'Edit authors': self._edit_authors,
+                'Edit title': self._edit_title,
+                'Edit date': self._edit_date,
+                'Edit comment': self._edit_comment,
+                'Delete': self._delete_file,
+                'Add to favorites': self._add_file_to_favorites,
+                'File_doubleClicked': self._double_click_file,
+                'Open': self._open_file,
+                'Open folder': self._open_folder,
+                'advanced_file_list': self.advanced_file_list,
+                'get_sel_files': self.get_sel_files,
+                'Favorites': self.favorite_file_list,
+                'Author Remove unused': self.author_remove_unused,
+                'Tag Remove unused': self.tag_remove_unused,
+                'Ext Remove unused': self.ext_remove_unused,
+                'Ext Create group': self.ext_create_group,
+                'Dirs Update tree': self._dir_update,
+                'change_font': self._change_font,
+                'Tag Scan in names': self._scan_for_tags
+                }
+
+
 
     def get_places_view(self):
         return self.view.cb_places
@@ -72,7 +101,7 @@ class MyController():
                 MyController.show_message("Data base does not exist")
                 return
 
-        self._dbu = DBUtils(self._connection)
+        self._dbu.set_connection(self._connection)
         self._populate_all_widgets()
 
     def on_change_data(self, sender, data):
@@ -126,6 +155,14 @@ class MyController():
             self._dir_update()
         elif sender == 'change_font':
             self._change_font()
+        elif sender == 'Tag Scan in names':
+            self._scan_for_tags()
+
+    def _scan_for_tags(self):
+        ext_idx = MyController._selected_db_indexes(self.view.extList)
+        files = self._dbu.delete_other2('FILE_NAME+TITLE', ','.join(ext_idx))
+        sel_tag = self.get_selected_items(self.view.tagsList)
+        print('|--> _scan_for_tags', ','.join(ext_idx), sel_tag)
 
     def _change_font(self):
         font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
@@ -151,11 +188,7 @@ class MyController():
         self._populate_ext_list()
 
     def ext_create_group(self):
-        sel_model_idx = self.view.extList.selectedIndexes()
-        model = self.view.extList.model()
-        ids = []
-        for idx in sel_model_idx:
-            ids.append(model.data(idx, Qt.UserRole)[0])
+        ids = self._selected_db_indexes(self.view.extList)
 
         if ids:
             group_name, ok_pressed = QInputDialog.getText(self.view.extList,
@@ -172,6 +205,15 @@ class MyController():
                 self._dbu.delete_other('UNUSED_EXT_GROUP', ())
 
                 self._populate_ext_list()
+
+    @staticmethod
+    def _selected_db_indexes(view):
+        sel_model_idx = view.selectedIndexes()
+        model = view.model()
+        ids = []
+        for idx in sel_model_idx:
+            ids.append(str(model.data(idx, Qt.UserRole)[0]))
+        return ids
 
     def _collect_all_ext(self, ids):
         all_id = set()
@@ -511,7 +553,6 @@ class MyController():
                 self.view.statusbar.showMessage(path[0])
 
     def _populate_all_widgets(self):
-        self._cb_places = Places(self)
         self._cb_places.populate_cb_places()
         self._populate_directory_tree(self._cb_places.get_curr_place()[1][0])
         self._populate_ext_list()
