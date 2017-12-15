@@ -2,7 +2,6 @@
 
 import os
 import datetime
-import sqlite3
 from threading import Thread, Event
 from PyPDF2 import PdfFileReader, utils
 
@@ -45,12 +44,8 @@ class LoadFiles(Thread):
 
     def run(self):
         super().run()
-        # start_time = datetime.datetime.now()
-        # print('|===> LoadFiles start time', start_time)
         files = LoadDBData(self.conn, self.cur_place)
         files.load_data(self.data)
-        # end_time = datetime.datetime.now()
-        # print('|===> LoadFiles end time', end_time, ' delta', end_time - start_time)
         E.set()
 
 
@@ -58,11 +53,7 @@ class FileInfo(Thread):
     def run(self):
         super().run()
         E.wait()
-        # start_time = datetime.datetime.now()
-        # print('|===> FileInfo start time', start_time)
         self.update_files()
-        # end_time = datetime.datetime.now()
-        # print('|===> FileInfo end time', end_time, ' delta', end_time - start_time)
 
     def __init__(self, conn, place_inst):
         super().__init__()
