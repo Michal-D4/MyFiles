@@ -79,6 +79,9 @@ class MainFlow(QMainWindow):
         menu.addAction('Open folder')
         menu.addAction('Add to favorites')
         menu.addAction('Delete')
+        menu.addSeparator()
+        menu.addAction('Copy file name')
+        menu.addAction('Copy full path')
         action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit(action.text())
