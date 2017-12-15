@@ -127,21 +127,7 @@ class DBUtils:
         self.curs = connection.cursor()
 
     def advanced_selection(self, param, cur_place_id):
-        print('|---> advanced_selection', param)
-        # 0 param.dir.use = True
-        # 1 param.extension.use = True
-        # 2 param.tags.use = True
-        # 3 param.authors.use = True
-        # 4 param.date.use = True
-        # 4 param.date.file_date = True
-        # 4 param.date.date = '2017-12-09'
-
-        #0 DirID     dir=dir             (use=True, list='10,11,12'),
-        #1 ExtID     extension=extension (use=True, list='1,3,4'),
-        #2 FileID    tags=tags           (use=True, match_all=True, list='1,2'),
-        #2 FileID    authors=authors     (use=True, list='3,18,19'),
-        #3 FileDate  date=not_older      (use=True, date='5', file_date=True))
-        #4 IssueDate date=not_older      (use=True, date='5', file_date=False))
+        # print('|---> advanced_selection', param)
 
         sql = self.generate_adv_sql(cur_place_id, param)
         print(sql)
@@ -151,9 +137,9 @@ class DBUtils:
 
     @staticmethod
     def generate_adv_sql(cur_place_id, param):
-        print(Selects['ADV_SELECT'])
-        print('cur_place_id:', cur_place_id)
-        print(param)
+        # print(Selects['ADV_SELECT'])
+        # print('cur_place_id:', cur_place_id)
+        # print(param)
         sql = ''
         sql_l = [Selects['ADV_SELECT'][5].format(cur_place_id)]
 
@@ -184,9 +170,8 @@ class DBUtils:
             else:                       # date of book issue
                 sql_l.append(Selects['ADV_SELECT'][4].format(tt))
 
-        if len(sql_l) > 1:      # check if at least one condition applied
-            sql_l.append(Selects['ADV_SELECT'][6])
-            sql = ' '.join([clause for clause in sql_l])
+        sql_l.append(Selects['ADV_SELECT'][6])
+        sql = ' '.join([clause for clause in sql_l])
         return sql
 
     def dir_tree_select(self, dir_id, level, place_id):
