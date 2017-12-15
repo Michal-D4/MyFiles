@@ -2,6 +2,7 @@
 
 import sqlite3
 import os
+import re
 import webbrowser
 from collections import namedtuple
 
@@ -55,8 +56,16 @@ class MyController():
                 'Ext Create group': self._ext_create_group,
                 'Dirs Update tree': self._dir_update,
                 'change_font': self._change_font,
-                'Tag Scan in names': self._scan_for_tags
+                'Tag Scan in names': self._scan_for_tags,
+                'Copy file name': self._copy_file_name,
+                'Copy full path': self._copy_full_path
                 }
+
+    def _copy_file_name(self):
+        pass
+
+    def _copy_full_path(self):
+        pass
 
     def get_places_view(self):
         return self.view.cb_places
@@ -110,15 +119,32 @@ class MyController():
         self._on_data_methods[action]()
 
     def _scan_for_tags(self):
-        # todo scan tags in file names, titles and comments
         ext_idx = MyController._selected_db_indexes(self.view.extList)
         all_id = self._collect_all_ext(ext_idx)
 
         files = self._dbu.select_other2('FILE_NAME+TITLE',
                                         (','.join([str(i) for i in all_id]),)).fetchall()
-        print('|--> _scan_for_tags,  file number', len(files))
-        sel_tag = self.get_selected_items(self.view.tagsList)
-        print('|--> _scan_for_tags', ','.join([str(i) for i in all_id]), sel_tag)
+        sel_tag = self.get_selected_tags()
+        for file in files:
+            for tag in sel_tag:
+                if re.search(tag[0], file[0], re.IGNORECASE):
+                    try:
+                        self._dbu.insert_other('TAG_FILE', (tag[1], file[1]))
+                    except sqlite3.IntegrityError:
+                        pass
+
+    def get_selected_tags(self):
+        idxs = self.view.tagsList.selectedIndexes()
+        t_ids = []
+        tag_s = []
+        rb = r'\b'
+        if idxs:
+            model = self.view.tagsList.model()
+            for i in idxs:
+                t_ids.append(model.data(i, Qt.UserRole))
+                tag_s.append(rb + model.data(i, Qt.DisplayRole) + rb)
+            return list(zip(tag_s, t_ids))
+        return []
 
     def _change_font(self):
         font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
@@ -145,7 +171,6 @@ class MyController():
 
     def _ext_create_group(self):
         ids = self._selected_db_indexes(self.view.extList)
-        print('|--> ext_create_group', ids)
         if ids:
             group_name, ok_pressed = QInputDialog.getText(self.view.extList,
                                                           'Input group name',
@@ -371,10 +396,8 @@ class MyController():
 
     def _edit_comment_item(self, to_update, item_no):
         checked = self.check_existence()
-        print('==-> ', to_update, checked, item_no, getattr(checked, item_no))
         data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
                                                  '', QLineEdit.Normal, getattr(checked, item_no))
-        print('---> ', data_)
         if ok_pressed:
             self._dbu.update_other(to_update[0], (data_, checked.comment_id))
             self._populate_comment_field(checked[:4]) # file_id, dir_id, comment_id, issue_date
