@@ -73,7 +73,7 @@ class Places:
                 self._curr_place = (idx, self._places[idx], Places.NOT_REMOVAL)
                 self._view.setCurrentIndex(idx)
             else:
-                self._curr_place = (0, (0, None, None), Places.NOT_DEFINED)
+                self._curr_place = (0, plc[0], Places.NOT_DEFINED)
 
         self._view.blockSignals(False)
 

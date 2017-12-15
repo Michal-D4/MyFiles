@@ -47,7 +47,7 @@ class MyController():
                 'Open': self._open_file,
                 'Open folder': self._open_folder,
                 'advanced_file_list': self._advanced_file_list,
-                'get_sel_files': self.get_sel_files,
+                'get_sel_files': self._get_sel_files,
                 'Favorites': self._favorite_file_list,
                 'Author Remove unused': self._author_remove_unused,
                 'Tag Remove unused': self._tag_remove_unused,
@@ -115,8 +115,8 @@ class MyController():
         all_id = self._collect_all_ext(ext_idx)
 
         files = self._dbu.select_other2('FILE_NAME+TITLE',
-                                        ','.join([str(i) for i in all_id])).fetchall()
-        print('|--> _scan_for_tags', files)
+                                        (','.join([str(i) for i in all_id]),)).fetchall()
+        print('|--> _scan_for_tags,  file number', len(files))
         sel_tag = self.get_selected_items(self.view.tagsList)
         print('|--> _scan_for_tags', ','.join([str(i) for i in all_id]), sel_tag)
 
@@ -209,11 +209,10 @@ class MyController():
         :return:
         """
         if self._opt.exec_():
-            self.get_sel_files()
+            self._get_sel_files()
 
-    def get_sel_files(self):
+    def _get_sel_files(self):
         res = self._opt.get_result()
-        print('|--> get_sel_files', res)
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
 
@@ -246,7 +245,7 @@ class MyController():
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
         else:
-            self.get_sel_files()
+            self._get_sel_files()
 
     def _open_folder(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
@@ -406,7 +405,7 @@ class MyController():
             dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
         else:
-            self.get_sel_files()
+            self._get_sel_files()
 
         self.view.filesList.setCurrentIndex(curr_idx)
         f_idx = self.view.filesList.model().index(curr_idx.row(), 0)
@@ -483,27 +482,29 @@ class MyController():
         if file_id:
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
-            tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
 
+            tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
             authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
 
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
             else:
                 comment = ('', '')
+
             self.view.commentField.setText(''.join((
-                '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.
-                    format(', '.join([tag[0] for tag in tags])),
-                '<p><a href="Edit authors">Authors</a>: {}</p>'.
-                    format(', '.join([author[0] for author in authors])),
+                '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.format(
+                    ', '.join([tag[0] for tag in tags])),
+                '<p><a href="Edit authors">Authors</a>: {}</p>'.format(
+                    ', '.join([author[0] for author in authors])),
                 '<p><a href="Edit date">Issue date</a>: {}</p>'.format(data[3]),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
-                '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.
-                    format(comment[0]))))
+                '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.format(
+                    comment[0]))))
 
             if not self.file_list_source == MyController.FOLDER:
                 f_idx = self.view.filesList.currentIndex()
-                file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+                file_id, dir_id, _, _ = self.view.filesList.model().data(
+                    f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
                 self.view.statusbar.showMessage(path[0])
 
@@ -526,6 +527,10 @@ class MyController():
 
         self._populate_file_list(model.data(idx, role=Qt.UserRole))
 
+        if len(dirs):
+            if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
+                self.show_message('Files in the list located in unavailable place')
+
         self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
 
     def _get_dirs(self, place_id):
@@ -536,13 +541,14 @@ class MyController():
         """
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
-        if self._cb_places.get_disk_state() == Places.NOT_REMOVAL:
-            for rr in dir_tree:
-                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
-        else:
+
+        if self._cb_places.get_disk_state() == Places.MOUNTED:
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
+        else:
+            for rr in dir_tree:
+                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
     def sel_changed(self, sel1, _):
