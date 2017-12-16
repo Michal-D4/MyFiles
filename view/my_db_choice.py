@@ -4,11 +4,14 @@ import sys
 import pickle
 
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QCoreApplication
 
 from view.ui_db_choice import Ui_ChoiceDB
 
 SKIP_OPEN_DIALOG = 2
+APP_NAME = 'File manager'
+ORG_DOMAIN = 'fake_domain.org'
+ORG_NAME = 'Fake organization'
 
 
 class MyDBChoice(QDialog):
@@ -25,6 +28,10 @@ class MyDBChoice(QDialog):
         self.ui_db_choice.addButton.clicked.connect(self.add)
         self.ui_db_choice.delButton.clicked.connect(self.delete)
         self.ui_db_choice.listOfBDs.currentRowChanged.connect(self.row_changed)
+
+        QCoreApplication.setApplicationName(APP_NAME)
+        QCoreApplication.setOrganizationDomain(ORG_DOMAIN)
+        QCoreApplication.setOrganizationName(ORG_NAME)
 
         self.ui_db_choice.listOfBDs.setSelectionMode(1)
 
@@ -118,21 +125,28 @@ class MyDBChoice(QDialog):
         return self.init_data[2][self.init_data[1]]
 
     def load_init_data(self):
-        _data = [0, 0, []]
-        try:
-            with open('setup.pcl', 'rb') as f:
-                _data = pickle.load(f)
-                file = _data[2][_data[1]]
-                _data[2].sort()
-                _data[1] = _data[2].index(file)
-        except (EOFError, FileNotFoundError):
-            pass
+        setting = QSettings()
+        if setting.contains('DB/init_data'):
+            _data = setting.value('DB/init_data', [0, 0, []])
+        else:
+            _data = [0, 0, []]
+        # try:
+        #     with open('setup.pcl', 'rb') as f:
+        #         _data = pickle.load(f)
+        #         file = _data[2][_data[1]]
+        #         _data[2].sort()
+        #         _data[1] = _data[2].index(file)
+        # except (EOFError, FileNotFoundError):
+        #     pass
         self.init_data = _data
 
     def save_init_data(self):
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
-        with open('setup.pcl', 'wb') as f:
-            pickle.dump(self.init_data, f)
+        setting = QSettings()
+        setting.setValue('DB/init_data', QVariant(self.init_data))
+        #
+        # with open('setup.pcl', 'wb') as f:
+        #     pickle.dump(self.init_data, f)
 
     def skip_open_dialog(self):
         return self.init_data[0] == SKIP_OPEN_DIALOG
