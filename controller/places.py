@@ -153,7 +153,6 @@ class Places:
                 self._view.setCurrentIndex(self._curr_place[0])
                 self._view.blockSignals(False)
         else:                           # switches to new place silently
-            print('|---> _change_place - disk state:', self.get_disk_state())
             self._curr_place = (data[0], self._places[data[0]], self.get_disk_state())
 
     def _remove_current_place(self):
