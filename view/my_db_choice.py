@@ -130,23 +130,12 @@ class MyDBChoice(QDialog):
             _data = setting.value('DB/init_data', [0, 0, []])
         else:
             _data = [0, 0, []]
-        # try:
-        #     with open('setup.pcl', 'rb') as f:
-        #         _data = pickle.load(f)
-        #         file = _data[2][_data[1]]
-        #         _data[2].sort()
-        #         _data[1] = _data[2].index(file)
-        # except (EOFError, FileNotFoundError):
-        #     pass
         self.init_data = _data
 
     def save_init_data(self):
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
         setting = QSettings()
         setting.setValue('DB/init_data', QVariant(self.init_data))
-        #
-        # with open('setup.pcl', 'wb') as f:
-        #     pickle.dump(self.init_data, f)
 
     def skip_open_dialog(self):
         return self.init_data[0] == SKIP_OPEN_DIALOG
