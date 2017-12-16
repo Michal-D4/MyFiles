@@ -46,10 +46,11 @@ Selects = {'TREE':
            'EXT_ID_IN_GROUP': 'select ExtID from Extensions where GroupID = ?;',
            'EXT_IN_GROUP': 'select Extension, ExtID from Extensions where GroupID = ?;',
            'EXT_IN_FILES': 'select FileID from Files where ExtID = ?;',
-           'FILE_NAME+TITLE': ' '.join(('select A.FileName || COALESCE(B.BookTitle, "")',
-                                        ' || COALESCE(B.Comment, ""), A.FileID',
-                                        'from Files A left join Comments B on',
-                                        'B.CommentID = A.CommentID where A.ExtID in ({});')),
+           'FILE_INFO': ' '.join(('select A.FileName || " " || COALESCE(B.BookTitle, "")',
+                                  '|| " " || COALESCE(B.Comment, ""), A.FileID from',
+                                  'Files A left join Comments B on B.CommentID = A.CommentID',
+                                  'where A.ExtID in ({}) and NOT EXISTS (select * from FileTag',
+                                  'where FileID = A.FileID and TagID = {});')),
            'TAGS': 'select Tag, TagID from Tags order by Tag;',
            'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
                                   '(select TagID from FileTag where FileID = ?);')),
@@ -131,7 +132,7 @@ class DBUtils:
         # print('|---> advanced_selection', param)
 
         sql = self.generate_adv_sql(cur_place_id, param)
-        print(sql)
+        # print(sql)
 
         self.curs.execute(sql)
         return self.curs
@@ -218,18 +219,18 @@ class DBUtils:
         return sql
 
     def select_other(self, sql, params=()):
-        print('|---> select_other', sql, params)
+        # print('|---> select_other', sql, params)
         self.curs.execute(Selects[sql], params)
         return self.curs
 
     def select_other2(self, sql, params=()):
-        print('|---> select_other2', sql, params)
-        print(Selects[sql].format(*params))
+        # print('|---> select_other2', sql, params)
+        # print(Selects[sql].format(*params))
         self.curs.execute(Selects[sql].format(*params))
         return self.curs
 
     def insert_other(self, sql, data):
-        print('|---> insert_other', sql, data)
+        # print('|---> insert_other', sql, data)
         self.curs.execute(Insert[sql], data)
         jj = self.curs.lastrowid
         self.conn.commit()
@@ -241,6 +242,6 @@ class DBUtils:
         self.conn.commit()
 
     def delete_other(self, sql, data):
-        print('|---> delete_other:', sql, data)
+        # print('|---> delete_other:', sql, data)
         self.curs.execute(Delete[sql], data)
         self.conn.commit()

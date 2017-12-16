@@ -122,11 +122,12 @@ class MyController():
         ext_idx = MyController._selected_db_indexes(self.view.extList)
         all_id = self._collect_all_ext(ext_idx)
 
-        files = self._dbu.select_other2('FILE_NAME+TITLE',
-                                        (','.join([str(i) for i in all_id]),)).fetchall()
         sel_tag = self.get_selected_tags()
-        for file in files:
-            for tag in sel_tag:
+        for tag in sel_tag:
+            files = self._dbu.select_other2('FILE_INFO',
+                                            (','.join([str(i) for i in all_id]),
+                                             tag[1])).fetchall()
+            for file in files:
                 if re.search(tag[0], file[0], re.IGNORECASE):
                     try:
                         self._dbu.insert_other('TAG_FILE', (tag[1], file[1]))
