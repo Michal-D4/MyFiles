@@ -58,19 +58,16 @@ class MyController():
                 'change_font': self._change_font,
                 'Tag Scan in names': self._scan_for_tags,
                 'Copy file name': self._copy_file_name,
-                'Copy full path': self._copy_full_path,
-                'save_setting': self._save_setting()
+                'Copy full path': self._copy_full_path
                 }
 
     def _save_setting(self):
-        print('<<< _save_setting start >>>')
         settings = QSettings()
-        self.file_list_source = settings.value('Ctrl/list_source', MyController.FOLDER)
-        print('<<< _save_setting end >>>')
+        settings.setValue('Ctrl/list_source', QVariant(self.file_list_source))
 
     def _restore_setting(self):
         settings = QSettings()
-        settings.setValue('Ctrl/list_source', QVariant(self.file_list_source))
+        self.file_list_source = settings.value('Ctrl/list_source', MyController.FOLDER)
 
     def _copy_file_name(self):
         pass
@@ -555,7 +552,6 @@ class MyController():
         self._populate_ext_list()
         self._populate_tag_list()
         self._populate_author_list()
-        self._restore_setting()
 
     def _populate_directory_tree(self):
         dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])

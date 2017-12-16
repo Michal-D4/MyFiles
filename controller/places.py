@@ -4,50 +4,54 @@ import socket
 import psutil
 import ctypes
 import os
+from collections import namedtuple
 
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
+from PyQt5.QtCore import QSettings, QVariant
 
 
 class Places:
     NOT_REMOVAL, NOT_DEFINED, MOUNTED, NOT_MOUNTED = (1, 2, 4, 8)
+
+    CurrPlace = namedtuple('curr_place', 'view_idx db_row disk_state')
 
     def __init__(self, parent):
         self.controller = parent
         self._view = parent.get_places_view()
         self._dbu = parent.get_db_utils()
         self._places = []           # list of (PlaceId, Place, Title)
-        self._curr_place = ()       # (index, (PlaceId, Place, Title), place_state)
+        self._curr_place = Places.CurrPlace(-1, (0, '', ''), Places.NOT_DEFINED)
         self._mount_point = ''
 
     def get_curr_place(self):
         return self._curr_place
 
-    def set_curr_place(self, curr_place):
-        self._curr_place = curr_place
-        self._view.setCurrentIndex(curr_place[0])
-
     def get_mount_point(self):
         return self._mount_point
 
     def get_disk_state(self):
+        return self._curr_place.disk_state
+
+    def _check_disk_state(self):
         """
+        Set NOT_DEFINED, NOT_REMOVAL, MOUNTED, NOT_MOUNTED state of disk
         Has side effect - saves mount point in self._mount_point
-        :return: NOT_DEFINED, NOT_REMOVAL, MOUNTED, NOT_MOUNTED
+        :return: None
         """
         idx = self._view.currentIndex()
         place_info = self._places[idx][1]
-        if not place_info:      # impossible to check if mounted
-            return self.NOT_DEFINED
-
-        loc = socket.gethostname()
-        if place_info == loc:   # always mounted
-            return self.NOT_REMOVAL
-
-        self._mount_point = Places._get_mount_point(place_info)
-        if self._mount_point:   # mount point exists
-            return self.MOUNTED
-
-        return self.NOT_MOUNTED
+        if not place_info:                  # impossible to check if mounted
+            self._curr_place = self._curr_place._replace(disk_state=self.NOT_DEFINED)
+        else:
+            loc = socket.gethostname()
+            if place_info == loc:           # always mounted
+                self._curr_place = self._curr_place._replace(disk_state=self.NOT_REMOVAL)
+            else:
+                self._mount_point = Places._get_mount_point(place_info)
+                if self._mount_point:       # mount point exists
+                    self._curr_place = self._curr_place._replace(disk_state=self.MOUNTED)
+                else:
+                    self._curr_place = self._curr_place._replace(disk_state=self.NOT_MOUNTED)
 
     @staticmethod
     def is_removable(device):
@@ -67,33 +71,50 @@ class Places:
         if self._places:
             self._view.addItems((x[2] for x in self._places))
 
-            loc = socket.gethostname()
-            try:
-                idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
-            except StopIteration:
-                idx = -1
-
-            if idx >= 0:
-                self._curr_place = (idx, self._places[idx], Places.NOT_REMOVAL)
-                self._view.setCurrentIndex(idx)
+            idx = self._restore_setting()
+            if not idx == -1:
+                self._restored_idx(idx)
             else:
-                self._curr_place = (0, plc[0], Places.NOT_DEFINED)
+                self._set_host_place()
 
         self._view.blockSignals(False)
+
+    def _set_host_place(self):
+        loc = socket.gethostname()
+        try:
+            idx = next(i for i in range(0, len(self._places)) if self._places[i][1] == loc)
+        except StopIteration:
+            idx = -1
+        if idx >= 0:
+            self._curr_place = Places.CurrPlace._make((idx, self._places[idx], Places.NOT_REMOVAL))
+            self._view.setCurrentIndex(idx)
+        else:
+            self._curr_place = Places.CurrPlace._make((0, self._places[0], Places.NOT_DEFINED))
+
+    def _restore_setting(self):
+        settings = QSettings()
+        cur_idx = settings.value('Place/Idx', -1)
+        return cur_idx
+
+    def _restored_idx(self, cur_idx):
+        if not cur_idx == -1:
+            self._curr_place = Places.CurrPlace._make((cur_idx, self._places[cur_idx], self.NOT_DEFINED))
+            self._view.setCurrentIndex(self._curr_place.view_idx)
+            self._check_disk_state()
 
     def about_change_place(self):
         """
         :param data: tuple (index in view, current text in view)
         :return: None
         """
-        prev_id = self._curr_place[0]
+        prev_id = self._curr_place.view_idx
         idx = self._view.currentIndex()
         place_title = self._view.currentText()
         if idx >= len(self._places):
             self._add_place((idx, place_title))
         else:
             self._change_place((idx, place_title))
-        if prev_id != self._curr_place[0]:
+        if prev_id != self._curr_place.view_idx:
             self.controller.on_change_data('dirTree')
 
     def update_place_name(self, root):
@@ -103,15 +124,17 @@ class Places:
         :param root: any path, used only "volume letter"/"mount point"
         :return: True / False
         """
-        if self.get_disk_state() == self.NOT_DEFINED:
+        self._check_disk_state()
+        if self._curr_place.disk_state == self.NOT_DEFINED:
             place_info = self.get_place_name(root)
 
             if self._is_not_registered_place(place_info[0]):
-                self._dbu.update_other('PLACE', (place_info[0], self._curr_place[1][0]))
-                self._curr_place = (self._curr_place[0],
-                                    (self._curr_place[1][0], place_info[0],
-                                     self._curr_place[1][2]), place_info[1])
-                self._places[self._curr_place[0]] = self._curr_place[1]
+                self._dbu.update_other('PLACE', (place_info[0], self._curr_place.db_row[0]))
+                self._curr_place = self._curr_place._replace(db_row=(self._curr_place.db_row[0],
+                                                                     place_info[0],
+                                                                     self._curr_place.db_row[2]),
+                                                             disk_state=place_info[1])
+                self._places[self._curr_place.view_idx] = self._curr_place.db_row
                 return True
 
         return False
@@ -146,18 +169,29 @@ class Places:
         :param data: (current index in combobox, text of current item - Title)
         :return: None
         """
-        if self.get_disk_state() == self.NOT_MOUNTED:
+        self._check_disk_state()
+        if self._curr_place.disk_state == self.NOT_MOUNTED:
             res = self._ask_switch_to_unavailable_storage(data)
             if res == 0:                # Ok button
-                self._curr_place = (data[0], self._places[data[0]], self.NOT_MOUNTED)
+                self._curr_place = Places.CurrPlace(view_idx=data[0],
+                                                    db_row=self._places[data[0]],
+                                                    disk_state=self.NOT_MOUNTED)
+                self._save_setting()
             elif res == 1:              # Remove button
                 self._remove_current_place()
             else:                       # Cancel - return to prev.place
                 self._view.blockSignals(True)
-                self._view.setCurrentIndex(self._curr_place[0])
+                self._view.setCurrentIndex(self._curr_place.view_idx)
                 self._view.blockSignals(False)
         else:                           # switches to new place silently
-            self._curr_place = (data[0], self._places[data[0]], self.get_disk_state())
+            self._curr_place = Places.CurrPlace(view_idx=data[0],
+                                                db_row=self._places[data[0]],
+                                                disk_state=self.get_disk_state())
+            self._save_setting()
+
+    def _save_setting(self):
+        settings = QSettings()
+        settings.setValue('Place/Idx', QVariant(self._curr_place.view_idx))
 
     def _remove_current_place(self):
         idx = self._view.currentIndex()
@@ -165,7 +199,7 @@ class Places:
             self._view.blockSignals(True)
             self._view.removeItem(idx)
             self._dbu.delete_other('PLACES', (self._places[idx][0],))
-            self._view.setCurrentIndex(self._curr_place[0])
+            self._view.setCurrentIndex(self._curr_place.view_idx)
             self._view.blockSignals(False)
 
     def _not_in_dirs(self, place_id):
@@ -186,11 +220,11 @@ class Places:
         if res == 0:                # add new
             self._add_new(data)
         elif res == 1:              # rename
-            self._rename_place((self._curr_place[0], data[1]))
+            self._rename_place((self._curr_place.view_idx, data[1]))
         else:                       # cancel
             self._view.blockSignals(True)
             self._view.removeItem(self._view.currentIndex())
-            self._view.setCurrentIndex(self._curr_place[0])
+            self._view.setCurrentIndex(self._curr_place.view_idx)
             self._view.blockSignals(False)
 
     def _add_new(self, data):
@@ -199,8 +233,10 @@ class Places:
         :return: None
         """
         jj = self._dbu.insert_other('PLACES', ('', data[1]))
-        self._curr_place = (self._view.currentIndex(), (jj, '', data[1]), self.NOT_DEFINED)
-        self._places.append(self._curr_place[1])
+        self._curr_place = Places.CurrPlace(view_idx=self._view.currentIndex(),
+                                            db_row=(jj, '', data[1]),
+                                            disk_state=self.NOT_DEFINED)
+        self._places.append(self._curr_place.db_row)
         root = QFileDialog.getExistingDirectory(parent=self._view,
                                                 caption='Select root folder')
         if root:
@@ -211,11 +247,10 @@ class Places:
         :param data: (index in combobox, current text in combobox)
         :return: None
         """
-        self._curr_place = (self._curr_place[0],
-                            (self._curr_place[1][0],
-                             self._curr_place[1][1], data[1]),
-                            self._curr_place[2])
-        self._places[self._curr_place[0]] = self._curr_place[1]
+        self._curr_place = self._curr_place._replace(db_row=(self._curr_place.db_row[0],
+                                                             self._curr_place.db_row[1],
+                                                             data[1]))
+        self._places[self._curr_place.view_idx] = self._curr_place.db_row
 
         self._view.blockSignals(True)
 
@@ -223,12 +258,12 @@ class Places:
 
         self._view.addItems((x[2] for x in self._places))
 
-        self._view.setCurrentIndex(self._curr_place[0])
+        self._view.setCurrentIndex(self._curr_place.view_idx)
         self._view.setCurrentText(data[1])
 
         self._view.blockSignals(False)
 
-        self._dbu.update_other('PLACE_TITLE', (data[1], self._curr_place[1][0]))
+        self._dbu.update_other('PLACE_TITLE', (data[1], self._curr_place.db_row[0]))
 
     @staticmethod
     def _ask_rename_or_new():
