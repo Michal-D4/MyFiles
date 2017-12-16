@@ -1,14 +1,10 @@
 # view/main_flow.py
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QCoreApplication
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
-
-APP_NAME = 'File manager'
-ORG_DOMAIN = 'fake_domain.org'
-ORG_NAME = 'Fake organization'
 
 
 class MainFlow(QMainWindow):
@@ -19,10 +15,6 @@ class MainFlow(QMainWindow):
         QWidget.__init__(self, parent)
         self.ui_main = Ui_MainWindow()
         self.ui_main.setupUi(self)
-
-        QCoreApplication.setApplicationName(APP_NAME)
-        QCoreApplication.setOrganizationDomain(ORG_DOMAIN)
-        QCoreApplication.setOrganizationName(ORG_NAME)
 
         self.restore_setting()
 
