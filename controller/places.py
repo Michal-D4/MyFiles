@@ -22,6 +22,10 @@ class Places:
     def get_curr_place(self):
         return self._curr_place
 
+    def set_curr_place(self, curr_place):
+        self._curr_place = curr_place
+        self._view.setCurrentIndex(curr_place[0])
+
     def get_mount_point(self):
         return self._mount_point
 
@@ -102,7 +106,7 @@ class Places:
         if self.get_disk_state() == self.NOT_DEFINED:
             place_info = self.get_place_name(root)
 
-            if self.is_not_registered_place(place_info[0]):
+            if self._is_not_registered_place(place_info[0]):
                 self._dbu.update_other('PLACE', (place_info[0], self._curr_place[1][0]))
                 self._curr_place = (self._curr_place[0],
                                     (self._curr_place[1][0], place_info[0],
@@ -115,17 +119,17 @@ class Places:
     def get_place_name(self, root):
         """
         :param root: any path, used only volume - mount point
-        :return: label of disk if removal, otherwise - computer name
+        :return: place_name, state
         """
         disk = psutil.os.path._getvolumepathname(root)
 
         if self.is_removable(disk):
-            place_name = (self._get_vol_name(disk), self.MOUNTED)    # disk label
+            place_name, state = (self._get_vol_name(disk), self.MOUNTED)    # disk label
         else:
-            place_name = (socket.gethostname(), self.NOT_REMOVAL)    # computer name
-        return place_name
+            place_name, state = (socket.gethostname(), self.NOT_REMOVAL)    # computer name
+        return place_name, state
 
-    def is_not_registered_place(self, place_name):
+    def _is_not_registered_place(self, place_name):
         """
         Check if exists in DB
         :param place_name: "name of computer" or "label of USB"
