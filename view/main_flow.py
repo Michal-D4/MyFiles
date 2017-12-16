@@ -1,10 +1,14 @@
 # view/main_flow.py
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QCoreApplication
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
+
+APP_NAME = 'File manager'
+ORG_DOMAIN = 'fake_domain.org'
+ORG_NAME = 'Fake organization'
 
 
 class MainFlow(QMainWindow):
@@ -15,6 +19,10 @@ class MainFlow(QMainWindow):
         QWidget.__init__(self, parent)
         self.ui_main = Ui_MainWindow()
         self.ui_main.setupUi(self)
+
+        QCoreApplication.setApplicationName(APP_NAME)
+        QCoreApplication.setOrganizationDomain(ORG_DOMAIN)
+        QCoreApplication.setOrganizationName(ORG_NAME)
 
         self.restore_setting()
 
@@ -143,7 +151,7 @@ class MainFlow(QMainWindow):
         self.change_data_signal.emit('cb_places')
 
     def restore_setting(self):
-        settings = QSettings('myorg', 'myapp')
+        settings = QSettings()
         if settings.contains("MainFlow/Size"):
             size = settings.value("MainFlow/Size", QSize(600, 500))
             self.resize(size)
@@ -173,7 +181,7 @@ class MainFlow(QMainWindow):
             self.open_dialog.emit_open_dialog()
 
     def closeEvent(self, event):
-        settings = QSettings('myorg', 'myapp')
+        settings = QSettings()
         settings.setValue("MainFlow/Size", QVariant(self.size()))
         settings.setValue("MainFlow/Position",
                           QVariant(self.pos()))
@@ -185,6 +193,5 @@ class MainFlow(QMainWindow):
                           QVariant(self.ui_main.opt_splitter.saveState()))
         settings.setValue("MainSplitter",
                           QVariant(self.ui_main.main_splitter.saveState()))
-        # event.accept()
         super(MainFlow, self).closeEvent(event)
 
