@@ -61,14 +61,6 @@ class MyController():
                 'Copy full path': self._copy_full_path
                 }
 
-    def _save_setting(self):
-        settings = QSettings()
-        settings.setValue('Ctrl/list_source', QVariant(self.file_list_source))
-
-    def _restore_setting(self):
-        settings = QSettings()
-        self.file_list_source = settings.value('Ctrl/list_source', MyController.FOLDER)
-
     def _copy_file_name(self):
         pass
 
@@ -232,6 +224,8 @@ class MyController():
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
             self.file_list_source = MyController.FAVORITE
+            settings = QSettings()
+            settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
             self._show_files(files, model)
             self.view.statusbar.showMessage('Favorite files')
         else:
@@ -260,6 +254,8 @@ class MyController():
         if curs:
             self._show_files(curs, model)
             self.file_list_source = MyController.ADVANCE
+            settings = QSettings()
+            settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         else:
             MyController.show_message("Nothing found. Change you choices.")
 
@@ -306,10 +302,10 @@ class MyController():
         if not page_number:
             page_number = 0
         pages, ok_pressed = QInputDialog.getInt(self.view.extList, 'Input page number',
-                                                '', QLineEdit.Normal, page_number)
+                                                '', int(page_number))
         if ok_pressed:
             self._dbu.update_other('PAGES', (pages, file_id))
-            self._refresh_file_list(f_idx)
+            self.view.filesList.model().update(f_idx, pages)
 
     def _open_file(self):
         f_idx = self.view.filesList.currentIndex()
@@ -425,29 +421,39 @@ class MyController():
         u_type = namedtuple('file_comment',
                             'file_id dir_id comment_id issue_date comment book_title')
         curr_idx = self.view.filesList.currentIndex()
-        #  user_data = (file_id, dir_id, comment_id, issue_date)
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
             self._dbu.update_other('FILE_COMMENT', (comment_id, user_data[0]))
-            self._refresh_file_list(curr_idx)   # need, to have comment_id in model
+            self.view.filesList.model().update(curr_idx,
+                                               user_data[:2] + (comment_id, user_data[3]),
+                                               Qt.UserRole)
         return u_type._make(user_data + comment)
 
-    def _refresh_file_list(self, curr_idx):
+    def _restore_file_list(self, curr_dir_idx):
+        settings = QSettings()
+        self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
+        row = settings.value('FILE_IDX', -1)
+        print('|--> _restore_file_list: row', row)
+
         if self.file_list_source == MyController.FAVORITE:
             self._favorite_file_list()
         elif self.file_list_source == MyController.FOLDER:
-            idx = self.view.dirTree.currentIndex()
-            dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
+            dir_idx = self.view.dirTree.model().data(curr_dir_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
         else:
             self._get_sel_files()
 
-        self.view.filesList.setCurrentIndex(curr_idx)
-        f_idx = self.view.filesList.model().index(curr_idx.row(), 0)
-        self.view.filesList.selectionModel().select(f_idx, QItemSelectionModel.Select)
+        if row == -1:
+            idx = QModelIndex()
+        else:
+            idx = self.view.filesList.model().index(row, 0)
+
+        if idx.isValid():
+            self.view.filesList.setCurrentIndex(idx)
+            self.view.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _edit_date(self):
         self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 'issue_date')
@@ -486,6 +492,8 @@ class MyController():
         :return:
         """
         self.file_list_source = MyController.FOLDER
+        settings = QSettings()
+        settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
         if dir_idx:
@@ -511,6 +519,10 @@ class MyController():
         self.view.filesList.activateWindow()
 
     def _file_changed(self, curr_idx, _):
+        settings = QSettings()
+        settings.setValue('FILE_IDX', curr_idx.row())
+        settings.sync()
+        print('|--> _file_changed', curr_idx.row(), settings.status())
         data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
         self._populate_comment_field(data)
 
@@ -558,12 +570,11 @@ class MyController():
 
         model = TreeModel(dirs)
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
-
         self.view.dirTree.setModel(model)
-        idx = model.index(0, 0)
-        self.view.dirTree.setCurrentIndex(idx)
 
-        self._populate_file_list(model.data(idx, role=Qt.UserRole))
+        cur_dir_idx = self._restore_path()
+
+        self._restore_file_list(cur_dir_idx)
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
@@ -597,10 +608,40 @@ class MyController():
         :return: None
         """
         idx = sel1.indexes()
-        if idx:
-            # dir_idx = (DirID, ParentID, Full path)
+        if idx:            # dir_idx = (DirID, ParentID, Full path)
+            MyController._save_path(idx[0])
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
             self._populate_file_list(dir_idx)
+
+    @staticmethod
+    def _save_path(idx):
+        id = idx
+        aux = []
+        while id.isValid():
+            aux.append(id.row())
+            id = id.parent()
+        aux.reverse()
+
+        settings = QSettings()
+        settings.setValue('TREE_SEL_IDX', QVariant(aux))
+
+    def _restore_path(self):
+        """
+        restore expand state and current index of dirTree
+        :return: current index
+        """
+        settings = QSettings()
+        aux = settings.value('TREE_SEL_IDX', [0])
+        model = self.view.dirTree.model()
+        parent = QModelIndex()
+        for id in aux:
+            if parent.isValid():
+                if not self.view.dirTree.isExpanded(parent):
+                    self.view.dirTree.setExpanded(parent, True)
+            idx = model.index(int(id), 0, parent)
+            self.view.dirTree.setCurrentIndex(idx)
+            parent = idx
+        return parent
 
     def on_scan_files(self):
         """
