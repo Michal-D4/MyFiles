@@ -436,7 +436,6 @@ class MyController():
         settings = QSettings()
         self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
         row = settings.value('FILE_IDX', -1)
-        print('|--> _restore_file_list: row', row)
 
         if self.file_list_source == MyController.FAVORITE:
             self._favorite_file_list()
@@ -521,8 +520,6 @@ class MyController():
     def _file_changed(self, curr_idx, _):
         settings = QSettings()
         settings.setValue('FILE_IDX', curr_idx.row())
-        settings.sync()
-        print('|--> _file_changed', curr_idx.row(), settings.status())
         data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
         self._populate_comment_field(data)
 
