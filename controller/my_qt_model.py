@@ -177,6 +177,19 @@ class TableModel(QAbstractTableModel):
                     return Qt.AlignLeft
                 return Qt.AlignRight
 
+    def update(self, index, data, role=Qt.DisplayRole):
+        if index.isValid():
+            if role == Qt.DisplayRole:
+                if len(self.__data[index.row()]) > index.column():
+                    i = index.column()
+                    if i + 1 < len(self.__data[index.row()]):
+                        self.__data[index.row()] = self.__data[index.row()][:i] + \
+                                                   (data,) + self.__data[index.row()][(i+1):]
+                    else:
+                        self.__data[index.row()] = self.__data[index.row()][:i] + (data,)
+            elif role == Qt.UserRole:
+                self.__user_data[index.row()] = data
+
     def append_row(self, row, user_data=None):
         if isinstance(row, str) or not isinstance(row, Iterable):
             row = (str(row),)
