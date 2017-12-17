@@ -3,7 +3,7 @@
 from collections import namedtuple
 
 from PyQt5.QtWidgets import QDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings
 from view.ui_sel_opt import Ui_SelOpt
 from model.db_utils import PLUS_EXT_ID
 
@@ -15,19 +15,41 @@ class SelOpt(QDialog):
         self.ui.setupUi(self)
 
         self.ctrl = controller
+        self._restore_state()
 
         self.ui.chAuthor.stateChanged.connect(self.author_toggle)
         self.ui.chDate.stateChanged.connect(self.date_toggle)
         self.ui.chDirs.stateChanged.connect(self.dir_toggle)
         self.ui.chExt.stateChanged.connect(self.ext_toggle)
         self.ui.chTags.stateChanged.connect(self.tag_toggle)
+        self.ui.eDate.textEdited.connect(self._text_edited)
+
+    def _text_edited(self, ed_str):
+        print('|--> _text_edited', ed_str)
+        self.not_older = int(ed_str)
+
+    def _restore_state(self):
+        settings = QSettings()
+        rest = settings.value('SelectionOptions', (False, False, False, True,
+                                                   False, (True, 5, True)))
+        print('|--> _restore_state', settings.status())
+        print('   ', rest)
+        self.ui.chDirs.setChecked(rest[0])
+        self.ui.chExt.setChecked(rest[1])
+        self.ui.chTags.setChecked(rest[2])
+        self.ui.tagAll.setChecked(rest[3])
+        self.ui.chAuthor.setChecked(rest[4])
+        self.ui.chDate.setChecked(rest[5][0])
+        self.not_older = int(rest[5][1])
+        self.ui.eDate.setText(str(self.not_older))
+        self.ui.dateFile.setChecked(rest[5][2])
 
     def author_toggle(self):
         if self.ui.chAuthor.isChecked():
             self.ui.eAuthors.setText(self.ctrl.get_selected_items(self.ctrl.view.authorsList))
-            if not self.ui.eAuthors.text():
-                self.ctrl.show_message("No authors selected")
-                self.ui.chAuthor.setChecked(False)
+            # if not self.ui.eAuthors.text():
+            #     self.ctrl.show_message("No authors selected")
+            #     self.ui.chAuthor.setChecked(False)
         else:
             self.ui.eAuthors.setText('')
 
@@ -39,7 +61,7 @@ class SelOpt(QDialog):
 
         if state:
             if not self.ui.eDate.text():
-                self.ui.eDate.setText('5')
+                self.ui.eDate.setText(str(self.not_older))
         else:
             self.ui.eDate.setText('')
 
@@ -55,9 +77,9 @@ class SelOpt(QDialog):
     def ext_toggle(self):
         if self.ui.chExt.isChecked():
             self.ui.eExt.setText(self.ctrl.get_selected_items(self.ctrl.view.extList))
-            if not self.ui.eExt.text():
-                self.ctrl.show_message("No extensions selected")
-                self.ui.chExt.setChecked(False)
+            # if not self.ui.eExt.text():
+            #     self.ctrl.show_message("No extensions selected")
+            #     self.ui.chExt.setChecked(False)
         else:
             self.ui.eExt.setText('')
 
@@ -65,9 +87,9 @@ class SelOpt(QDialog):
         state = self.ui.chTags.isChecked()
         if state:
             self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.view.tagsList))
-            if not self.ui.eTags.text():
-                self.ctrl.show_message("No key words selected")
-                self.ui.chTags.setChecked(False)
+            # if not self.ui.eTags.text():
+            #     self.ctrl.show_message("No key words selected")
+            #     self.ui.chTags.setChecked(False)
         else:
             self.ui.eTags.setText('')
 
@@ -98,11 +120,19 @@ class SelOpt(QDialog):
                      date=doc_date(use=self.ui.chDate.isChecked(),
                                    date=self.ui.eDate.text(),
                                    file_date=self.ui.dateFile.isChecked()))
+        settings = QSettings()
+        settings.setValue('SelectionOptions', (res.dir.use, res.extension.use,
+                                               res.tags.use, res.tags.match_all,
+                                               res.authors.use,
+                                               (res.date.use, res.date.date,
+                                                res.date.file_date)))
         return res
 
     def _get_dir_ids(self):
         if self.ui.chDirs.isChecked():
-            lvl = int(self.ui.sbLevel.text())
+            print('|--> _get_dir_ids', self.ui.sbLevel.text())
+            # lvl = int(self.ui.sbLevel.text())
+            lvl = 0
             idx = self.ctrl.view.dirTree.currentIndex()
             root_id = int(self.ctrl.view.dirTree.model().data(idx, Qt.UserRole)[0])
             place_id = self.ctrl.get_place_instance().get_curr_place()[1][0]
