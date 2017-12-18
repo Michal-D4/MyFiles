@@ -42,6 +42,7 @@ class SelOpt(QDialog):
         self.ui.chDate.setChecked(rest[5][0])
         self.not_older = int(rest[5][1])
         self.ui.eDate.setText(str(self.not_older))
+        self.ui.eDate.setEnabled(rest[5][0])
         self.ui.dateFile.setChecked(rest[5][2])
 
     def author_toggle(self):
