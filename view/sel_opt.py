@@ -32,8 +32,6 @@ class SelOpt(QDialog):
         settings = QSettings()
         rest = settings.value('SelectionOptions', (False, False, False, True,
                                                    False, (True, 5, True)))
-        print('|--> _restore_state', settings.status())
-        print('   ', rest)
         self.ui.chDirs.setChecked(rest[0])
         self.ui.chExt.setChecked(rest[1])
         self.ui.chTags.setChecked(rest[2])
