@@ -468,7 +468,7 @@ class MyController():
         self.view.extList.setModel(model)
         self.view.extList.selectionModel().selectionChanged.connect(self._ext_sel_changed)
 
-    def _ext_sel_changed(self):
+    def _ext_sel_changed(self, selected: QItemSelection, deselected: QItemSelection):
         """
         Selection changed for view.extList, save new selection
         :param selected:
@@ -476,6 +476,12 @@ class MyController():
         :return: None
         """
         print('|--> _ext_sel_changed')
+        model = self.view.extList.model()
+        for id in selected.indexes():
+            print('se', model.data(id, role=Qt.DisplayRole), id.row(), id.parent().row())
+        for id in deselected.indexes():
+            print('de', model.data(id, role=Qt.DisplayRole), id.row(), id.parent().row())
+
         if not self.is_restoring_selection:
             idxs = self.view.extList.selectedIndexes()
             sel = []
