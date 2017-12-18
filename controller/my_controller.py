@@ -7,7 +7,7 @@ import webbrowser
 from collections import namedtuple
 
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox, QFontDialog
-from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel, QSettings, QVariant
+from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel, QSettings, QVariant, QItemSelection
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
@@ -28,6 +28,7 @@ class MyController():
     def __init__(self, view):
         self._connection = None
         self.view = view.ui_main
+        self.is_restoring_selection = False
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
         self._cb_places = Places(self)
@@ -465,6 +466,25 @@ class MyController():
         model = TreeModel(ext_list)
         model.setHeaderData(0, Qt.Horizontal, "Extensions")
         self.view.extList.setModel(model)
+        self.view.extList.selectionModel().selectionChanged.connect(self._ext_sel_changed)
+
+    def _ext_sel_changed(self):
+        """
+        Selection changed for view.extList, save new selection
+        :param selected:
+        :param deselected:
+        :return: None
+        """
+        print('|--> _ext_sel_changed')
+        if not self.is_restoring_selection:
+            idxs = self.view.extList.selectedIndexes()
+            sel = []
+            for ss in idxs:
+                print(ss.row(), ss.parent().row())
+                sel.append((ss.row(), ss.parent().row()))
+
+            settings = QSettings()
+            settings.setValue('EXT_SEL_LIST', sel)
 
     def _populate_tag_list(self):
         tag_list = self._dbu.select_other('TAGS')
@@ -556,8 +576,28 @@ class MyController():
         self._cb_places.populate_cb_places()
         self._populate_directory_tree()
         self._populate_ext_list()
+        self._restore_ext_selection()
         self._populate_tag_list()
         self._populate_author_list()
+
+    def _restore_ext_selection(self):
+        settings = QSettings()
+        sel = settings.value('EXT_SEL_LIST', [])
+        print('|--> _restore_ext_selection', sel)
+        model = self.view.extList.model()
+        self.is_restoring_selection = True
+        for ss in sel:
+            if ss[1] == -1:
+                parent = QModelIndex()
+            else:
+                parent = model.index(ss[1], 0)
+                self.view.extList.setExpanded(parent, True)
+
+            idx = model.index(ss[0], 0, parent)
+
+            self.view.extList.selectionModel().select(idx, QItemSelectionModel.Select)
+
+        self.is_restoring_selection = False
 
     def _populate_directory_tree(self):
         dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
