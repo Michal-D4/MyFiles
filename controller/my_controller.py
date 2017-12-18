@@ -55,7 +55,7 @@ class MyController():
                 'Ext Remove unused': self._ext_remove_unused,
                 'Ext Create group': self._ext_create_group,
                 'Dirs Update tree': self._dir_update,
-                'change_font': self._change_font,
+                'change_font': self._ask_for_change_font,
                 'Tag Scan in names': self._scan_for_tags,
                 'Copy file name': self._copy_file_name,
                 'Copy full path': self._copy_full_path
@@ -153,15 +153,18 @@ class MyController():
             return list(zip(tag_s, t_ids))
         return []
 
-    def _change_font(self):
+    def _ask_for_change_font(self):
         font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
         if ok_:
-            self.view.dirTree.setFont(font)
-            self.view.extList.setFont(font)
-            self.view.filesList.setFont(font)
-            self.view.tagsList.setFont(font)
-            self.view.authorsList.setFont(font)
-            self.view.commentField.setFont(font)
+            self._change_font(font)
+
+    def _change_font(self, font):
+        self.view.dirTree.setFont(font)
+        self.view.extList.setFont(font)
+        self.view.filesList.setFont(font)
+        self.view.tagsList.setFont(font)
+        self.view.authorsList.setFont(font)
+        self.view.commentField.setFont(font)
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -269,19 +272,13 @@ class MyController():
         u_data = self.view.filesList.model().data(f_idx, Qt.UserRole)
         if self.file_list_source == MyController.FAVORITE:
             self._dbu.delete_other('FAVORITES', (u_data[0],))
-            self._favorite_file_list()
-            return
-
-        self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
-        self._dbu.delete_other('TAG_FILE_BY_FILE', (u_data[0],))
-        self._dbu.delete_other('COMMENT', (u_data[2],))
-        self._dbu.delete_other('FILE', (u_data[0],))
-        if self.file_list_source == MyController.FOLDER:
-            idx = self.view.dirTree.currentIndex()
-            dir_idx = self.view.dirTree.model().data(idx, Qt.UserRole)
-            self._populate_file_list(dir_idx)
         else:
-            self._get_sel_files()
+            self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
+            self._dbu.delete_other('TAG_FILE_BY_FILE', (u_data[0],))
+            self._dbu.delete_other('COMMENT', (u_data[2],))
+            self._dbu.delete_other('FILE', (u_data[0],))
+
+        self.view.filesList.model().delete_row(f_idx)
 
     def _open_folder(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
@@ -515,7 +512,7 @@ class MyController():
         self.view.filesList.selectionModel().currentRowChanged.connect(self._file_changed)
         index_ = model.index(0, 0)
         self.view.filesList.setCurrentIndex(index_)
-        self.view.filesList.activateWindow()
+        self.view.filesList.setFocus()
 
     def _file_changed(self, curr_idx, _):
         settings = QSettings()

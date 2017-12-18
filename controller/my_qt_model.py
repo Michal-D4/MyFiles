@@ -190,6 +190,12 @@ class TableModel(QAbstractTableModel):
             elif role == Qt.UserRole:
                 self.__user_data[index.row()] = data
 
+    def delete_row(self, index):
+        if index.isValid():
+            row = index.row()
+            self.__data.remove(self.__data[row])
+            self.__user_data.remove(self.__user_data[row])
+
     def append_row(self, row, user_data=None):
         if isinstance(row, str) or not isinstance(row, Iterable):
             row = (str(row),)
