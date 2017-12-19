@@ -34,6 +34,7 @@ class MyController():
         self._cb_places = Places(self)
         self._opt = SelOpt(self)
         self._on_data_methods = self.set_on_data_methods()
+        self._restore_font()
 
     def set_on_data_methods(self):
         return {'cb_places': self._cb_places.about_change_place,
@@ -157,6 +158,14 @@ class MyController():
     def _ask_for_change_font(self):
         font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
         if ok_:
+            self._change_font(font)
+            settings = QSettings()
+            settings.setValue('FONT', font)
+
+    def _restore_font(self):
+        settings = QSettings()
+        font = settings.value('FONT', None)
+        if font:
             self._change_font(font)
 
     def _change_font(self, font):
