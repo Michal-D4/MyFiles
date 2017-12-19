@@ -33,10 +33,10 @@ class MyController():
         self._dbu = DBUtils()
         self._cb_places = Places(self)
         self._opt = SelOpt(self)
-        self._on_data_methods = self.set_on_data_methods()
+        self._on_data_methods = self._set_on_data_methods()
         self._restore_font()
 
-    def set_on_data_methods(self):
+    def _set_on_data_methods(self):
         return {'cb_places': self._cb_places.about_change_place,
                 'dirTree': self._populate_directory_tree,
                 'Edit key words': self._edit_key_words,
@@ -50,7 +50,7 @@ class MyController():
                 'Open': self._open_file,
                 'Open folder': self._open_folder,
                 'advanced_file_list': self._advanced_file_list,
-                'get_sel_files': self._get_sel_files,
+                'get_sel_files': self._list_of_selected_files,
                 'Favorites': self._favorite_file_list,
                 'Author Remove unused': self._author_remove_unused,
                 'Tag Remove unused': self._tag_remove_unused,
@@ -64,9 +64,11 @@ class MyController():
                 }
 
     def _copy_file_name(self):
+        # todo - not implemented
         pass
 
     def _copy_full_path(self):
+        # todo - not implemented
         pass
 
     def get_places_view(self):
@@ -112,7 +114,7 @@ class MyController():
                 self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                    detect_types=DETECT_TYPES)
             else:
-                MyController.show_message("Data base does not exist")
+                MyController._show_message("Data base does not exist")
                 return
 
         self._dbu.set_connection(self._connection)
@@ -127,6 +129,10 @@ class MyController():
         self._on_data_methods[action]()
 
     def _scan_for_tags(self):
+        """
+        Tags are searched if files with selected extensions
+        :return:
+        """
         ext_idx = MyController._selected_db_indexes(self.view.extList)
         all_id = self._collect_all_ext(ext_idx)
 
@@ -228,6 +234,7 @@ class MyController():
         return all_id
 
     def _dir_update(self):
+        # to do - execute when thread "load_files" finished, not from menu
         self._populate_directory_tree()
         self._populate_ext_list()
 
@@ -256,9 +263,9 @@ class MyController():
         :return:
         """
         if self._opt.exec_():
-            self._get_sel_files()
+            self._list_of_selected_files()
 
-    def _get_sel_files(self):
+    def _list_of_selected_files(self):
         res = self._opt.get_result()
         model = TableModel()
         model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
@@ -270,7 +277,7 @@ class MyController():
             settings = QSettings()
             settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         else:
-            MyController.show_message("Nothing found. Change you choices.")
+            MyController._show_message("Nothing found. Change you choices.")
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
@@ -330,7 +337,7 @@ class MyController():
                 except OSError:
                     pass
             else:
-                MyController.show_message("Can't find file {}".format(full_file_name))
+                MyController._show_message("Can't find file {}".format(full_file_name))
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
@@ -349,32 +356,32 @@ class MyController():
             res = edit_tags.get_result()
             sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'),
                         ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
-            self.save_edited_items(new_items=res, old_items=sel_tags,
-                                   file_id=u_data[0], sql_list=sql_list)
+            self._save_edited_items(new_items=res, old_items=sel_tags,
+                                    file_id=u_data[0], sql_list=sql_list)
 
             self._populate_tag_list()
             self._populate_comment_field(u_data)
 
-    def save_edited_items(self, new_items, old_items, file_id, sql_list):
+    def _save_edited_items(self, new_items, old_items, file_id, sql_list):
         old_words_set = set([tag[0] for tag in old_items])
         new_words_set = set([str.lstrip(item) for item in new_items.split(', ')])
 
         to_del = old_words_set.difference(new_words_set)
         to_del_ids = [tag[1] for tag in old_items if tag[0] in to_del]
-        self.del_item_links(to_del_ids, file_id, sql_list[0])
+        self._del_item_links(to_del_ids, file_id, sql_list[0])
 
         old_words_set.add('')
         to_add = new_words_set.difference(old_words_set)
-        self.add_item_links(to_add, file_id, sql_list[1])
+        self._add_item_links(to_add, file_id, sql_list[1])
 
-    def del_item_links(self, items2del, file_id, sqls):
+    def _del_item_links(self, items2del, file_id, sqls):
         for item in items2del:
             self._dbu.delete_other(sqls[0], (item, file_id))
             res = self._dbu.select_other(sqls[1], (item,)).fetchone()
             if not res:
                 self._dbu.delete_other(sqls[2], (item,))
 
-    def add_item_links(self, items2add, file_id, sqls):
+    def _add_item_links(self, items2add, file_id, sqls):
         add_ids = self._dbu.select_other2(sqls[0], ('","'.join(items2add),)).fetchall()
         sel_items = [item[0] for item in add_ids]
         not_in_ids = [item for item in items2add if not item in sel_items]
@@ -406,21 +413,21 @@ class MyController():
             res = edit_authors.get_result()
             sql_list = (('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'),
                         ('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
-            self.save_edited_items(new_items=res, old_items=sel_authors,
-                                   file_id=u_data[0], sql_list=sql_list)
+            self._save_edited_items(new_items=res, old_items=sel_authors,
+                                    file_id=u_data[0], sql_list=sql_list)
 
             self._populate_author_list()
             self._populate_comment_field(u_data)
 
     def _edit_comment_item(self, to_update, item_no):
-        checked = self.check_existence()
+        checked = self._check_existence()
         data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
                                                  '', QLineEdit.Normal, getattr(checked, item_no))
         if ok_pressed:
             self._dbu.update_other(to_update[0], (data_, checked.comment_id))
             self._populate_comment_field(checked[:4]) # file_id, dir_id, comment_id, issue_date
 
-    def check_existence(self):
+    def _check_existence(self):
         """
         Check if comment record already created for file
         :return: (file_id, dir_id, comment_id, issue_date, comment, book_title)
@@ -450,7 +457,7 @@ class MyController():
             dir_idx = self.view.dirTree.model().data(curr_dir_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
         else:
-            self._get_sel_files()
+            self._list_of_selected_files()
 
         if row == -1:
             idx = QModelIndex()
@@ -679,9 +686,9 @@ class MyController():
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
-                self.show_message('Files in the list located in unavailable place')
+                self._show_message('Files in the list located in unavailable place')
 
-        self.view.dirTree.selectionModel().selectionChanged.connect(self.sel_changed)
+        self.view.dirTree.selectionModel().selectionChanged.connect(self._sel_changed)
 
     def _get_dirs(self, place_id):
         """
@@ -701,7 +708,7 @@ class MyController():
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
-    def sel_changed(self, sel1, _):
+    def _sel_changed(self, sel1, _):
         """
         Changed selection in dirTree
         :param sel1: QList<QModelIndex>
@@ -752,18 +759,17 @@ class MyController():
         2) reading from prepared file for  unmounted disk
         :return: None
         """
-        if self._cb_places.get_disk_state() == Places.NOT_MOUNTED:
-            _data = self._read_from_file()
-        else:
+        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             _data = self._scan_file_system()
+            if _data:
+                curr_place = self._cb_places.get_curr_place()
+                load_files = LoadFiles(self._connection, curr_place, _data)
+                load_files.start()
 
-        if _data:
-            curr_place = self._cb_places.get_curr_place()
-            load_files = LoadFiles(self._connection, curr_place, _data)
-            load_files.start()
-
-            thread = FileInfo(self._connection, self._cb_places)
-            thread.start()
+                thread = FileInfo(self._connection, self._cb_places)
+                thread.start()
+        else:
+            self._show_message("Can't scan disk for files. Disk is not available.")
 
     def _scan_file_system(self):
         ext_ = self._get_selected_ext()
@@ -777,27 +783,8 @@ class MyController():
 
         return ()       # not ok_pressed or root is empty
 
-    def _read_from_file(self):
-        file_name = QFileDialog().getOpenFileName(self.view.extList, 'Choose input file',
-                                                  os.getcwd())
-        with open(file_name, 'rb') as a_file:
-            line = next(a_file)
-            if not self._cb_places.get_curr_place()[1][1] in line:
-                # do : in case of 'other place' check if place defined in the first line of file
-                # 1) if not defined - possible action:
-                #    a)  show message and stop action
-                #    b)  ???
-                # 2) if defined - possible action:
-                #    a)  - switch to place in file
-                #    b)  - create new place
-                MyController.show_message("The file {} doesn't have data from current place!".
-                                          format(file_name))
-                a_file = ()
-            return a_file
-        return ()
-
     @staticmethod
-    def show_message(message, message_type=QMessageBox.Critical):
+    def _show_message(message, message_type=QMessageBox.Critical):
         box = QMessageBox()
         box.setIcon(message_type)
         box.setText(message)

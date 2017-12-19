@@ -150,25 +150,3 @@ class TestMyController(unittest.TestCase):
         mock_places.update_place_name.assert_called_once_with('root')
         mock_yield_files.assert_called_once_with('root', 'pdf')
         self.assertEqual(res, ('file_list',))
-
-    @patch.object(my_controller.MyController, 'show_message')
-    @patch('controller.my_controller.QFileDialog', spec_set=QFileDialog)
-    @patch('controller.my_controller.Places', spec_set=Places)
-    def test__read_from_file(self, mock_places, mock_file_dialog, mock_show_message):
-        list_lines = '### same place ###\nfirst file name\nsecond file name\n'
-        self.controller._cb_places = mock_places
-        mock_places.get_curr_place.side_effect = ((0, (0, 'same place', 'same_title'), 0),
-                                                  (0, (0, 'other_place', 'other_title'), 0))
-        mock_file_dialog.getOpenFileName.return_value = 'file name'
-
-        self.mock_open_file = mock_open(read_data=list_lines)
-        self.mock_open_file.return_value.__iter__ = lambda self:self
-        self.mock_open_file.return_value.__next__ = my_next
-
-        with patch('builtins.open', self.mock_open_file):
-            res = self.controller._read_from_file()
-            self.assertEqual(list(res), ['first file name\n', 'second file name\n'])
-
-            res = self.controller._read_from_file()
-            self.assertEqual(tuple(res), ())
-
