@@ -503,7 +503,6 @@ class MyController():
             idxs = self.view.extList.selectedIndexes()
             sel = []
             for ss in idxs:
-                print(ss.row(), ss.parent().row())
                 sel.append((ss.row(), ss.parent().row()))
 
             settings = QSettings()
@@ -516,6 +515,28 @@ class MyController():
         for tag, id_ in tag_list:
             model.append_row(tag, id_)
         self.view.tagsList.setModel(model)
+        self.view.tagsList.selectionModel().selectionChanged.connect(self._tag_sel_changed)
+
+    def _tag_sel_changed(self):
+        if not self.is_restoring_selection:
+            idxs = self.view.tagsList.selectedIndexes()
+            sel = []
+            for ss in idxs:
+                sel.append((ss.row(), ss.parent().row()))
+
+            settings = QSettings()
+            settings.setValue('TAG_SEL_LIST', sel)
+
+    def _restore_tag_selection(self):
+        settings = QSettings()
+        sel = settings.value('TAG_SEL_LIST', [])
+        model = self.view.tagsList.model()
+        self.is_restoring_selection = True
+        for ss in sel:
+            idx = model.index(ss[0], 0, QModelIndex())
+            self.view.tagsList.selectionModel().select(idx, QItemSelectionModel.Select)
+
+        self.is_restoring_selection = False
 
     def _populate_author_list(self):
         author_list = self._dbu.select_other('AUTHORS')
@@ -524,6 +545,28 @@ class MyController():
         for author, id_ in author_list:
             model.append_row(author, id_)
         self.view.authorsList.setModel(model)
+        self.view.authorsList.selectionModel().selectionChanged.connect(self._author_sel_changed)
+
+    def _author_sel_changed(self):
+        if not self.is_restoring_selection:
+            idxs = self.view.authorsList.selectedIndexes()
+            sel = []
+            for ss in idxs:
+                sel.append((ss.row(), ss.parent().row()))
+
+            settings = QSettings()
+            settings.setValue('AUTHOR_SEL_LIST', sel)
+
+    def _restore_author_selection(self):
+        settings = QSettings()
+        sel = settings.value('AUTHOR_SEL_LIST', [])
+        model = self.view.authorsList.model()
+        self.is_restoring_selection = True
+        for ss in sel:
+            idx = model.index(ss[0], 0, QModelIndex())
+            self.view.authorsList.selectionModel().select(idx, QItemSelectionModel.Select)
+
+        self.is_restoring_selection = False
 
     def _populate_file_list(self, dir_idx):
         """
@@ -601,12 +644,13 @@ class MyController():
         self._populate_ext_list()
         self._restore_ext_selection()
         self._populate_tag_list()
+        self._restore_tag_selection()
         self._populate_author_list()
+        self._restore_author_selection()
 
     def _restore_ext_selection(self):
         settings = QSettings()
         sel = settings.value('EXT_SEL_LIST', [])
-        print('|--> _restore_ext_selection', sel)
         model = self.view.extList.model()
         self.is_restoring_selection = True
         for ss in sel:
