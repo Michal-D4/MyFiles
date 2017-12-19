@@ -475,13 +475,21 @@ class MyController():
         :param deselected:
         :return: None
         """
-        print('|--> _ext_sel_changed')
         model = self.view.extList.model()
         for id in selected.indexes():
-            print('se', model.data(id, role=Qt.DisplayRole), id.row(), id.parent().row())
-        for id in deselected.indexes():
-            print('de', model.data(id, role=Qt.DisplayRole), id.row(), id.parent().row())
+            if model.rowCount(id) > 0:
+                self.view.extList.setExpanded(id, True)
+                sel = QItemSelection(model.index(0, 0, id),
+                                     model.index(model.rowCount(id)-1, model.columnCount(id)-1, id))
+                self.view.extList.selectionModel().select(sel, QItemSelectionModel.Select)
 
+        for id in deselected.indexes():
+            if id.parent().isValid():
+                self.view.extList.selectionModel().select(id.parent(), QItemSelectionModel.Deselect)
+
+        self._save_ext_selection()
+
+    def _save_ext_selection(self):
         if not self.is_restoring_selection:
             idxs = self.view.extList.selectedIndexes()
             sel = []
