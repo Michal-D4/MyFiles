@@ -46,9 +46,6 @@ class SelOpt(QDialog):
     def author_toggle(self):
         if self.ui.chAuthor.isChecked():
             self.ui.eAuthors.setText(self.ctrl.get_selected_items(self.ctrl.view.authorsList))
-            # if not self.ui.eAuthors.text():
-            #     self.ctrl.show_message("No authors selected")
-            #     self.ui.chAuthor.setChecked(False)
         else:
             self.ui.eAuthors.setText('')
 
@@ -76,9 +73,6 @@ class SelOpt(QDialog):
     def ext_toggle(self):
         if self.ui.chExt.isChecked():
             self.ui.eExt.setText(self.ctrl.get_selected_items(self.ctrl.view.extList))
-            # if not self.ui.eExt.text():
-            #     self.ctrl.show_message("No extensions selected")
-            #     self.ui.chExt.setChecked(False)
         else:
             self.ui.eExt.setText('')
 
@@ -87,7 +81,7 @@ class SelOpt(QDialog):
         if state:
             self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.view.tagsList))
             # if not self.ui.eTags.text():
-            #     self.ctrl.show_message("No key words selected")
+            #     self.ctrl._show_message("No key words selected")
             #     self.ui.chTags.setChecked(False)
         else:
             self.ui.eTags.setText('')
