@@ -80,9 +80,6 @@ class SelOpt(QDialog):
         state = self.ui.chTags.isChecked()
         if state:
             self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.view.tagsList))
-            # if not self.ui.eTags.text():
-            #     self.ctrl._show_message("No key words selected")
-            #     self.ui.chTags.setChecked(False)
         else:
             self.ui.eTags.setText('')
 
@@ -123,8 +120,6 @@ class SelOpt(QDialog):
 
     def _get_dir_ids(self):
         if self.ui.chDirs.isChecked():
-            print('|--> _get_dir_ids', self.ui.sbLevel.text())
-            # lvl = int(self.ui.sbLevel.text())
             lvl = 0
             idx = self.ctrl.view.dirTree.currentIndex()
             root_id = int(self.ctrl.view.dirTree.model().data(idx, Qt.UserRole)[0])
