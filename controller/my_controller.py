@@ -6,8 +6,10 @@ import re
 import webbrowser
 from collections import namedtuple
 
-from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox, QFontDialog
-from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionModel, QSettings, QVariant, QItemSelection
+from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QMessageBox,
+                             QFontDialog, QApplication)
+from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
+                          QVariant, QItemSelection)
 
 from controller.my_qt_model import TreeModel, TableModel
 from controller.places import Places
@@ -63,12 +65,16 @@ class MyController():
                 }
 
     def _copy_file_name(self):
-        # todo - not implemented
-        pass
+        idx = self.view.filesList.currentIndex()
+        if idx.column() == 0:
+            txt = self.view.filesList.model().data(idx, role=Qt.DisplayRole)
+            QApplication.clipboard().setText(txt)
 
     def _copy_full_path(self):
-        # todo - not implemented
-        pass
+        idx = self.view.filesList.currentIndex()
+        u_dat = self.view.filesList.model().data(idx, role=Qt.UserRole)
+        path = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
+        QApplication.clipboard().setText(path[0])
 
     def get_places_view(self):
         return self.view.cb_places
