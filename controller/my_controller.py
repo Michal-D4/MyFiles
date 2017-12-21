@@ -33,10 +33,9 @@ class MyController():
         self._dbu = DBUtils()
         self._cb_places = Places(self)
         self._opt = SelOpt(self)
-        self._on_data_methods = self._set_on_data_methods()
         self._restore_font()
 
-    def _set_on_data_methods(self):
+    def _on_data_methods(self):
         return {'cb_places': self._cb_places.about_change_place,
                 'dirTree': self._populate_directory_tree,
                 'Edit key words': self._edit_key_words,
@@ -126,7 +125,7 @@ class MyController():
         :param action:
         :return:
         '''
-        self._on_data_methods[action]()
+        self._on_data_methods()[action]()
 
     def _scan_for_tags(self):
         """
