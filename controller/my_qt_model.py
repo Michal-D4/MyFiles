@@ -49,11 +49,10 @@ class TreeItem(object):
 
 
 class TreeModel(QAbstractItemModel):
-    def __init__(self, data_, parent=None):
+    def __init__(self, parent=None):
         super(TreeModel, self).__init__(parent)
 
         self.rootItem = TreeItem(data_=("",))
-        self._setup_model_data(data_)
 
     def columnCount(self, parent):
         if parent.isValid():
@@ -117,7 +116,7 @@ class TreeModel(QAbstractItemModel):
             value = value.split(' ')
         self.rootItem.set_data(value)
 
-    def _setup_model_data(self, rows):
+    def append_model_data(self, rows):
         """
         Fill tree structure
         :param rows: iterable, each item contains 3 elements

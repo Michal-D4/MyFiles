@@ -484,7 +484,8 @@ class MyController():
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
-        model = TreeModel(ext_list)
+        model = TreeModel()
+        model.append_model_data(ext_list)
         model.setHeaderData(0, Qt.Horizontal, "Extensions")
         self.view.extList.setModel(model)
         self.view.extList.selectionModel().selectionChanged.connect(self._ext_sel_changed)
@@ -681,7 +682,9 @@ class MyController():
     def _populate_directory_tree(self):
         dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
 
-        model = TreeModel(dirs)
+        model = TreeModel()
+        model.append_model_data(dirs)
+
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
         self.view.dirTree.setModel(model)
 
