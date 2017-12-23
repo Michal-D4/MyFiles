@@ -246,11 +246,3 @@ class TableModel2(TableModel):
         if role == Qt.TextAlignmentRole:
             return Qt.AlignRight
         return super().data(index, role)
-
-    def append_row(self, row):
-        data_ = []
-        user_data = []
-        for r in row:
-            data_.append(r)
-            # user_data.append(r[1])
-        super().append_row(tuple(data_), user_data)
