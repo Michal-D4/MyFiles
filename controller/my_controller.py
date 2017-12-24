@@ -493,8 +493,8 @@ class MyController():
     def _ext_sel_changed(self, selected: QItemSelection, deselected: QItemSelection):
         """
         Selection changed for view.extList, save new selection
-        :param selected:
-        :param deselected:
+        :param selected: QItemSelection
+        :param deselected: QItemSelection
         :return: None
         """
         model = self.view.extList.model()
@@ -696,7 +696,7 @@ class MyController():
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 self._show_message('Files in the list located in unavailable place')
 
-        self.view.dirTree.selectionModel().selectionChanged.connect(self._sel_changed)
+        self.view.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
 
     def _get_dirs(self, place_id):
         """
@@ -716,14 +716,13 @@ class MyController():
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
-    def _sel_changed(self, sel1, _):
+    def _cur_dir_changed(self, selected):   # , unselected):
         """
         Changed selection in dirTree
-        :param sel1: QList<QModelIndex>
-        :param sel2: QList<QModelIndex>
+        :param selected:  QItemSelection
         :return: None
         """
-        idx = sel1.indexes()
+        idx = selected.indexes()
         if idx:            # dir_idx = (DirID, ParentID, Full path)
             MyController._save_path(idx[0])
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
