@@ -608,12 +608,12 @@ class MyController():
             model.append_row(ff[:4], ff[4:])
 
         self.view.filesList.setModel(model)
-        self.view.filesList.selectionModel().currentRowChanged.connect(self._file_changed)
+        self.view.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
         self.view.filesList.setCurrentIndex(index_)
         self.view.filesList.setFocus()
 
-    def _file_changed(self, curr_idx, _):
+    def _cur_file_changed(self, curr_idx):
         settings = QSettings()
         settings.setValue('FILE_IDX', curr_idx.row())
         data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
