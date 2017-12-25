@@ -3,7 +3,8 @@ import unittest
 from model.db_utils import *
 from unittest.mock import MagicMock, Mock
 from unittest.mock import patch, call
-from controller.my_qt_model import TreeModel, TableModel
+from controller.table_model import TableModel
+from controller.tree_model import TreeModel
 from controller import my_controller
 from model.db_utils import DBUtils
 

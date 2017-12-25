@@ -4,7 +4,7 @@ import re
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import QItemSelectionModel
 from view.ui_items_edit import Ui_ItemChoice
-from controller.my_qt_model import TableModel2
+from controller.table_model import TableModel2
 
 
 class ItemEdit(QDialog):

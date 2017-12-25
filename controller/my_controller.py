@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QMessageBox,
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
                           QVariant, QItemSelection)
 
-from controller.my_qt_model import TreeModel, TableModel
+from controller.table_model import TableModel
+from controller.tree_model import TreeModel
 from controller.places import Places
 from model.db_utils import DBUtils, PLUS_EXT_ID
 from model.utils import create_db
