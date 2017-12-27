@@ -1,6 +1,7 @@
 # model/file_info.py
 
 import os
+import re
 import datetime
 from threading import Thread, Event
 from PyPDF2 import PdfFileReader, utils
@@ -62,10 +63,11 @@ class FileInfo(Thread):
         self.cursor = conn.cursor()
         self.file_info = []
 
-    def insert_author(self, file_id):
+    def _insert_author(self, file_id):
         # todo split also by 'and', '&'
-        authors = self.file_info[3].split(',')
-        print('|-> insert_author', authors, file_id)
+        authors = re.split(r',|&|\band\b', self.file_info[3])  # done
+        # authors = self.file_info[3].split(',')
+        print('|-> _insert_author', authors, file_id)
         for author in authors:
             aut = author.strip()
             auth_idl = self.cursor.execute(AUTHOR_ID, (aut,)).fetchone()
@@ -163,7 +165,7 @@ class FileInfo(Thread):
                                           'file_id': file_id})
         self.conn.commit()
         if len(self.file_info) > 3 and self.file_info[3]:
-            self.insert_author(file_id)
+            self._insert_author(file_id)
 
     def update_files(self):
         cur_place = self.places.get_curr_place()
