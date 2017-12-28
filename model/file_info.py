@@ -64,14 +64,11 @@ class FileInfo(Thread):
         self.file_info = []
 
     def _insert_author(self, file_id):
-        # todo split also by 'and', '&'
-        authors = re.split(r',|&|\band\b', self.file_info[3])  # done
+        authors = re.split(r',|;|&|\band\b', self.file_info[3])
         # authors = self.file_info[3].split(',')
-        print('|-> _insert_author', authors, file_id)
         for author in authors:
             aut = author.strip()
             auth_idl = self.cursor.execute(AUTHOR_ID, (aut,)).fetchone()
-            print('  ', aut, auth_idl)
             if not auth_idl:
                 self.cursor.execute(INSERT_AUTHOR, (aut,))
                 self.conn.commit()
