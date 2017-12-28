@@ -1,7 +1,7 @@
 # view/main_flow.py
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
@@ -16,6 +16,8 @@ class MainFlow(QMainWindow):
         self.ui_main = Ui_MainWindow()
         self.ui_main.setupUi(self)
 
+        self.old_size = None
+        self.old_pos = None
         self.restore_setting()
 
         self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
@@ -29,7 +31,7 @@ class MainFlow(QMainWindow):
                                                        emit('Favorites'))
 
         self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
-        self.ui_main.filesList.resizeEvent = self.resize_event
+
         self.ui_main.filesList.doubleClicked.connect(lambda:
                                                      self.change_data_signal.
                                                      emit('File_doubleClicked'))
@@ -53,6 +55,7 @@ class MainFlow(QMainWindow):
 
         self.open_dialog = open_dialog
 
+    def set_collumns_width(self):
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
         self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line)
                            .width() for line in lines]
@@ -124,28 +127,57 @@ class MainFlow(QMainWindow):
         self.ui_main.commentField.setSource(QUrl())
         self.change_data_signal.emit(argv_1.toString())
 
-    def resize_event(self, event):
-        """
-        Resize columns width of file list
-        :param event:
-        :return:
-        """
-        self.ui_main.filesList.blockSignals(True)
+    def resizeEvent(self, event):
+        self.set_collumns_width()
+        print('|--> resize_event', bool(self.windowState() & Qt.WindowMaximized))
         w = event.size().width()
-        ww = [sum(self.widths)] + self.widths
-        if w > ww[0]*2:
-            ww[0] = w - ww[0]
-        for k in range(4):
-            self.ui_main.filesList.setColumnWidth(k, ww[k])
-        self.ui_main.filesList.blockSignals(False)
+        self.old_size = event.oldSize()
+        if w != self.old_size.width():
+            self.ui_main.filesList.blockSignals(True)
+            ww = [sum(self.widths)] + self.widths
+            if w > ww[0]*2:
+                ww[0] = w - ww[0]
+            for k in range(4):
+                self.ui_main.filesList.setColumnWidth(k, ww[k])
+            self.ui_main.filesList.blockSignals(False)
+
+        super().resizeEvent(event)
+        self.save_size()
+
+    def changeEvent(self, event, **kwargs):
+        print('|--> changeEvent', event.type(), QEvent.WindowStateChange)
+        if event.type() == QEvent.WindowStateChange:
+            settings = QSettings()
+            if event.oldState() == Qt.WindowMaximized:
+                print("         MainFlow/isFullScreen", False)
+                settings.setValue("MainFlow/isFullScreen", QVariant(False))
+            elif event.oldState() == Qt.WindowNoState and \
+                    self.windowState() == Qt.WindowMaximized:
+                settings.setValue("MainFlow/isFullScreen", QVariant(True))
+                if self.old_size:
+                    settings.setValue("MainFlow/Size", QVariant(self.old_size))
+                if self.old_pos:
+                    settings.setValue("MainFlow/Position", QVariant(self.old_pos))
+                print("         MainFlow/isFullScreen", True, self.old_size)
+        else:
+            super().changeEvent(event)
+
+    def moveEvent(self, event):
+        print('|---> moveEvent', self.pos())
+        self.old_pos = event.oldPos()
+        settings = QSettings()
+        settings.setValue("MainFlow/Position", QVariant(self.pos()))
+        super().moveEvent(event)
 
     def change_place(self, idx):
         self.change_data_signal.emit('cb_places')
 
     def restore_setting(self):
+        print('|---> restore_setting')
         settings = QSettings()
         if settings.contains("MainFlow/Size"):
-            size = settings.value("MainFlow/Size", QSize(600, 500))
+            full_screen = settings.value("MainFlow/isFullScreen", False, type=bool)
+            size = settings.value("MainFlow/Size", QSize(640, 480))
             self.resize(size)
             position = settings.value("MainFlow/Position")
             self.move(position)
@@ -154,6 +186,10 @@ class MainFlow(QMainWindow):
             self.ui_main.splitter_files.restoreState(settings.value("FilesSplitter"))
             self.ui_main.opt_splitter.restoreState(settings.value("OptSplitter"))
             self.ui_main.main_splitter.restoreState(settings.value("MainSplitter"))
+            print("   MainFlow/isFullScreen", full_screen)
+            if full_screen:
+                print(' +++ full_screen')
+                self.showMaximized()
         else:
             self.ui_main.main_splitter.setStretchFactor(0, 2)
             self.ui_main.main_splitter.setStretchFactor(1, 5)
@@ -174,9 +210,7 @@ class MainFlow(QMainWindow):
 
     def closeEvent(self, event):
         settings = QSettings()
-        settings.setValue("MainFlow/Size", QVariant(self.size()))
-        settings.setValue("MainFlow/Position",
-                          QVariant(self.pos()))
+        print('|--> closeEvent', self.isFullScreen())
         settings.setValue("MainFlow/State",
                           QVariant(self.saveState()))
         settings.setValue("FilesSplitter",
@@ -185,5 +219,11 @@ class MainFlow(QMainWindow):
                           QVariant(self.ui_main.opt_splitter.saveState()))
         settings.setValue("MainSplitter",
                           QVariant(self.ui_main.main_splitter.saveState()))
+        full_screen = self.isFullScreen()
         super(MainFlow, self).closeEvent(event)
+
+    def save_size(self):
+        print('|--> save_size', self.size())
+        settings = QSettings()
+        settings.setValue("MainFlow/Size", QVariant(self.size()))
 
