@@ -15,6 +15,8 @@ class SelOpt(QDialog):
         self.ui.setupUi(self)
 
         self.ctrl = controller
+
+        self.not_older = 5
         self._restore_state()
 
         self.ui.chAuthor.stateChanged.connect(self.author_toggle)
@@ -38,7 +40,10 @@ class SelOpt(QDialog):
         self.ui.tagAll.setChecked(rest[3])
         self.ui.chAuthor.setChecked(rest[4])
         self.ui.chDate.setChecked(rest[5][0])
-        self.not_older = int(rest[5][1])
+        if rest[5][1]:
+            self.not_older = int(rest[5][1])
+        else:
+            self.not_older = 5
         self.ui.eDate.setText(str(self.not_older))
         self.ui.eDate.setEnabled(rest[5][0])
         self.ui.dateFile.setChecked(rest[5][2])
