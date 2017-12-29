@@ -13,68 +13,64 @@ class MainFlow(QMainWindow):
 
     def __init__(self, parent=None, open_dialog=MyDBChoice):
         QWidget.__init__(self, parent)
-        self.ui_main = Ui_MainWindow()
-        self.ui_main.setupUi(self)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
         self.old_size = None
         self.old_pos = None
         self.restore_setting()
 
-        self.ui_main.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
-        self.ui_main.actionScanFiles.triggered.connect(lambda: self.
-                                                       scan_files_signal.emit())
-        self.ui_main.actionGetFiles.triggered.connect(lambda:
-                                                      self.change_data_signal.
-                                                      emit('get_sel_files'))
-        self.ui_main.actionFavorites.triggered.connect(lambda:
-                                                       self.change_data_signal.
-                                                       emit('Favorites'))
+        self.set_actions()
 
-        self.ui_main.cb_places.currentIndexChanged.connect(self.change_place)
-
-        self.ui_main.filesList.doubleClicked.connect(lambda:
-                                                     self.change_data_signal.
-                                                     emit('File_doubleClicked'))
-        menu = QMenu(self)
-        change_font = menu.addAction('Change Font')
-        opt2 = menu.addAction('options 2')
-        self.ui_main.btnOption.setMenu(menu)
-        change_font.triggered.connect(lambda: self.change_data_signal.
-                                      emit('change_font'))
-
-        menu2 = QMenu(self)
-        sel_opt = menu2.addAction('Selection options')
-        self.ui_main.btnGetFiles.setMenu(menu2)
-
-        sel_opt.triggered.connect(lambda: self.change_data_signal.
-                                  emit('advanced_file_list'))
+        self.set_menus()
 
         self.setup_context_menu()
 
-        self.ui_main.commentField.anchorClicked.connect(self.ref_clicked)
-
         self.open_dialog = open_dialog
 
-    def set_collumns_width(self):
+    def set_actions(self):
+        self.ui.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
+        self.ui.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
+        self.ui.actionGetFiles.triggered.connect(lambda: self.change_data_signal.emit('get_sel_files'))
+        self.ui.actionFavorites.triggered.connect(lambda: self.change_data_signal.emit('Favorites'))
+
+        self.ui.cb_places.currentIndexChanged.connect(self.change_place)
+        self.ui.commentField.anchorClicked.connect(self.ref_clicked)
+        self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
+
+        self.ui.filesList.resizeEvent = self.resize_event
+
+    def set_menus(self):
+        menu = QMenu(self)
+        change_font = menu.addAction('Change Font')
+        opt2 = menu.addAction('options 2')
+        self.ui.btnOption.setMenu(menu)
+        change_font.triggered.connect(lambda: self.change_data_signal.emit('change_font'))
+
+        menu2 = QMenu(self)
+        sel_opt = menu2.addAction('Selection options')
+        self.ui.btnGetFiles.setMenu(menu2)
+        sel_opt.triggered.connect(lambda: self.change_data_signal.emit('advanced_file_list'))
+
+    def calc_collumns_width(self):
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
-        self.widths = [self.ui_main.filesList.fontMetrics().boundingRect(line)
-                           .width() for line in lines]
+        return [self.ui.filesList.fontMetrics().boundingRect(line).width() for line in lines]
 
     def setup_context_menu(self):
-        self.ui_main.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.filesList.customContextMenuRequested.connect(self._file_menu)
+        self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.filesList.customContextMenuRequested.connect(self._file_menu)
 
-        self.ui_main.extList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.extList.customContextMenuRequested.connect(self._ext_menu)
+        self.ui.extList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.extList.customContextMenuRequested.connect(self._ext_menu)
 
-        self.ui_main.tagsList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.tagsList.customContextMenuRequested.connect(self._tag_menu)
+        self.ui.tagsList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tagsList.customContextMenuRequested.connect(self._tag_menu)
 
-        self.ui_main.authorsList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.authorsList.customContextMenuRequested.connect(self._author_menu)
+        self.ui.authorsList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.authorsList.customContextMenuRequested.connect(self._author_menu)
 
-        self.ui_main.dirTree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui_main.dirTree.customContextMenuRequested.connect(self._dir_menu)
+        self.ui.dirTree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.dirTree.customContextMenuRequested.connect(self._dir_menu)
 
     def _file_menu(self, pos):
         menu = QMenu(self)
@@ -85,7 +81,7 @@ class MainFlow(QMainWindow):
         menu.addSeparator()
         menu.addAction('Copy file name')
         menu.addAction('Copy full path')
-        action = menu.exec_(self.ui_main.filesList.mapToGlobal(pos))
+        action = menu.exec_(self.ui.filesList.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit(action.text())
 
@@ -93,7 +89,7 @@ class MainFlow(QMainWindow):
         menu = QMenu(self)
         menu.addAction('Remove unused')
         menu.addAction('Create group')
-        action = menu.exec_(self.ui_main.extList.mapToGlobal(pos))
+        action = menu.exec_(self.ui.extList.mapToGlobal(pos))
         if action:
             act = 'Ext {}'.format(action.text())
             self.change_data_signal.emit(act)
@@ -102,7 +98,7 @@ class MainFlow(QMainWindow):
         menu = QMenu(self)
         menu.addAction('Remove unused')
         menu.addAction('Scan in names')
-        action = menu.exec_(self.ui_main.tagsList.mapToGlobal(pos))
+        action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
         if action:
             act = 'Tag {}'.format(action.text())
             self.change_data_signal.emit(act)
@@ -110,7 +106,7 @@ class MainFlow(QMainWindow):
     def _author_menu(self, pos):
         menu = QMenu(self)
         menu.addAction('Remove unused')
-        action = menu.exec_(self.ui_main.authorsList.mapToGlobal(pos))
+        action = menu.exec_(self.ui.authorsList.mapToGlobal(pos))
         if action:
             act = 'Author {}'.format(action.text())
             self.change_data_signal.emit(act)
@@ -118,38 +114,43 @@ class MainFlow(QMainWindow):
     def _dir_menu(self, pos):
         menu = QMenu(self)
         menu.addAction('Update tree')
-        action = menu.exec_(self.ui_main.dirTree.mapToGlobal(pos))
+        action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
         if action:
             act = 'Dirs {}'.format(action.text())
             self.change_data_signal.emit(act)
 
     def ref_clicked(self, argv_1):
-        self.ui_main.commentField.setSource(QUrl())
+        self.ui.commentField.setSource(QUrl())
         self.change_data_signal.emit(argv_1.toString())
 
     def resizeEvent(self, event):
-        self.set_collumns_width()
-        print('|--> resize_event', bool(self.windowState() & Qt.WindowMaximized))
-        w = event.size().width()
+        super().resizeEvent(event)
         self.old_size = event.oldSize()
+        settings = QSettings()
+        settings.setValue("MainFlow/Size", QVariant(self.size()))
+
+    def resize_event(self, event):
+        widths = self.calc_collumns_width()
+        old_width = event.oldSize().width()
+        w = event.size().width()
+        w1 = self.ui.filesList.width()
         if w != self.old_size.width():
-            self.ui_main.filesList.blockSignals(True)
-            ww = [sum(self.widths)] + self.widths
+            self.ui.filesList.blockSignals(True)
+            ww = [sum(widths)] + widths
             if w > ww[0]*2:
                 ww[0] = w - ww[0]
+            else:
+                ww[0] = w * 0.75
             for k in range(4):
-                self.ui_main.filesList.setColumnWidth(k, ww[k])
-            self.ui_main.filesList.blockSignals(False)
+                self.ui.filesList.setColumnWidth(k, ww[k])
+            self.ui.filesList.blockSignals(False)
 
         super().resizeEvent(event)
-        self.save_size()
 
     def changeEvent(self, event, **kwargs):
-        print('|--> changeEvent', event.type(), QEvent.WindowStateChange)
         if event.type() == QEvent.WindowStateChange:
             settings = QSettings()
             if event.oldState() == Qt.WindowMaximized:
-                print("         MainFlow/isFullScreen", False)
                 settings.setValue("MainFlow/isFullScreen", QVariant(False))
             elif event.oldState() == Qt.WindowNoState and \
                     self.windowState() == Qt.WindowMaximized:
@@ -158,12 +159,10 @@ class MainFlow(QMainWindow):
                     settings.setValue("MainFlow/Size", QVariant(self.old_size))
                 if self.old_pos:
                     settings.setValue("MainFlow/Position", QVariant(self.old_pos))
-                print("         MainFlow/isFullScreen", True, self.old_size)
         else:
             super().changeEvent(event)
 
     def moveEvent(self, event):
-        print('|---> moveEvent', self.pos())
         self.old_pos = event.oldPos()
         settings = QSettings()
         settings.setValue("MainFlow/Position", QVariant(self.pos()))
@@ -173,30 +172,26 @@ class MainFlow(QMainWindow):
         self.change_data_signal.emit('cb_places')
 
     def restore_setting(self):
-        print('|---> restore_setting')
         settings = QSettings()
         if settings.contains("MainFlow/Size"):
-            full_screen = settings.value("MainFlow/isFullScreen", False, type=bool)
             size = settings.value("MainFlow/Size", QSize(640, 480))
             self.resize(size)
             position = settings.value("MainFlow/Position")
             self.move(position)
             self.restoreState(settings.value("MainFlow/State"))
             self.restoreState(settings.value("MainFlow/State"))
-            self.ui_main.splitter_files.restoreState(settings.value("FilesSplitter"))
-            self.ui_main.opt_splitter.restoreState(settings.value("OptSplitter"))
-            self.ui_main.main_splitter.restoreState(settings.value("MainSplitter"))
-            print("   MainFlow/isFullScreen", full_screen)
-            if full_screen:
-                print(' +++ full_screen')
+            self.ui.splitter_files.restoreState(settings.value("FilesSplitter"))
+            self.ui.opt_splitter.restoreState(settings.value("OptSplitter"))
+            self.ui.main_splitter.restoreState(settings.value("MainSplitter"))
+            if settings.value("MainFlow/isFullScreen", False, type=bool):
                 self.showMaximized()
         else:
-            self.ui_main.main_splitter.setStretchFactor(0, 2)
-            self.ui_main.main_splitter.setStretchFactor(1, 5)
-            self.ui_main.main_splitter.setStretchFactor(2, 1)
+            self.ui.main_splitter.setStretchFactor(0, 2)
+            self.ui.main_splitter.setStretchFactor(1, 5)
+            self.ui.main_splitter.setStretchFactor(2, 1)
 
-            self.ui_main.splitter_files.setStretchFactor(0, 5)
-            self.ui_main.splitter_files.setStretchFactor(1, 2)
+            self.ui.splitter_files.setStretchFactor(0, 5)
+            self.ui.splitter_files.setStretchFactor(1, 2)
 
     def first_open_data_base(self):
         """
@@ -210,20 +205,9 @@ class MainFlow(QMainWindow):
 
     def closeEvent(self, event):
         settings = QSettings()
-        print('|--> closeEvent', self.isFullScreen())
-        settings.setValue("MainFlow/State",
-                          QVariant(self.saveState()))
-        settings.setValue("FilesSplitter",
-                          QVariant(self.ui_main.splitter_files.saveState()))
-        settings.setValue("OptSplitter",
-                          QVariant(self.ui_main.opt_splitter.saveState()))
-        settings.setValue("MainSplitter",
-                          QVariant(self.ui_main.main_splitter.saveState()))
-        full_screen = self.isFullScreen()
+        settings.setValue("MainFlow/State", QVariant(self.saveState()))
+        settings.setValue("FilesSplitter", QVariant(self.ui.splitter_files.saveState()))
+        settings.setValue("OptSplitter", QVariant(self.ui.opt_splitter.saveState()))
+        settings.setValue("MainSplitter", QVariant(self.ui.main_splitter.saveState()))
         super(MainFlow, self).closeEvent(event)
-
-    def save_size(self):
-        print('|--> save_size', self.size())
-        settings = QSettings()
-        settings.setValue("MainFlow/Size", QVariant(self.size()))
 
