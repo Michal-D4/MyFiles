@@ -30,7 +30,7 @@ class MyController():
 
     def __init__(self, view):
         self._connection = None
-        self.view = view.ui_main
+        self.view = view.ui
         self.is_restoring_selection = False
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
