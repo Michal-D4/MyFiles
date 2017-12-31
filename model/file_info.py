@@ -27,7 +27,7 @@ FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
 
 UPDATE_FILE = ' '.join(('update Files set',
                         'CommentID = :comm_id,',
-                        'FileDate = :year,',
+                        'FileDate = :date,',
                         'Pages = :page,',
                         'Size = :size,',
                         'IssueDate = :issue_date',
@@ -65,7 +65,6 @@ class FileInfo(Thread):
 
     def _insert_author(self, file_id):
         authors = re.split(r',|;|&|\band\b', self.file_info[3])
-        # authors = self.file_info[3].split(',')
         for author in authors:
             aut = author.strip()
             auth_idl = self.cursor.execute(AUTHOR_ID, (aut,)).fetchone()
@@ -155,7 +154,7 @@ class FileInfo(Thread):
         comm_id, pages, issue_date = self._insert_comment()
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
-                                          'year': self.file_info[1],
+                                          'date': self.file_info[1],
                                           'page': pages,
                                           'size': self.file_info[0],
                                           'issue_date': issue_date,
