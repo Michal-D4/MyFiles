@@ -72,10 +72,7 @@ class Places:
             self._view.addItems((x[2] for x in self._places))
 
             idx = self._restore_setting()
-            if not idx == -1:
-                self._restored_idx(idx)
-            else:
-                self._set_host_place()
+            self._restored_idx(idx)
 
         self._view.blockSignals(False)
 
@@ -97,10 +94,12 @@ class Places:
         return cur_idx
 
     def _restored_idx(self, cur_idx):
-        if not cur_idx == -1:
+        if (not cur_idx == -1) & (cur_idx < len(self._places)):
             self._curr_place = Places.CurrPlace._make((cur_idx, self._places[cur_idx], self.NOT_DEFINED))
             self._view.setCurrentIndex(self._curr_place.view_idx)
             self._check_disk_state()
+        else:
+            self._set_host_place()
 
     def about_change_place(self):
         """

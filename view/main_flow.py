@@ -204,6 +204,7 @@ class MainFlow(QMainWindow):
             self.open_dialog.emit_open_dialog()
 
     def closeEvent(self, event):
+        self.open_dialog.save_init_data()
         settings = QSettings()
         settings.setValue("MainFlow/State", QVariant(self.saveState()))
         settings.setValue("FilesSplitter", QVariant(self.ui.splitter_files.saveState()))

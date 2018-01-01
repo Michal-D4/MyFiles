@@ -16,12 +16,13 @@ CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
 FIND_FILE = 'select * from Files where DirID = :dir_id and FileName = :file;'
 
 INSERT_DIR = '''insert into Dirs
-    (Path, ParentID, PlaceId)
-    values (:path, :id, :placeId);'''
+    (Path, ParentID, PlaceId, Fake)
+    values (:path, :id, :placeId, 0);'''
 
 INSERT_FILE = '''insert into Files
-    (DirID, FileName, ExtID, PlaceId, Size)
-    values (:dir_id, :file, :ext_id, :placeId, 0);'''
+    (DirID, FileName, ExtID, PlaceId, CommentID, Size, IssueDate, 
+    Opened, Commented) values (:dir_id, :file, :ext_id, :placeId, 0, 0, 
+    "0000-00-00", "0000-00-00", "0000-00-00");'''
 
 FIND_EXT = '''select ExtID
     from Extensions where Extension = ?;'''
@@ -89,9 +90,9 @@ class LoadDBData:
             ext_id, ext = self.insert_extension(file)
 
             self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
-                                                  'file': file,
-                                                  'ext_id': ext_id,
-                                                  'placeId': self.place_id})
+                                              'file': file,
+                                              'ext_id': ext_id,
+                                              'placeId': self.place_id})
 
     def insert_extension(self, file):
         ext = get_file_extension(file)

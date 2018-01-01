@@ -17,6 +17,8 @@ FileDate DATE,
 Pages INTEGER,
 Size INTEGER,
 IssueDate DATE,
+Opened DATE,
+Commented DATE,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID),
 FOREIGN KEY(CommentID) REFERENCES Comments(CommentID),
 FOREIGN KEY(ExtID) REFERENCES Extensions(ExtID)
@@ -63,6 +65,7 @@ DirID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Path TEXT,
 PlaceId INTEGER,
 ParentID INTEGER,
+Fake INTEGER,
 FOREIGN KEY(ParentID) REFERENCES Dirs(DirID)
 );
     ''',
@@ -87,13 +90,21 @@ CommentID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Comment TEXT,
 BookTitle TEXT
 ); ''',
+    '''
+CREATE TABLE IF NOT EXISTS Log (
+ActTime DATETIME,
+ObjID INTEGER,
+ActCode INTEGER
+);  ''',
     'CREATE TABLE IF NOT EXISTS Favorites (FileID INTEGER NOT NULL);',
     'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
     'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(PlaceId, ExtID);',
     'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Files_Date ON Files(PlaceId, FileDate);',
-    'CREATE INDEX IF NOT EXISTS Files_IssueDate ON Files(PlaceId, IssueDate);'
+    'CREATE INDEX IF NOT EXISTS Files_IssueDate ON Files(PlaceId, IssueDate);',
+    'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ActTime desc)',
+    'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ObjID, ActTime desc)'
 )
 
 

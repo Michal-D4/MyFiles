@@ -62,7 +62,8 @@ class MyDBChoice(QDialog):
 
     def accept(self):
         self.emit_open_dialog()
-        self.save_init_data()
+        # self.init_data[0] = 0
+        # self._save_settings()
         super(MyDBChoice, self).accept()
 
     def new_db(self):
@@ -78,7 +79,8 @@ class MyDBChoice(QDialog):
             if not (file_name in self.init_data[2]):
                 self.create_db(file_name)
                 self.open_DB_signal.emit(file_name, True)
-                self.save_init_data()
+                # self.init_data[0] = 0
+                # self._save_settings()
                 super(MyDBChoice, self).accept()
             else:
                 self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
@@ -131,14 +133,23 @@ class MyDBChoice(QDialog):
         else:
             _data = [0, 0, []]
         self.init_data = _data
+        print('--> load_init_data', self.init_data)
 
     def save_init_data(self):
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
+        self._save_settings()
+
+    def _save_settings(self):
         setting = QSettings()
+        print('--> _save_settings', self.init_data)
         setting.setValue('DB/init_data', QVariant(self.init_data))
 
     def skip_open_dialog(self):
-        return self.init_data[0] == SKIP_OPEN_DIALOG
+        res = self.init_data[0] == SKIP_OPEN_DIALOG
+        self.init_data[0] = 0
+        self._save_settings()
+        print('--> skip_open_dialog', res, self.init_data[0])
+        return res
 
 
 if __name__ == "__main__":
