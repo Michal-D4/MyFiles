@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QMessageBox,
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
                           QVariant, QItemSelection)
 
-from controller.table_model import TableModel
+from controller.table_model import TableModel, ProxyModel
 from controller.tree_model import TreeModel
 from controller.places import Places
 from model.db_utils import DBUtils, PLUS_EXT_ID
@@ -245,8 +245,7 @@ class MyController():
         self._populate_ext_list()
 
     def _favorite_file_list(self):
-        model = TableModel()
-        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
+        model = self.set_file_model()
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
             self.file_list_source = MyController.FAVORITE
@@ -273,8 +272,7 @@ class MyController():
 
     def _list_of_selected_files(self):
         res = self._opt.get_result()
-        model = TableModel()
-        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
+        model = self.set_file_model()
 
         curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place()[1][0]).fetchall()
         if curs:
@@ -590,8 +588,7 @@ class MyController():
         self.file_list_source = MyController.FOLDER
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
-        model = TableModel()
-        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size')
+        model = self.set_file_model()
         if dir_idx:
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
@@ -601,6 +598,13 @@ class MyController():
         else:
             self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
+
+    def set_file_model(self):
+        model = TableModel(parent=self.view.filesList)
+        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size', role=Qt.DisplayRole)
+        proxy_model = ProxyModel()
+        proxy_model.setSourceModel(model)
+        return proxy_model
 
     def _show_files(self, files, model):
         for ff in files:

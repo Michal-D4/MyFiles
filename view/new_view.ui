@@ -231,6 +231,12 @@
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
+        <property name="indentation">
+         <number>5</number>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
        </widget>
        <widget class="QTextBrowser" name="commentField">
         <property name="focusPolicy">

@@ -1,7 +1,22 @@
 # controller/table_model.py
 
 from collections import Iterable
-from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel
+from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel, QSortFilterProxyModel
+
+
+class ProxyModel(QSortFilterProxyModel):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def append_row(self, row, user_data=None):
+        self.sourceModel().append_row(row, user_data)
+
+    def update(self, index, data, role=Qt.DisplayRole):
+        self.sourceModel().update(index, data, role)
+
+    def delete_row(self, index):
+        self.sourceModel().delete_row(index)
 
 
 class TableModel(QAbstractTableModel):
