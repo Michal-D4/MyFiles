@@ -134,9 +134,10 @@ class MyController():
 
     def _scan_for_tags(self):
         """
-        Tags are searched if files with selected extensions
+        Tags are searched if files with selected EXTENSIONS
         :return:
         """
+        self._show_message('Scan in files with selected extensions')
         ext_idx = MyController._selected_db_indexes(self.view.extList)
         all_id = self._collect_all_ext(ext_idx)
 
@@ -800,13 +801,13 @@ class MyController():
 
         return ()       # not ok_pressed or root is empty
 
-    @staticmethod
-    def _show_message(message, message_type=QMessageBox.Critical):
-        box = QMessageBox()
-        box.setIcon(message_type)
-        box.setText(message)
-        box.addButton('Ok', QMessageBox.AcceptRole)
-        box.exec_()
+    def _show_message(self, message): # , message_type=QMessageBox.Critical):
+        self.view.statusbar.showMessage(message, 2000)
+        # box = QMessageBox()
+        # box.setIcon(message_type)
+        # box.setText(message)
+        # box.addButton('Ok', QMessageBox.AcceptRole)
+        # box.exec_()
 
     @staticmethod
     def get_selected_items(view):
