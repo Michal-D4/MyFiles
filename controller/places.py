@@ -32,6 +32,11 @@ class Places:
     def get_disk_state(self):
         return self._curr_place.disk_state
 
+    def get_state(self, place_id):
+        id = [place[0] for place in self._places].index(place_id)
+        place = self._places[id][1]
+        return self._state(place)
+
     def _check_disk_state(self):
         """
         Set NOT_DEFINED, NOT_REMOVAL, MOUNTED, NOT_MOUNTED state of disk
@@ -40,18 +45,18 @@ class Places:
         """
         idx = self._view.currentIndex()
         place_info = self._places[idx][1]
-        if not place_info:                  # impossible to check if mounted
-            self._curr_place = self._curr_place._replace(disk_state=self.NOT_DEFINED)
-        else:
-            loc = socket.gethostname()
-            if place_info == loc:           # always mounted
-                self._curr_place = self._curr_place._replace(disk_state=self.NOT_REMOVAL)
-            else:
-                self._mount_point = Places._get_mount_point(place_info)
-                if self._mount_point:       # mount point exists
-                    self._curr_place = self._curr_place._replace(disk_state=self.MOUNTED)
-                else:
-                    self._curr_place = self._curr_place._replace(disk_state=self.NOT_MOUNTED)
+        self._curr_place = self._curr_place._replace(disk_state=self._state(place_info))
+
+    def _state(self, place_name):
+        if not place_name:  # impossible to check if mounted
+            return self.NOT_DEFINED
+        loc = socket.gethostname()
+        if place_name == loc:  # always mounted
+            return self.NOT_REMOVAL
+        self._mount_point = Places._get_mount_point(place_name)
+        if self._mount_point:  # mount point exists
+            return self.MOUNTED
+        return self.NOT_MOUNTED
 
     @staticmethod
     def is_removable(device):
