@@ -334,7 +334,12 @@ class MyController():
     def _open_file2(self, dir_id, file_name):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-            full_file_name = os.path.join(path[0], file_name)
+            if self._cb_places.get_disk_state() == Places.MOUNTED:
+                root = self._cb_places.get_mount_point()
+                full_file_name = os.altsep.join((root, path[0], file_name))
+            else:
+                full_file_name = os.altsep.join((path[0], file_name))
+            print('--> _open_file2', full_file_name)
             if os.path.isfile(full_file_name):
                 try:
                     os.startfile(full_file_name)
