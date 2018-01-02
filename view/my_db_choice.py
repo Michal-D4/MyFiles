@@ -133,7 +133,6 @@ class MyDBChoice(QDialog):
         else:
             _data = [0, 0, []]
         self.init_data = _data
-        print('--> load_init_data', self.init_data)
 
     def save_init_data(self):
         self.init_data[0] = self.ui_db_choice.skipThisWindow.checkState()
@@ -141,14 +140,12 @@ class MyDBChoice(QDialog):
 
     def _save_settings(self):
         setting = QSettings()
-        print('--> _save_settings', self.init_data)
         setting.setValue('DB/init_data', QVariant(self.init_data))
 
     def skip_open_dialog(self):
         res = self.init_data[0] == SKIP_OPEN_DIALOG
         self.init_data[0] = 0
         self._save_settings()
-        print('--> skip_open_dialog', res, self.init_data[0])
         return res
 
 
