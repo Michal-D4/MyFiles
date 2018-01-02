@@ -72,10 +72,8 @@ class MyController():
             QApplication.clipboard().setText(txt)
 
     def _copy_full_path(self):
-        idx = self.view.filesList.currentIndex()
-        u_dat = self.view.filesList.model().data(idx, role=Qt.UserRole)
-        path = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
-        QApplication.clipboard().setText(path[0])
+        path, _, _ = self._file_path()
+        QApplication.clipboard().setText(path)
 
     def get_places_view(self):
         return self.view.cb_places
@@ -302,18 +300,18 @@ class MyController():
         self.view.filesList.model().delete_row(f_idx)
 
     def _open_folder(self):
-        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            idx = self.view.dirTree.currentIndex()
-            dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
-            webbrowser.open(''.join(('file://', dir_[2])))
+        path, _, state = self._file_path()
+        if state & (Places.MOUNTED | Places.NOT_REMOVAL):
+            webbrowser.open(''.join(('file://', path)))
 
     def _double_click_file(self):
         f_idx = self.view.filesList.currentIndex()
-        file_name = self.view.filesList.model().data(f_idx)
-        file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
-        if f_idx.column() == 0:
-            self._open_file2(dir_id, file_name)
-        elif f_idx.column() == 2:
+        column_head = self.view.filesList.model().headerData(f_idx.column(), Qt.Horizontal)
+        if column_head == 'File':
+            self._open_file()
+        elif column_head == 'Pages':
+            file_name = self.view.filesList.model().data(f_idx)
+            file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
             self._update_pages(f_idx, file_id, file_name)
 
     def _update_pages(self, f_idx, file_id, page_number):
@@ -326,20 +324,9 @@ class MyController():
             self.view.filesList.model().update(f_idx, pages)
 
     def _open_file(self):
-        f_idx = self.view.filesList.currentIndex()
-        file_name = self.view.filesList.model().data(f_idx)
-        _, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
-        self._open_file2(dir_id, file_name)
-
-    def _open_file2(self, dir_id, file_name):
-        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-            if self._cb_places.get_disk_state() == Places.MOUNTED:
-                root = self._cb_places.get_mount_point()
-                full_file_name = os.altsep.join((root, path[0], file_name))
-            else:
-                full_file_name = os.altsep.join((path[0], file_name))
-            print('--> _open_file2', full_file_name)
+        path, file_name, status = self._file_path()
+        if status & (Places.MOUNTED | Places.NOT_REMOVAL):
+            full_file_name = os.altsep.join((path, file_name))
             if os.path.isfile(full_file_name):
                 try:
                     os.startfile(full_file_name)
@@ -347,6 +334,19 @@ class MyController():
                     pass
             else:
                 MyController._show_message("Can't find file {}".format(full_file_name))
+        else:
+            MyController._show_message('File/disk is inaccessible')
+
+    def _file_path(self):
+        f_idx = self.view.filesList.currentIndex()
+        file_name = self.view.filesList.model().data(f_idx)
+        _, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
+        state = self._cb_places.get_state(place_id)
+        if state == Places.MOUNTED:
+            root = self._cb_places.get_mount_point()
+            path = os.altsep.join((root, path))
+        return path, file_name, state
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
@@ -704,7 +704,7 @@ class MyController():
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
-                self._show_message('Files in the list located in unavailable place')
+                self._show_message('Files are in an inaccessible place')
 
         self.view.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
 
@@ -717,13 +717,13 @@ class MyController():
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
 
-        if self._cb_places.get_disk_state() == Places.MOUNTED:
-            root = self._cb_places.get_mount_point()
-            for rr in dir_tree:
-                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
-        else:
-            for rr in dir_tree:
-                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
+        # if self._cb_places.get_disk_state() == Places.MOUNTED:
+        #     root = self._cb_places.get_mount_point()
+        #     for rr in dir_tree:
+        #         dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
+        # else:
+        for rr in dir_tree:
+            dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
     def _cur_dir_changed(self, selected):   # , unselected):
@@ -786,7 +786,7 @@ class MyController():
                 thread = FileInfo(self._connection, self._cb_places)
                 thread.start()
         else:
-            self._show_message("Can't scan disk for files. Disk is not available.")
+            self._show_message("Can't scan disk for files. Disk is not accessible.")
 
     def _scan_file_system(self):
         ext_ = self._get_selected_ext()

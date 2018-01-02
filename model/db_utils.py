@@ -36,7 +36,7 @@ Selects = {'TREE':
                                          'group by FileID having count(*) = {};')),
            'PLACES': 'select * from Places;',
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
-           'PATH': 'select Path from Dirs where DirID = ?;',
+           'PATH': 'select Path, PlaceId from Dirs where DirID = ?;',
            'IS_EXIST': 'select * from Places where Place = ?;',
            'EXT': ' '.join(('select Extension as title, ExtID+{}, GroupID'.format(PLUS_EXT_ID),
                             'as ID from Extensions UNION select GroupName as title,',
