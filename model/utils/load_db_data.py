@@ -22,7 +22,7 @@ INSERT_DIR = '''insert into Dirs
 INSERT_FILE = '''insert into Files
     (DirID, FileName, ExtID, PlaceId, CommentID, Size, IssueDate, 
     Opened, Commented) values (:dir_id, :file, :ext_id, :placeId, 0, 0, 
-    "0000-00-00", "0000-00-00", "0000-00-00");'''
+    "0001-01-01", "0001-01-01", "0001-01-01");'''
 
 FIND_EXT = '''select ExtID
     from Extensions where Extension = ?;'''
