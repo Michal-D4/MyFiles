@@ -1,10 +1,9 @@
 # model/file_info.py
 
-import os
 import re
 import datetime
-from threading import Thread, Event
 from PyPDF2 import PdfFileReader, utils
+from PyQt5.QtCore import pyqtSignal, QObject, pyqtSlot
 
 from model.utils.load_db_data import LoadDBData
 from model.helpers import *
@@ -33,28 +32,31 @@ UPDATE_FILE = ' '.join(('update Files set',
                         'IssueDate = :issue_date',
                         'where FileID = :file_id;'))
 
-E = Event()
 
+class LoadFiles(QObject):
+    finished = pyqtSignal()
 
-class LoadFiles(Thread):
     def __init__(self, conn, cur_place, data_):
         super().__init__()
         self.cur_place = cur_place
         self.conn = conn
         self.data = data_
 
+    @pyqtSlot()
     def run(self):
-        super().run()
         files = LoadDBData(self.conn, self.cur_place)
         files.load_data(self.data)
-        E.set()
+        self.finished.emit()
 
 
-class FileInfo(Thread):
+class FileInfo(QObject):
+    completed = pyqtSignal()
+
+    @pyqtSlot()
     def run(self):
-        super().run()
-        E.wait()
         self.update_files()
+        self.completed.emit()           # 'Updating of files is finished'
+        print('--> FileInfo.run finished')
 
     def __init__(self, conn, place_inst):
         super().__init__()

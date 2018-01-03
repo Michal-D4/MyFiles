@@ -9,12 +9,12 @@ from collections import namedtuple
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QMessageBox,
                              QFontDialog, QApplication)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
-                          QVariant, QItemSelection)
+                          QVariant, QItemSelection, QThread)
 
 from controller.table_model import TableModel, ProxyModel
 from controller.tree_model import TreeModel
 from controller.places import Places
-from model.db_utils import DBUtils, PLUS_EXT_ID
+from model.utilities import DBUtils, PLUS_EXT_ID
 from model.utils import create_db
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
@@ -37,6 +37,8 @@ class MyController():
         self._cb_places = Places(self)
         self._opt = SelOpt(self)
         self._restore_font()
+        self.thread = None
+        self.obj_thread = None
 
     def _on_data_methods(self):
         return {'cb_places': self._cb_places.about_change_place,
@@ -239,9 +241,19 @@ class MyController():
         return all_id
 
     def _dir_update(self):
-        # to do - execute when thread "load_files" finished, not from menu
         self._populate_directory_tree()
         self._populate_ext_list()
+
+        self.thread = QThread()
+        self.obj_thread = FileInfo(self._connection, self._cb_places)
+        self.obj_thread.moveToThread(self.thread)
+        self.obj_thread.completed.connect(self.thread.quit)
+        self.thread.finished.connect(self._finish_thread)
+        self.thread.started.connect(self.obj_thread.run)
+        self.thread.start()
+
+    def _finish_thread(self):
+        self._show_message('Updating of files is finished')        #
 
     def _favorite_file_list(self):
         model = self.set_file_model()
@@ -781,11 +793,13 @@ class MyController():
             _data = self._scan_file_system()
             if _data:
                 curr_place = self._cb_places.get_curr_place()
-                load_files = LoadFiles(self._connection, curr_place, _data)
-                load_files.start()
-
-                file_info = FileInfo(self._connection, self._cb_places)
-                file_info.start()
+                self.thread = QThread()
+                self.obj_thread = LoadFiles(self._connection, curr_place, _data)
+                self.obj_thread.moveToThread(self.thread)
+                self.obj_thread.finished.connect(self.thread.quit)
+                self.thread.finished.connect(self._dir_update)
+                self.thread.started.connect(self.obj_thread.run)
+                self.thread.start()
         else:
             self._show_message("Can't scan disk for files. Disk is not accessible.")
 
@@ -801,13 +815,8 @@ class MyController():
 
         return ()       # not ok_pressed or root is empty
 
-    def _show_message(self, message): # , message_type=QMessageBox.Critical):
-        self.view.statusbar.showMessage(message, 2000)
-        # box = QMessageBox()
-        # box.setIcon(message_type)
-        # box.setText(message)
-        # box.addButton('Ok', QMessageBox.AcceptRole)
-        # box.exec_()
+    def _show_message(self, message):
+        self.view.statusbar.showMessage(message, 3000)
 
     @staticmethod
     def get_selected_items(view):
