@@ -35,7 +35,7 @@ class LoadDBData:
     """
     class LoadDBData
     """
-    def __init__(self, connection, current_place):
+    def __init__(self, connection, current_place: Places.CurrPlace):
         """
         class LoadDBData
         :param connection: - connection to database
@@ -46,7 +46,7 @@ class LoadDBData:
         self.place_status = current_place[2]
         self.insert_current_place(current_place)
 
-    def insert_current_place(self, current_place):
+    def insert_current_place(self, current_place: Places.CurrPlace):
         '''
         Check existence of place in Places table and insert it if absent
         :return:  None
@@ -55,7 +55,7 @@ class LoadDBData:
                                     (current_place[1][1],)).fetchone()
         if place_id is None:
             self.cursor.execute('''insert into Places (Place, Title)
-            values (:place, :title)''', current_place)
+            values (:place, :title)''', current_place.db_row[1:])
             self.place_id = self.cursor.lastrowid
             self.conn.commit()
         else:
@@ -71,7 +71,7 @@ class LoadDBData:
         for line in data:
             line = line.translate(trantab)
             if self.place_status == Places.MOUNTED:
-                line = line.partition(os.altsep)[2]
+                line = line.partition(os.altsep)[2]         # remove mount point, ie disk letter with ":/"
             idx = self.insert_dir(line)
             self.insert_file(idx, line)
         self.conn.commit()
@@ -159,7 +159,7 @@ class LoadDBData:
             if item:
                 res = tuple(item)
                 break
-            path = path.rpartition(os.altsep)[0]
+            path = get_parent_dir(path)
         return res
 
 
