@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from model.db_utils import *
+from model.utilities import *
 from unittest.mock import Mock
 from model.utils import create_db
 from model.utils import load_db_data

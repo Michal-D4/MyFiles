@@ -6,7 +6,7 @@ import ctypes
 import socket
 
 from controller.places import Places
-from model.db_utils import DBUtils
+from model.utilities import DBUtils
 from controller.my_controller import *
 
 from PyQt5.QtWidgets import QComboBox, QFileDialog

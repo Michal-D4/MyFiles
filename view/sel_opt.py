@@ -5,7 +5,7 @@ from collections import namedtuple
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import Qt, QSettings
 from view.ui_sel_opt import Ui_SelOpt
-from model.db_utils import PLUS_EXT_ID
+from model.utilities import PLUS_EXT_ID
 
 
 class SelOpt(QDialog):
