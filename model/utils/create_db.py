@@ -108,8 +108,8 @@ ActCode INTEGER
 )
 
 
-def create_all_objects(conn_param):
-    cursor = conn_param.cursor()
+def create_all_objects(connection):
+    cursor = connection.cursor()
     for obj in OBJ_DEFS:
         try:
             cursor.execute(obj)
@@ -117,15 +117,15 @@ def create_all_objects(conn_param):
             print("An error occurred:", err.args[0])
             print(obj)
 
-    set_initial_place(conn_param)
+    set_initial_place(connection)
 
 
-def set_initial_place(conn_param):
-    cursor = conn_param.cursor()
+def set_initial_place(connection):
+    cursor = connection.cursor()
     loc = socket.gethostname()
     cursor.execute('''insert into Places (Place, Title)    
         values (:place, :title)''', (loc, loc))
-    conn_param.commit()
+    connection.commit()
 
 
 if __name__ == "__main__":
