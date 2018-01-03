@@ -784,8 +784,8 @@ class MyController():
                 load_files = LoadFiles(self._connection, curr_place, _data)
                 load_files.start()
 
-                thread = FileInfo(self._connection, self._cb_places)
-                thread.start()
+                file_info = FileInfo(self._connection, self._cb_places)
+                file_info.start()
         else:
             self._show_message("Can't scan disk for files. Disk is not accessible.")
 
