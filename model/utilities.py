@@ -21,17 +21,6 @@ Selects = {'TREE':
                           'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
-           'ADV_SELECT':
-                (
-                    'and DirID in ({})',
-                    'and ExtID in ({})',
-                    'and FileID in ({})',
-                    'and FileDate > {}',
-                    'and IssueDate > {}',
-                    ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
-                              'CommentID, IssueDate from Files where PlaceId = {}')),
-                    'order by FileName COLLATE NOCASE;'
-                ),
            'FILE_IDS_ALL_TAG': ' '.join(('select FileID from FileTag where TagID in ({})',
                                          'group by FileID having count(*) = {};')),
            'PLACES': 'select * from Places;',
@@ -66,6 +55,17 @@ Selects = {'TREE':
            'AUTHOR_FILE': 'select * from FileAuthor where FileID = ? and AuthorID =?;',
            'FILE_IDS_AUTHORS': 'select FileID from FileAuthor where AuthorID in ({});',
            'FILE_COMMENT': 'select Comment, BookTitle from Comments where CommentID = ?;',
+           'ADV_SELECT':
+                (
+                    'and DirID in ({})',
+                    'and ExtID in ({})',
+                    'and FileID in ({})',
+                    'and FileDate > {}',
+                    'and IssueDate > {}',
+                    ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
+                              'CommentID, IssueDate from Files where PlaceId = {}')),
+                    'order by FileName COLLATE NOCASE;'
+                ),
            'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
                                       'CommentID, IssueDate from Files where DirId = ?;')),
            'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, FileID,',
@@ -118,7 +118,11 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
 
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
+    FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
+                  'Opened', 'Commented']
+                  # , 'FileID', 'DirID', 'CommentID', 'ExtID', 'PlaceId']
 
+    Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
 
     def __init__(self):
         self.conn = None
