@@ -50,12 +50,12 @@ class LoadFiles(QObject):
 
 
 class FileInfo(QObject):
-    completed = pyqtSignal()
+    finished = pyqtSignal()
 
     @pyqtSlot()
     def run(self):
         self.update_files()
-        self.completed.emit()           # 'Updating of files is finished'
+        self.finished.emit()           # 'Updating of files is finished'
         print('--> FileInfo.run finished')
 
     def __init__(self, conn, place_inst):
