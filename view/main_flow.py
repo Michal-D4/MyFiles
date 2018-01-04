@@ -43,9 +43,10 @@ class MainFlow(QMainWindow):
     def set_menus(self):
         menu = QMenu(self)
         change_font = menu.addAction('Change Font')
-        opt2 = menu.addAction('options 2')
+        set_fields = menu.addAction('Set fields')
         self.ui.btnOption.setMenu(menu)
         change_font.triggered.connect(lambda: self.change_data_signal.emit('change_font'))
+        set_fields.triggered.connect(lambda: self.change_data_signal.emit('Set fields'))
 
         menu2 = QMenu(self)
         sel_opt = menu2.addAction('Selection options')

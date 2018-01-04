@@ -454,9 +454,11 @@ class MyController():
             self._populate_comment_field(u_data)
 
     def _edit_comment_item(self, to_update, item_no):
+        print('--> _edit_comment_item', to_update, item_no)
         checked = self._check_existence()
         data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
                                                  '', QLineEdit.Normal, getattr(checked, item_no))
+        print('--> _edit_comment_item', checked, data_)
         if ok_pressed:
             self._dbu.update_other(to_update[0], (data_, checked.comment_id))
             self._dbu.update_other('COMMENT_DATE', (checked[0],))
@@ -472,13 +474,18 @@ class MyController():
         curr_idx = self.view.filesList.currentIndex()
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
+        print('--> _check_existence', user_data, comment)
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
+            print(comment_id)
             self._dbu.update_other('FILE_COMMENT', (comment_id, user_data[0]))
+            print(' updated')
             self.view.filesList.model().update(curr_idx,
                                                user_data[:2] + (comment_id,)
                                                + user_data[3:], Qt.UserRole)
+
+        print('--> _check_ AFTER', user_data, comment)
         return u_type._make(user_data + comment)
 
     def _restore_file_list(self, curr_dir_idx):

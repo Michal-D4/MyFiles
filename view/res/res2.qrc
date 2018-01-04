@@ -1,6 +1,8 @@
 <RCC>
   <qresource prefix="image">
     <file>fileopen22.png</file>
+    <file>ic_action_forward.png</file>
+    <file>ic_action_back.png</file>
     <file>ic_action_play22.png</file>
     <file>star.png</file>
     <file>loaddata22.png</file>
