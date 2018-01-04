@@ -62,14 +62,16 @@ Selects = {'TREE':
                     'and FileID in ({})',
                     'and FileDate > {}',
                     'and IssueDate > {}',
-                    ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
-                              'CommentID, IssueDate from Files where PlaceId = {}')),
-                    'order by FileName COLLATE NOCASE;'
+                    ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
+                              'Opened, Commented, FileID, DirID, CommentID, ExtID,',
+                              'PlaceId from Files where PlaceId = {}'))
                 ),
-           'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, FileID, DirID,',
-                                      'CommentID, IssueDate from Files where DirId = ?;')),
-           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, FileID,',
-                                  'DirID, CommentID, IssueDate from Files where FileID in',
+           'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
+                                       'Opened, Commented, FileID, DirID, CommentID, ExtID,',
+                                       'PlaceId from Files where DirId = ?;')),
+           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
+                                  'Opened, Commented, FileID, DirID, CommentID, ExtID,',
+                                  'PlaceId from Files where FileID in',
                                   '(select FileID from Favorites);'))
            }
 
@@ -90,7 +92,9 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'BOOK_TITLE': 'update Comments set BookTitle = ? where CommentID = ?;',
           'COMMENT': 'update Comments set Comment = ? where CommentID = ?;',
           'FILE_COMMENT': 'update Files set CommentID = ? where FileID = ?;',
-          'PAGES': 'update Files set Pages = ? where FileID = ?;'
+          'PAGES': 'update Files set Pages = ? where FileID = ?;',
+          'OPEN_DATE': "update Files set Opened = date('now') where FileID = ?;",
+          'COMMENT_DATE': "update Files set Commented = date('now') where FileID = ?;"
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
@@ -118,12 +122,6 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
 
 class DBUtils:
     """Different methods for select, update and insert information into/from DB"""
-    FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
-                  'Opened', 'Commented']
-                  # , 'FileID', 'DirID', 'CommentID', 'ExtID', 'PlaceId']
-
-    Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
-
     def __init__(self):
         self.conn = None
         self.curs = None
@@ -146,38 +144,37 @@ class DBUtils:
         # print(Selects['ADV_SELECT'])
         # print('cur_place_id:', cur_place_id)
         # print(param)
-        sql = ''
-        sql_l = [Selects['ADV_SELECT'][5].format(cur_place_id)]
+        res_sql = [Selects['ADV_SELECT'][5].format(cur_place_id)]
 
         if param.dir.use:           # select files by directory tree
-            sql_l.append(Selects['ADV_SELECT'][0].format(param.dir.list))
+            res_sql.append(Selects['ADV_SELECT'][0].format(param.dir.list))
 
         if param.extension.use and param.extension.list:    # by extension
-            sql_l.append(Selects['ADV_SELECT'][1].format(param.extension.list))
+            res_sql.append(Selects['ADV_SELECT'][1].format(param.extension.list))
 
         if param.tags.use and param.authors.use:        # by tags and authors
             t1 = set(param.tags.list.split(','))
             t2 = set(param.authors.list.split(','))
             tmp = t1.intersection(t2)
             if tmp:
-                sql_l.append(Selects['ADV_SELECT'][2].format(','.join(tmp)))
+                res_sql.append(Selects['ADV_SELECT'][2].format(','.join(tmp)))
 
         elif param.tags.use and param.tags.list:        # tags, authors not used
-            sql_l.append(Selects['ADV_SELECT'][2].format(param.tags.list))
+            res_sql.append(Selects['ADV_SELECT'][2].format(param.tags.list))
 
         elif param.authors.use and param.authors.list:  # authors, tags not used
-            sql_l.append(Selects['ADV_SELECT'][2].format(param.authors.list))
+            res_sql.append(Selects['ADV_SELECT'][2].format(param.authors.list))
 
         if param.date.use:              # by date
             tt = datetime.date.today()
             tt = tt.replace(year=tt.year - int(param.date.date))
             if param.date.file_date:    # date of file
-                sql_l.append(Selects['ADV_SELECT'][3].format(tt))
+                res_sql.append(Selects['ADV_SELECT'][3].format(tt))
             else:                       # date of book issue
-                sql_l.append(Selects['ADV_SELECT'][4].format(tt))
+                res_sql.append(Selects['ADV_SELECT'][4].format(tt))
 
-        sql_l.append(Selects['ADV_SELECT'][6])
-        sql = ' '.join([clause for clause in sql_l])
+        res_sql.append(';')
+        sql = ' '.join([clause for clause in res_sql])
         return sql
 
     def dir_tree_select(self, dir_id, level, place_id):

@@ -22,6 +22,10 @@ from view.item_edit import ItemEdit
 from view.sel_opt import SelOpt
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
+              'Opened', 'Commented']
+Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
+Noms = list(range(6))
 
 
 class MyController():
@@ -73,7 +77,7 @@ class MyController():
             QApplication.clipboard().setText(txt)
 
     def _copy_full_path(self):
-        path, _, _ = self._file_path()
+        path, _, _, _ = self._file_path()
         QApplication.clipboard().setText(path)
 
     def get_places_view(self):
@@ -119,7 +123,7 @@ class MyController():
                 self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                    detect_types=DETECT_TYPES)
             else:
-                MyController._show_message("Data base does not exist")
+                self._show_message("Data base does not exist")
                 return
 
         self._dbu.set_connection(self._connection)
@@ -297,7 +301,7 @@ class MyController():
             settings = QSettings()
             settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         else:
-            MyController._show_message("Nothing found. Change you choices.")
+            self._show_message("Nothing found. Change you choices.")
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
@@ -318,7 +322,7 @@ class MyController():
         self.view.filesList.model().delete_row(f_idx)
 
     def _open_folder(self):
-        path, _, state = self._file_path()
+        path, _, state, _ = self._file_path()
         if state & (Places.MOUNTED | Places.NOT_REMOVAL):
             webbrowser.open(''.join(('file://', path)))
 
@@ -329,7 +333,7 @@ class MyController():
             self._open_file()
         elif column_head == 'Pages':
             file_name = self.view.filesList.model().data(f_idx)
-            file_id, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+            file_id, dir_id, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
             self._update_pages(f_idx, file_id, file_name)
 
     def _update_pages(self, f_idx, file_id, page_number):
@@ -342,29 +346,30 @@ class MyController():
             self.view.filesList.model().update(f_idx, pages)
 
     def _open_file(self):
-        path, file_name, status = self._file_path()
+        path, file_name, status, file_id = self._file_path()
         if status & (Places.MOUNTED | Places.NOT_REMOVAL):
             full_file_name = os.altsep.join((path, file_name))
             if os.path.isfile(full_file_name):
                 try:
                     os.startfile(full_file_name)
+                    self._dbu.update_other('OPEN_DATE', (file_id,))
                 except OSError:
                     pass
             else:
-                MyController._show_message("Can't find file {}".format(full_file_name))
+                self._show_message("Can't find file {}".format(full_file_name))
         else:
-            MyController._show_message('File/disk is inaccessible')
+            self._show_message('File/disk is inaccessible')
 
     def _file_path(self):
         f_idx = self.view.filesList.currentIndex()
         file_name = self.view.filesList.model().data(f_idx)
-        _, dir_id, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        file_id, dir_id, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
         path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
         state = self._cb_places.get_state(place_id)
         if state == Places.MOUNTED:
             root = self._cb_places.get_mount_point()
             path = os.altsep.join((root, path))
-        return path, file_name, state
+        return path, file_name, state, file_id
 
     def _edit_key_words(self):
         curr_idx = self.view.filesList.currentIndex()
@@ -390,16 +395,18 @@ class MyController():
             self._populate_comment_field(u_data)
 
     def _save_edited_items(self, new_items, old_items, file_id, sql_list):
-        old_words_set = set([tag[0] for tag in old_items])
+        old_words_set = set([item[0] for item in old_items])
         new_words_set = set([str.lstrip(item) for item in new_items.split(', ')])
 
         to_del = old_words_set.difference(new_words_set)
-        to_del_ids = [tag[1] for tag in old_items if tag[0] in to_del]
+        to_del_ids = [item[1] for item in old_items if item[0] in to_del]
         self._del_item_links(to_del_ids, file_id, sql_list[0])
 
         old_words_set.add('')
         to_add = new_words_set.difference(old_words_set)
         self._add_item_links(to_add, file_id, sql_list[1])
+
+        self._dbu.update_other('COMMENT_DATE', (file_id,))
 
     def _del_item_links(self, items2del, file_id, sqls):
         for item in items2del:
@@ -452,6 +459,7 @@ class MyController():
                                                  '', QLineEdit.Normal, getattr(checked, item_no))
         if ok_pressed:
             self._dbu.update_other(to_update[0], (data_, checked.comment_id))
+            self._dbu.update_other('COMMENT_DATE', (checked[0],))
             self._populate_comment_field(checked[:4]) # file_id, dir_id, comment_id, issue_date
 
     def _check_existence(self):
@@ -469,8 +477,8 @@ class MyController():
             comment_id = self._dbu.insert_other('COMMENT', comment)
             self._dbu.update_other('FILE_COMMENT', (comment_id, user_data[0]))
             self.view.filesList.model().update(curr_idx,
-                                               user_data[:2] + (comment_id, user_data[3]),
-                                               Qt.UserRole)
+                                               user_data[:2] + (comment_id,)
+                                               + user_data[3:], Qt.UserRole)
         return u_type._make(user_data + comment)
 
     def _restore_file_list(self, curr_dir_idx):
@@ -633,7 +641,7 @@ class MyController():
         for ff in files:
             # ff[:4] = [FileName, FileDate, Pages, Size]
             # ff[4:] = [FileID, DirID, CommentID, IssueDate]
-            model.append_row(ff[:4], ff[4:])
+            model.append_row(ff[:4], ff[-5:])
 
         self.view.filesList.setModel(model)
         self.view.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
@@ -674,7 +682,7 @@ class MyController():
 
             if not self.file_list_source == MyController.FOLDER:
                 f_idx = self.view.filesList.currentIndex()
-                file_id, dir_id, _, _ = self.view.filesList.model().data(
+                file_id, dir_id, _, _, _ = self.view.filesList.model().data(
                     f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
                 self.view.statusbar.showMessage(path[0])
