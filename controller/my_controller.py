@@ -42,7 +42,7 @@ class MyController():
 
     def _on_data_methods(self):
         return {'cb_places': self._cb_places.about_change_place,
-                'dirTree': self._populate_directory_tree,
+                'dirTree': self._populate_directory_tree,       # emit from Places
                 'Edit key words': self._edit_key_words,
                 'Edit authors': self._edit_authors,
                 'Edit title': self._edit_title,
@@ -60,7 +60,6 @@ class MyController():
                 'Tag Remove unused': self._tag_remove_unused,
                 'Ext Remove unused': self._ext_remove_unused,
                 'Ext Create group': self._ext_create_group,
-                'Dirs Update tree': self._dir_update,
                 'change_font': self._ask_for_change_font,
                 'Tag Scan in names': self._scan_for_tags,
                 'Copy file name': self._copy_file_name,
@@ -132,7 +131,10 @@ class MyController():
         :param action:
         :return:
         '''
-        self._on_data_methods()[action]()
+        try:
+            self._on_data_methods()[action]()
+        except KeyError:
+            print('Action "{}" not implemented'.format(action))
 
     def _scan_for_tags(self):
         """
@@ -244,11 +246,14 @@ class MyController():
         self._populate_directory_tree()
         self._populate_ext_list()
 
-        self.thread = QThread()
         self.obj_thread = FileInfo(self._connection, self._cb_places)
+        self._run_in_qthread(self._finish_thread)
+
+    def _run_in_qthread(self, finish):
+        self.thread = QThread()
         self.obj_thread.moveToThread(self.thread)
-        self.obj_thread.completed.connect(self.thread.quit)
-        self.thread.finished.connect(self._finish_thread)
+        self.obj_thread.finished.connect(self.thread.quit)
+        self.thread.finished.connect(finish)
         self.thread.started.connect(self.obj_thread.run)
         self.thread.start()
 
@@ -784,22 +789,16 @@ class MyController():
     def on_scan_files(self):
         """
         The purpose is to fill the data base with files by means of
-        1) scanning the file system for  mounted disk
-        or
-        2) reading from prepared file for  unmounted disk
+        scanning the file system
         :return: None
         """
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             _data = self._scan_file_system()
             if _data:
                 curr_place = self._cb_places.get_curr_place()
-                self.thread = QThread()
+
                 self.obj_thread = LoadFiles(self._connection, curr_place, _data)
-                self.obj_thread.moveToThread(self.thread)
-                self.obj_thread.finished.connect(self.thread.quit)
-                self.thread.finished.connect(self._dir_update)
-                self.thread.started.connect(self.obj_thread.run)
-                self.thread.start()
+                self._run_in_qthread(self._dir_update)
         else:
             self._show_message("Can't scan disk for files. Disk is not accessible.")
 
