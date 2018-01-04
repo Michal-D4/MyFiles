@@ -13,7 +13,8 @@ class ProxyModel(QSortFilterProxyModel):
         self.sourceModel().append_row(row, user_data)
 
     def update(self, index, data, role=Qt.DisplayRole):
-        self.sourceModel().update(index, data, role)
+        s_index = self.mapToSource(index)
+        self.sourceModel().update(s_index, data, role)
 
     def delete_row(self, index):
         self.sourceModel().delete_row(index)
