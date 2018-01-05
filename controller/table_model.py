@@ -16,7 +16,8 @@ class ProxyModel(QSortFilterProxyModel):
         self.sourceModel().update(self.mapToSource(index), data, role)
 
     def delete_row(self, index):
-        self.sourceModel().delete_row(index)
+        print('--> ProxyModel.delete_row', self.sourceModel().data(index))
+        self.sourceModel().delete_row(self.mapToSource(index))
 
 
 class TableModel(QAbstractTableModel):
@@ -65,10 +66,13 @@ class TableModel(QAbstractTableModel):
                 self.__user_data[index.row()] = data
 
     def delete_row(self, index):
+        print('--> TableModel.delete_row', self.data(index))
         if index.isValid():
+            self.beginRemoveRows(QModelIndex(), index.row(), index.row())
             row = index.row()
             self.__data.remove(self.__data[row])
             self.__user_data.remove(self.__user_data[row])
+            self.endRemoveRows()
 
     def append_row(self, row, user_data=None):
         self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
@@ -84,8 +88,17 @@ class TableModel(QAbstractTableModel):
         self.__user_data.append(user_data)
         self.endInsertRows()
 
-    def insert_row(self, index, row, user_data=None):
-        pass
+    def insert_row(self, index, row_data, user_data=None):
+        if index.isValid():
+            row = index.row()
+            self.beginInsertRows(QModelIndex(), row, row)
+            self.__data.insert(row, row_data)
+            self.__user_data.insert(row, user_data)
+        else:
+            self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
+            self.__data.append(row_data)
+            self.__user_data.append(user_data)
+        self.endInsertRows()
 
     def appendData(self, value, role=Qt.EditRole):
         in_row = self.rowCount(QModelIndex())
@@ -97,6 +110,7 @@ class TableModel(QAbstractTableModel):
     def removeRows(self, row, count=1, parent=QModelIndex()):
         self.beginRemoveRows(QModelIndex(), row, row + count - 1)
         del self.__data[row:row + count]
+        del self.__user_data[row:row + count]
         self.endRemoveRows()
         return True
 
@@ -120,9 +134,9 @@ class TableModel(QAbstractTableModel):
             if role == Qt.UserRole:
                 self.__user_data[index.row()][index.column()] = value
 
-    def get_row(self, index):
-        if index.isValid():
-            return (self.__data[index.row()], self.__user_data[index.row()])
+    def get_row(self, row):
+        if row >= 0 & row < self.rowCount():
+            return (self.__data[row], self.__user_data[row])
         return ()
 
 

@@ -1,65 +1,78 @@
 # view.set_fields.py
 
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtCore import Qt, QModelIndex
 
 from controller.table_model import TableModel
 from view.ui_set_fields import Ui_SelectorFields
+from controller.my_controller import Fields
 
 FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
               'Opened', 'Commented']
 Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
-Noms = list(range(6))
 
 
 class SetFields(QDialog):
-    def __init__(self, left, right, parent=None):     # , flags, Qt_WindowFlags=None, Qt_WindowType=None, *args, **kwargs):
+    def __init__(self, current: Fields, parent=None):
         super().__init__(parent)
         self.ui = Ui_SelectorFields()
         self.ui.setupUi(self)
 
-        self.aval_fields = left
-        self.used_fields = right
+        self.aval_fields = [it for it in Heads if it not in current.headers]
+        self.used_fields = current.headers
 
         self.left_m = TableModel()
         self.right_m = TableModel()
-        self._setup_models()
+        self._setup_models(current)
 
         self.ui.btn_add.clicked.connect(self._add)
         self.ui.btn_remove.clicked.connect(self._remove)
 
     def _add(self):
         idx = self.ui.fieldsAval.currentIndex()
-        item = self.left_m.get_row(idx)
+        item = self.left_m.get_row(idx.row())
 
         if item:
-            self.right_m.append_row(item[0], item[1])
+            self.right_m.insert_row(self.ui.fieldsUsed.currentIndex(), item[0], item[1])
             self.left_m.removeRows(idx.row())
 
     def _remove(self):
         idx = self.ui.fieldsUsed.currentIndex()
-        item = self.right_m.get_row(idx)
+        item = self.right_m.get_row(idx.row())
 
         if item:
-            self.left_m.append_row(item[0], item[1])
-            self.right_m.removeRows(idx.row())
+            if item[0][0] == 'File':
+                QMessageBox.critical(self, 'File field', 'File field must be used!')
+            else:
+                self.left_m.insert_row(self.ui.fieldsAval.currentIndex(), item[0], item[1])
+                self.right_m.removeRows(idx.row())
 
-    def _setup_models(self):
+    def _setup_models(self, current):
         for it in self.aval_fields:
-            self.left_m.append_row(it)
+            id = Heads.index(it)
+            self.left_m.append_row(it, (FileFields[id], id))
 
         self.left_m.setHeaderData(0, Qt.Horizontal, ("Available",))
         self.ui.fieldsAval.setModel(self.left_m)
 
         for it in self.used_fields:
-            self.right_m.append_row(it)
+            id = Heads.index(it)
+            self.right_m.append_row(it, (FileFields[id], id))
 
         self.right_m.setHeaderData(0, Qt.Horizontal, ("Used",))
         self.ui.fieldsUsed.setModel(self.right_m)
 
     def get_result(self):
-        co1 = self.ui.fieldsUsed.model().rowCount(QModelIndex())
-        print('--> Result', co1)
+        co1 = self.right_m.rowCount(QModelIndex())
+        heads = []
+        fields = []
+        idx = []
+        for i in range(co1):
+            it = self.right_m.get_row(i)
+            heads.append(it[0][0])
+            fields.append(it[1][0])
+            idx.append(it[1][1])
+        return Fields._make((fields, heads, idx))
 
 
 if __name__ == "__main__":
@@ -81,12 +94,12 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    left = FileFields[4:]
-    right = FileFields[:4]
+    curr = Fields._make((FileFields[:4], Heads[:4], range(4)))
 
-    fields_set = SetFields(left, right)
+    fields_set = SetFields(curr)
     if fields_set.exec_():
-        fields_set.get_result()
+        print(fields_set.get_result())
+        sys.exit(0)
 
     sys.exit(app.exec_())
 

@@ -50,7 +50,7 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QListView" name="fieldsAval">
+  <widget class="QTreeView" name="fieldsAval">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -60,7 +60,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QListView" name="fieldsUsed">
+  <widget class="QTreeView" name="fieldsUsed">
    <property name="geometry">
     <rect>
      <x>170</x>
