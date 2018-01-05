@@ -5,20 +5,20 @@ from PyQt5.QtCore import Qt, QModelIndex
 
 from controller.table_model import TableModel
 from view.ui_set_fields import Ui_SelectorFields
-from controller.my_controller import Fields
-
-FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
-              'Opened', 'Commented']
-Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
+from model.helpers import Fields
 
 
 class SetFields(QDialog):
+    FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
+                  'Opened', 'Commented']
+    Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
+
     def __init__(self, current: Fields, parent=None):
         super().__init__(parent)
         self.ui = Ui_SelectorFields()
         self.ui.setupUi(self)
 
-        self.aval_fields = [it for it in Heads if it not in current.headers]
+        self.aval_fields = [it for it in SetFields.Heads if it not in current.headers]
         self.used_fields = current.headers
 
         self.left_m = TableModel()
@@ -49,15 +49,15 @@ class SetFields(QDialog):
 
     def _setup_models(self, current):
         for it in self.aval_fields:
-            id = Heads.index(it)
-            self.left_m.append_row(it, (FileFields[id], id))
+            id = SetFields.Heads.index(it)
+            self.left_m.append_row(it, (SetFields.FileFields[id], id))
 
         self.left_m.setHeaderData(0, Qt.Horizontal, ("Available",))
         self.ui.fieldsAval.setModel(self.left_m)
 
         for it in self.used_fields:
-            id = Heads.index(it)
-            self.right_m.append_row(it, (FileFields[id], id))
+            id = SetFields.Heads.index(it)
+            self.right_m.append_row(it, (SetFields.FileFields[id], id))
 
         self.right_m.setHeaderData(0, Qt.Horizontal, ("Used",))
         self.ui.fieldsUsed.setModel(self.right_m)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    curr = Fields._make((FileFields[:4], Heads[:4], range(4)))
+    curr = Fields._make((SetFields.FileFields[:4], SetFields.Heads[:4], range(4)))
 
     fields_set = SetFields(curr)
     if fields_set.exec_():

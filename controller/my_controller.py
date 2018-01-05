@@ -20,55 +20,74 @@ from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
 from view.item_edit import ItemEdit
 from view.sel_opt import SelOpt
+from view.set_fields import SetFields
+from model.helpers import Fields
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
 
 class MyController():
-
     FOLDER, FAVORITE, ADVANCE = (1, 2, 4)
 
     def __init__(self, view):
         self._connection = None
         self.view = view.ui
-        self.is_restoring_selection = False
+
+        self.fields = None
+        self.thread = None
+        self.obj_thread = None
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
         self._cb_places = Places(self)
         self._opt = SelOpt(self)
         self._restore_font()
-        self.thread = None
-        self.obj_thread = None
+        self._restore_fields()
 
     def _on_data_methods(self):
-        return {'cb_places': self._cb_places.about_change_place,
-                'dirTree': self._populate_directory_tree,       # emit from Places
-                'Edit key words': self._edit_key_words,
-                'Edit authors': self._edit_authors,
-                'Edit title': self._edit_title,
-                'Edit date': self._edit_date,
-                'Edit comment': self._edit_comment,
-                'Delete': self._delete_file,
-                'Add to favorites': self._add_file_to_favorites,
-                'File_doubleClicked': self._double_click_file,
-                'Open': self._open_file,
-                'Open folder': self._open_folder,
-                'advanced_file_list': self._advanced_file_list,
-                'get_sel_files': self._list_of_selected_files,
-                'Favorites': self._favorite_file_list,
+        return {'Add to favorites': self._add_file_to_favorites,
                 'Author Remove unused': self._author_remove_unused,
-                'Tag Remove unused': self._tag_remove_unused,
-                'Ext Remove unused': self._ext_remove_unused,
-                'Ext Create group': self._ext_create_group,
+                'Change place': self._cb_places.about_change_place,
                 'change_font': self._ask_for_change_font,
-                'Set fields': self._set_fields,
-                'Tag Scan in names': self._scan_for_tags,
                 'Copy file name': self._copy_file_name,
-                'Copy full path': self._copy_full_path
+                'Copy full path': self._copy_full_path,
+                'Delete': self._delete_file,
+                'dirTree': self._populate_directory_tree,  # emit from Places
+                'Edit authors': self._edit_authors,
+                'Edit comment': self._edit_comment,
+                'Edit date': self._edit_date,
+                'Edit key words': self._edit_key_words,
+                'Edit title': self._edit_title,
+                'Ext Create group': self._ext_create_group,
+                'Ext Remove unused': self._ext_remove_unused,
+                'Favorites': self._favorite_file_list,
+                'File_doubleClicked': self._double_click_file,
+                'get_sel_files': self._list_of_selected_files,
+                'Open folder': self._open_folder,
+                'Open': self._open_file,
+                'Selection options': self._selection_options,
+                'Set fields': self._set_fields,
+                'Tag Remove unused': self._tag_remove_unused,
+                'Tag Rename': self._tag_rename,
+                'Tag Scan in names': self._scan_for_tags
                 }
 
+    def _restore_fields(self):
+        settings = QSettings()
+        self.fields = Fields._make(settings.value('FIELDS',
+                                                  (['FileName', 'FileDate', 'Pages', 'Size'],
+                                                   ['File', 'Date', 'Pages', 'Size'],
+                                                   [0, 1, 2, 3])))
+        print(self.fields)
+
     def _set_fields(self):
-        pass
+        set_fields_dialog = SetFields(self.fields)
+        if set_fields_dialog.exec_():
+            self.fields = set_fields_dialog.get_result()
+            settings = QSettings()
+            settings.setValue('FIELDS', self.fields)
+
+    def _tag_rename(self):
+        print('--> _tag_rename')
 
     def _copy_file_name(self):
         idx = self.view.filesList.currentIndex()
@@ -262,7 +281,7 @@ class MyController():
         self.thread.start()
 
     def _finish_thread(self):
-        self._show_message('Updating of files is finished')        #
+        self._show_message('Updating of files is finished')  #
 
     def _favorite_file_list(self):
         model = self.set_file_model()
@@ -277,7 +296,7 @@ class MyController():
             self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
-    def _advanced_file_list(self):
+    def _selection_options(self):
         """
         Show files according optional conditions
         1) folder and nested sub-folders up to n-th level
@@ -432,7 +451,7 @@ class MyController():
         model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, IssueDate)
         """
         curr_idx = self.view.filesList.currentIndex()
-        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole) # file_id, _, comment_id, _
+        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)  # file_id, _, comment_id, _
 
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
@@ -462,7 +481,7 @@ class MyController():
         if ok_pressed:
             self._dbu.update_other(to_update[0], (data_, checked.comment_id))
             self._dbu.update_other('COMMENT_DATE', (checked[0],))
-            self._populate_comment_field(checked[:4]) # file_id, dir_id, comment_id, issue_date
+            self._populate_comment_field(checked[:4])  # file_id, dir_id, comment_id, issue_date
 
     def _check_existence(self):
         """
@@ -542,7 +561,7 @@ class MyController():
             if model.rowCount(id) > 0:
                 self.view.extList.setExpanded(id, True)
                 sel = QItemSelection(model.index(0, 0, id),
-                                     model.index(model.rowCount(id)-1, model.columnCount(id)-1, id))
+                                     model.index(model.rowCount(id) - 1, model.columnCount(id) - 1, id))
                 self.view.extList.selectionModel().select(sel, QItemSelectionModel.Select)
 
         for id in deselected.indexes():
@@ -552,14 +571,13 @@ class MyController():
         self._save_ext_selection()
 
     def _save_ext_selection(self):
-        if not self.is_restoring_selection:
-            idxs = self.view.extList.selectedIndexes()
-            sel = []
-            for ss in idxs:
-                sel.append((ss.row(), ss.parent().row()))
+        idxs = self.view.extList.selectedIndexes()
+        sel = []
+        for ss in idxs:
+            sel.append((ss.row(), ss.parent().row()))
 
-            settings = QSettings()
-            settings.setValue('EXT_SEL_LIST', sel)
+        settings = QSettings()
+        settings.setValue('EXT_SEL_LIST', sel)
 
     def _populate_tag_list(self):
         tag_list = self._dbu.select_other('TAGS')
@@ -571,25 +589,21 @@ class MyController():
         self.view.tagsList.selectionModel().selectionChanged.connect(self._tag_sel_changed)
 
     def _tag_sel_changed(self):
-        if not self.is_restoring_selection:
-            idxs = self.view.tagsList.selectedIndexes()
-            sel = []
-            for ss in idxs:
-                sel.append((ss.row(), ss.parent().row()))
+        idxs = self.view.tagsList.selectedIndexes()
+        sel = []
+        for ss in idxs:
+            sel.append((ss.row(), ss.parent().row()))
 
-            settings = QSettings()
-            settings.setValue('TAG_SEL_LIST', sel)
+        settings = QSettings()
+        settings.setValue('TAG_SEL_LIST', sel)
 
     def _restore_tag_selection(self):
         settings = QSettings()
         sel = settings.value('TAG_SEL_LIST', [])
         model = self.view.tagsList.model()
-        self.is_restoring_selection = True
         for ss in sel:
             idx = model.index(ss[0], 0, QModelIndex())
             self.view.tagsList.selectionModel().select(idx, QItemSelectionModel.Select)
-
-        self.is_restoring_selection = False
 
     def _populate_author_list(self):
         author_list = self._dbu.select_other('AUTHORS')
@@ -601,25 +615,21 @@ class MyController():
         self.view.authorsList.selectionModel().selectionChanged.connect(self._author_sel_changed)
 
     def _author_sel_changed(self):
-        if not self.is_restoring_selection:
-            idxs = self.view.authorsList.selectedIndexes()
-            sel = []
-            for ss in idxs:
-                sel.append((ss.row(), ss.parent().row()))
+        idxs = self.view.authorsList.selectedIndexes()
+        sel = []
+        for ss in idxs:
+            sel.append((ss.row(), ss.parent().row()))
 
-            settings = QSettings()
-            settings.setValue('AUTHOR_SEL_LIST', sel)
+        settings = QSettings()
+        settings.setValue('AUTHOR_SEL_LIST', sel)
 
     def _restore_author_selection(self):
         settings = QSettings()
         sel = settings.value('AUTHOR_SEL_LIST', [])
         model = self.view.authorsList.model()
-        self.is_restoring_selection = True
         for ss in sel:
             idx = model.index(ss[0], 0, QModelIndex())
             self.view.authorsList.selectionModel().select(idx, QItemSelectionModel.Select)
-
-        self.is_restoring_selection = False
 
     def _populate_file_list(self, dir_idx):
         """
@@ -700,19 +710,18 @@ class MyController():
 
     def _populate_all_widgets(self):
         self._cb_places.populate_cb_places()
-        self._populate_directory_tree()
         self._populate_ext_list()
         self._restore_ext_selection()
         self._populate_tag_list()
         self._restore_tag_selection()
         self._populate_author_list()
         self._restore_author_selection()
+        self._populate_directory_tree()
 
     def _restore_ext_selection(self):
         settings = QSettings()
         sel = settings.value('EXT_SEL_LIST', [])
         model = self.view.extList.model()
-        self.is_restoring_selection = True
         for ss in sel:
             if ss[1] == -1:
                 parent = QModelIndex()
@@ -723,8 +732,6 @@ class MyController():
             idx = model.index(ss[0], 0, parent)
 
             self.view.extList.selectionModel().select(idx, QItemSelectionModel.Select)
-
-        self.is_restoring_selection = False
 
     def _populate_directory_tree(self):
         dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
@@ -763,14 +770,14 @@ class MyController():
             dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
-    def _cur_dir_changed(self, selected):   # , unselected):
+    def _cur_dir_changed(self, selected):  # , unselected):
         """
         Changed selection in dirTree
         :param selected:  QItemSelection
         :return: None
         """
         idx = selected.indexes()
-        if idx:            # dir_idx = (DirID, ParentID, Full path)
+        if idx:  # dir_idx = (DirID, ParentID, Full path)
             MyController._save_path(idx[0])
             dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
             self._populate_file_list(dir_idx)
@@ -831,7 +838,7 @@ class MyController():
                 self._cb_places.update_place_name(root)
                 return MyController._yield_files(root, ext_item)
 
-        return ()       # not ok_pressed or root is empty
+        return ()  # not ok_pressed or root is empty
 
     def _show_message(self, message):
         self.view.statusbar.showMessage(message, 3000)

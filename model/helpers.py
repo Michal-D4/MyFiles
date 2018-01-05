@@ -1,5 +1,8 @@
 # model/helpers.py
 import os
+from collections import namedtuple
+
+Fields = namedtuple('Fields', 'fields headers indexes')
 
 
 def get_file_extension(file_name):
