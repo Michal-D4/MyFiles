@@ -16,7 +16,6 @@ class ProxyModel(QSortFilterProxyModel):
         self.sourceModel().update(self.mapToSource(index), data, role)
 
     def delete_row(self, index):
-        print('--> ProxyModel.delete_row', self.sourceModel().data(index))
         self.sourceModel().delete_row(self.mapToSource(index))
 
     def lessThan(self, left, right):
@@ -29,6 +28,9 @@ class ProxyModel(QSortFilterProxyModel):
             rightData = int(rightData) or 0
 
         return leftData < rightData
+
+    def setHeaderData(self, value):
+        self.sourceModel().setHeaderData(0, Qt.Horizontal, value)
 
 class TableModel(QAbstractTableModel):
     def __init__(self, parent=None, *args):
@@ -76,7 +78,6 @@ class TableModel(QAbstractTableModel):
                 self.__user_data[index.row()] = data
 
     def delete_row(self, index):
-        print('--> TableModel.delete_row', self.data(index))
         if index.isValid():
             self.beginRemoveRows(QModelIndex(), index.row(), index.row())
             row = index.row()
