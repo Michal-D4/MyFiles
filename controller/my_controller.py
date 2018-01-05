@@ -22,10 +22,6 @@ from view.item_edit import ItemEdit
 from view.sel_opt import SelOpt
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
-              'Opened', 'Commented']
-Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
-Noms = list(range(6))
 
 
 class MyController():
@@ -65,10 +61,14 @@ class MyController():
                 'Ext Remove unused': self._ext_remove_unused,
                 'Ext Create group': self._ext_create_group,
                 'change_font': self._ask_for_change_font,
+                'Set fields': self._set_fields,
                 'Tag Scan in names': self._scan_for_tags,
                 'Copy file name': self._copy_file_name,
                 'Copy full path': self._copy_full_path
                 }
+
+    def _set_fields(self):
+        pass
 
     def _copy_file_name(self):
         idx = self.view.filesList.currentIndex()
@@ -472,9 +472,12 @@ class MyController():
         u_type = namedtuple('file_comment',
                             'file_id dir_id comment_id issue_date comment book_title')
         curr_idx = self.view.filesList.currentIndex()
+        # user_data = (FileID, DirID, CommentID, ExtID, PlaceId)
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        issue_date = self._dbu.select_other('ISSUE_DATE', (user_data[0],)).fetchone()
+        issue_date = str(issue_date[0])
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
-        print('--> _check_existence', user_data, comment)
+        print('--> _check_existence', user_data, comment, issue_date)
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
@@ -486,7 +489,7 @@ class MyController():
                                                + user_data[3:], Qt.UserRole)
 
         print('--> _check_ AFTER', user_data, comment)
-        return u_type._make(user_data + comment)
+        return u_type._make(user_data[:3] + (issue_date,) + comment)
 
     def _restore_file_list(self, curr_dir_idx):
         settings = QSettings()
@@ -671,6 +674,7 @@ class MyController():
 
             tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
             authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
+            issue_date = self._dbu.select_other('ISSUE_DATE', (file_id,)).fetchone()
 
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
@@ -682,7 +686,7 @@ class MyController():
                     ', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'.format(
                     ', '.join([author[0] for author in authors])),
-                '<p><a href="Edit date">Issue date</a>: {}</p>'.format(data[3]),
+                '<p><a href="Edit date">Issue date</a>: {}</p>'.format(issue_date[0]),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.format(
                     comment[0]))))

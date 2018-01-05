@@ -72,7 +72,8 @@ Selects = {'TREE':
            'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
                                   'Opened, Commented, FileID, DirID, CommentID, ExtID,',
                                   'PlaceId from Files where FileID in',
-                                  '(select FileID from Favorites);'))
+                                  '(select FileID from Favorites);')),
+           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
