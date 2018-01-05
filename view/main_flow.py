@@ -29,14 +29,19 @@ class MainFlow(QMainWindow):
         self.open_dialog = open_dialog
 
     def set_actions(self):
-        self.ui.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
-        self.ui.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
-        self.ui.actionGetFiles.triggered.connect(lambda: self.change_data_signal.emit('get_sel_files'))
-        self.ui.actionFavorites.triggered.connect(lambda: self.change_data_signal.emit('Favorites'))
+        self.ui.actionOpenDB.triggered.connect(
+            lambda: self.open_dialog.exec_())
+        self.ui.actionScanFiles.triggered.connect(
+            lambda: self.scan_files_signal.emit())
+        self.ui.actionGetFiles.triggered.connect(
+            lambda: self.change_data_signal.emit('get_sel_files'))
+        self.ui.actionFavorites.triggered.connect(
+            lambda: self.change_data_signal.emit('Favorites'))
 
         self.ui.cb_places.currentIndexChanged.connect(self.change_place)
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
-        self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
+        self.ui.filesList.doubleClicked.connect(
+            lambda: self.change_data_signal.emit('File_doubleClicked'))
 
         self.ui.filesList.resizeEvent = self.resize_event
 
@@ -51,7 +56,7 @@ class MainFlow(QMainWindow):
         menu2 = QMenu(self)
         sel_opt = menu2.addAction('Selection options')
         self.ui.btnGetFiles.setMenu(menu2)
-        sel_opt.triggered.connect(lambda: self.change_data_signal.emit('advanced_file_list'))
+        sel_opt.triggered.connect(lambda: self.change_data_signal.emit('Selection options'))
 
     def calc_collumns_width(self):
         lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
@@ -82,6 +87,10 @@ class MainFlow(QMainWindow):
         menu.addSeparator()
         menu.addAction('Copy file name')
         menu.addAction('Copy full path')
+        menu.addSeparator()
+        menu.addAction('Copy file')
+        menu.addAction('Move file')
+        menu.addAction('Delete file')
         action = menu.exec_(self.ui.filesList.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit(action.text())
@@ -99,6 +108,7 @@ class MainFlow(QMainWindow):
         menu = QMenu(self)
         menu.addAction('Remove unused')
         menu.addAction('Scan in names')
+        menu.addAction('Rename')
         action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
         if action:
             act = 'Tag {}'.format(action.text())
@@ -170,7 +180,7 @@ class MainFlow(QMainWindow):
         super().moveEvent(event)
 
     def change_place(self, idx):
-        self.change_data_signal.emit('cb_places')
+        self.change_data_signal.emit('Change place')
 
     def restore_setting(self):
         settings = QSettings()
