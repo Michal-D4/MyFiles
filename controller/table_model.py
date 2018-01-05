@@ -19,6 +19,16 @@ class ProxyModel(QSortFilterProxyModel):
         print('--> ProxyModel.delete_row', self.sourceModel().data(index))
         self.sourceModel().delete_row(self.mapToSource(index))
 
+    def lessThan(self, left, right):
+        s_model = self.sourceModel()
+        leftData = s_model.data(left)
+        rightData = s_model.data(right)
+
+        if s_model.headerData(left.column(), Qt.Horizontal) in ('Pages', 'Size'):
+            leftData = int(leftData) or 0
+            rightData = int(rightData) or 0
+
+        return leftData < rightData
 
 class TableModel(QAbstractTableModel):
     def __init__(self, parent=None, *args):
