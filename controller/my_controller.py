@@ -6,7 +6,7 @@ import re
 import webbrowser
 from collections import namedtuple
 
-from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QMessageBox,
+from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog,
                              QFontDialog, QApplication)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
                           QVariant, QItemSelection, QThread)

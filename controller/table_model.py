@@ -27,7 +27,7 @@ class TableModel(QAbstractTableModel):
         self.__user_data = []
         self.column_count = 0
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=QModelIndex()):
         if parent.isValid():
             return 0
         return len(self.__data)
@@ -71,6 +71,7 @@ class TableModel(QAbstractTableModel):
             self.__user_data.remove(self.__user_data[row])
 
     def append_row(self, row, user_data=None):
+        self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
         if isinstance(row, str) or not isinstance(row, Iterable):
             row = (str(row),)
         else:
@@ -81,6 +82,10 @@ class TableModel(QAbstractTableModel):
 
         self.__data.append(row)
         self.__user_data.append(user_data)
+        self.endInsertRows()
+
+    def insert_row(self, index, row, user_data=None):
+        pass
 
     def appendData(self, value, role=Qt.EditRole):
         in_row = self.rowCount(QModelIndex())
@@ -114,6 +119,11 @@ class TableModel(QAbstractTableModel):
                 return
             if role == Qt.UserRole:
                 self.__user_data[index.row()][index.column()] = value
+
+    def get_row(self, index):
+        if index.isValid():
+            return (self.__data[index.row()], self.__user_data[index.row()])
+        return ()
 
 
 class TableModel2(TableModel):
