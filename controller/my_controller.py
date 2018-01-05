@@ -33,7 +33,7 @@ class MyController():
         self._connection = None
         self.view = view.ui
 
-        self.fields = None
+        self.fields = Fields._make(((),(),()))
         self.thread = None
         self.obj_thread = None
         self.file_list_source = MyController.FOLDER
@@ -77,7 +77,6 @@ class MyController():
                                                   (['FileName', 'FileDate', 'Pages', 'Size'],
                                                    ['File', 'Date', 'Pages', 'Size'],
                                                    [0, 1, 2, 3])))
-        print(self.fields)
 
     def _set_fields(self):
         set_fields_dialog = SetFields(self.fields)
@@ -479,7 +478,10 @@ class MyController():
                                                  '', QLineEdit.Normal, getattr(checked, item_no))
         print('--> _edit_comment_item', checked, data_)
         if ok_pressed:
-            self._dbu.update_other(to_update[0], (data_, checked.comment_id))
+            if item_no == 'issue_date':
+                self._dbu.update_other(to_update[0], (data_, checked.file_id))
+            else:
+                self._dbu.update_other(to_update[0], (data_, checked.comment_id))
             self._dbu.update_other('COMMENT_DATE', (checked[0],))
             self._populate_comment_field(checked[:4])  # file_id, dir_id, comment_id, issue_date
 
@@ -652,16 +654,16 @@ class MyController():
 
     def set_file_model(self):
         model = TableModel(parent=self.view.filesList)
-        model.setHeaderData(0, Qt.Horizontal, 'File Date Pages Size', role=Qt.DisplayRole)
         proxy_model = ProxyModel()
         proxy_model.setSourceModel(model)
         return proxy_model
 
     def _show_files(self, files, model):
+        idx = getattr(self.fields, 'indexes')
+        model.setHeaderData(getattr(self.fields, 'headers'))
         for ff in files:
-            # ff[:4] = [FileName, FileDate, Pages, Size]
-            # ff[4:] = [FileID, DirID, CommentID, IssueDate]
-            model.append_row(ff[:4], ff[-5:])
+            ff1 = [ff[i] for i in idx]
+            model.append_row(tuple(ff1), ff[-5:])
 
         self.view.filesList.setModel(model)
         self.view.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
