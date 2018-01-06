@@ -8,10 +8,10 @@ from collections import namedtuple
 
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog,
                              QFontDialog, QApplication)
-from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
+from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QVariant, QItemSelection, QThread)
 
-from controller.table_model import TableModel, ProxyModel
+from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.places import Places
 from model.utilities import DBUtils, PLUS_EXT_ID
@@ -21,6 +21,7 @@ from model.helpers import *
 from view.item_edit import ItemEdit
 from view.sel_opt import SelOpt
 from view.set_fields import SetFields
+from view.input_date import DateInputDialog
 from model.helpers import Fields
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
@@ -54,7 +55,6 @@ class MyController():
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
-                'Edit date': self._edit_date,
                 'Edit key words': self._edit_key_words,
                 'Edit title': self._edit_title,
                 'Ext Create group': self._ext_create_group,
@@ -283,7 +283,7 @@ class MyController():
         self._show_message('Updating of files is finished')  #
 
     def _favorite_file_list(self):
-        model = self.set_file_model()
+        model = self._set_file_model()
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
             self.file_list_source = MyController.FAVORITE
@@ -310,7 +310,7 @@ class MyController():
 
     def _list_of_selected_files(self):
         res = self._opt.get_result()
-        model = self.set_file_model()
+        model = self._set_file_model()
 
         curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place()[1][0]).fetchall()
         if curs:
@@ -323,7 +323,7 @@ class MyController():
 
     def _add_file_to_favorites(self):
         f_idx = self.view.filesList.currentIndex()
-        file_id, _, _, _ = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        file_id, _, _, _, _ = self.view.filesList.model().data(f_idx, Qt.UserRole)
         self._dbu.insert_other('FAVORITES', (file_id,))
 
     def _delete_file(self):
@@ -350,9 +350,25 @@ class MyController():
         if column_head == 'File':
             self._open_file()
         elif column_head == 'Pages':
-            file_name = self.view.filesList.model().data(f_idx)
-            file_id, dir_id, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
-            self._update_pages(f_idx, file_id, file_name)
+            pages = self.view.filesList.model().data(f_idx)
+            file_id, _, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+            self._update_pages(f_idx, file_id, pages)
+        elif column_head == 'Issued':
+            issue_date = self.view.filesList.model().data(f_idx)
+            file_id, _, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+            self._update_issue_date(f_idx, file_id, issue_date)
+
+    def _update_issue_date(self, f_idx, file_id, issue_date):
+        try:
+            zz = [int(t) for t in issue_date.split('-')]
+            issue_date = QDate(*zz)
+        except (TypeError, ValueError):
+            issue_date = QDate.currentDate()
+
+        _date, ok_ = DateInputDialog.getDate(issue_date)
+        if ok_:
+            self._dbu.update_other('ISSUE_DATE', (_date, file_id))
+            self.view.filesList.model().update(f_idx, _date)
 
     def _update_pages(self, f_idx, file_id, page_number):
         if not page_number:
@@ -447,10 +463,10 @@ class MyController():
 
     def _edit_authors(self):
         """
-        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, IssueDate)
+        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, ExtID, PlaceId)
         """
         curr_idx = self.view.filesList.currentIndex()
-        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)  # file_id, _, comment_id, _
+        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
 
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
@@ -490,27 +506,29 @@ class MyController():
         Check if comment record already created for file
         :return: (file_id, dir_id, comment_id, issue_date, comment, book_title)
         """
-        u_type = namedtuple('file_comment',
-                            'file_id dir_id comment_id issue_date comment book_title')
+        file_comment = namedtuple('file_comment',
+                                  'file_id dir_id comment_id issue_date comment book_title')
         curr_idx = self.view.filesList.currentIndex()
         # user_data = (FileID, DirID, CommentID, ExtID, PlaceId)
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
         issue_date = self._dbu.select_other('ISSUE_DATE', (user_data[0],)).fetchone()
         issue_date = str(issue_date[0])
+        res = file_comment._make(user_data[:3] + (issue_date, '', ''))
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
-        print('--> _check_existence', user_data, comment, issue_date)
+        print('--> _check_existence', res)
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
             print(comment_id)
-            self._dbu.update_other('FILE_COMMENT', (comment_id, user_data[0]))
+            self._dbu.update_other('FILE_COMMENT', (res.comment_id, res.file_id))
             print(' updated')
             self.view.filesList.model().update(curr_idx,
                                                user_data[:2] + (comment_id,)
                                                + user_data[3:], Qt.UserRole)
 
         print('--> _check_ AFTER', user_data, comment)
-        return u_type._make(user_data[:3] + (issue_date,) + comment)
+
+        return res._replace(comment=comment[0], book_title=comment[1])
 
     def _restore_file_list(self, curr_dir_idx):
         settings = QSettings()
@@ -534,11 +552,20 @@ class MyController():
             self.view.filesList.setCurrentIndex(idx)
             self.view.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
 
-    def _edit_date(self):
-        self._edit_comment_item(('ISSUE_DATE', 'Input issue date'), 'issue_date')
-
     def _edit_title(self):
         self._edit_comment_item(('BOOK_TITLE', 'Input book title'), 'book_title')
+        #    _edit_comment_item(self, to_update, item_no):
+        # checked = self._check_existence()
+        # data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
+        #                                          '', QLineEdit.Normal, getattr(checked, item_no))
+        # print('--> _edit_comment_item', checked, data_)
+        # if ok_pressed:
+        #     if item_no == 'issue_date':
+        #         self._dbu.update_other(to_update[0], (data_, checked.file_id))
+        #     else:
+        #         self._dbu.update_other(to_update[0], (data_, checked.comment_id))
+        #     self._dbu.update_other('COMMENT_DATE', (checked[0],))
+        #     self._populate_comment_field(checked[:4])  # file_id, dir_id, comment_id, issue_date
 
     def _edit_comment(self):
         self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
@@ -641,7 +668,7 @@ class MyController():
         self.file_list_source = MyController.FOLDER
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
-        model = self.set_file_model()
+        model = self._set_file_model()
         if dir_idx:
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
@@ -652,9 +679,9 @@ class MyController():
             self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
-    def set_file_model(self):
+    def _set_file_model(self):
         model = TableModel(parent=self.view.filesList)
-        proxy_model = ProxyModel()
+        proxy_model = ProxyModel2()
         proxy_model.setSourceModel(model)
         return proxy_model
 
@@ -674,8 +701,9 @@ class MyController():
     def _cur_file_changed(self, curr_idx):
         settings = QSettings()
         settings.setValue('FILE_IDX', curr_idx.row())
-        data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
-        self._populate_comment_field(data)
+        if curr_idx.isValid():
+            data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
+            self._populate_comment_field(data)
 
     def _populate_comment_field(self, data):
         file_id = data[0]
@@ -686,7 +714,6 @@ class MyController():
 
             tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
             authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
-            issue_date = self._dbu.select_other('ISSUE_DATE', (file_id,)).fetchone()
 
             if comment_id:
                 comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
@@ -698,7 +725,6 @@ class MyController():
                     ', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'.format(
                     ', '.join([author[0] for author in authors])),
-                '<p><a href="Edit date">Issue date</a>: {}</p>'.format(issue_date[0]),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.format(
                     comment[0]))))
