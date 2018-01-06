@@ -69,10 +69,9 @@ Selects = {'TREE':
            'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
                                        'Opened, Commented, FileID, DirID, CommentID, ExtID,',
                                        'PlaceId from Files where DirId = ?;')),
-           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
-                                  'Opened, Commented, FileID, DirID, CommentID, ExtID,',
-                                  'PlaceId from Files where FileID in',
-                                  '(select FileID from Favorites);')),
+           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
+                                  'Commented, FileID, DirID, CommentID, ExtID, PlaceId from',
+                                  'Files where FileID in (select FileID from Favorites);')),
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
