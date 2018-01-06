@@ -18,19 +18,30 @@ class ProxyModel(QSortFilterProxyModel):
     def delete_row(self, index):
         self.sourceModel().delete_row(self.mapToSource(index))
 
-    def lessThan(self, left, right):
-        s_model = self.sourceModel()
-        leftData = s_model.data(left)
-        rightData = s_model.data(right)
-
-        if s_model.headerData(left.column(), Qt.Horizontal) in ('Pages', 'Size'):
-            leftData = int(leftData) or 0
-            rightData = int(rightData) or 0
-
-        return leftData < rightData
-
     def setHeaderData(self, value):
         self.sourceModel().setHeaderData(0, Qt.Horizontal, value)
+
+
+class ProxyModel2(ProxyModel):
+    """
+    Specific model for file list
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def lessThan(self, left, right):
+        s_model = self.sourceModel()
+        left_data = s_model.data(left)
+        right_data = s_model.data(right)
+
+        if s_model.headerData(left.column(), Qt.Horizontal) in ('Pages', 'Size'):
+            left_data = int(left_data) or 0
+            right_data = int(right_data) or 0
+
+        return left_data < right_data
+
+
 
 class TableModel(QAbstractTableModel):
     def __init__(self, parent=None, *args):
