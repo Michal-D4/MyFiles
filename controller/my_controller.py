@@ -487,46 +487,26 @@ class MyController():
             self._populate_author_list()
             self._populate_comment_field(u_data)
 
-    def _edit_comment_item(self, to_update, item_no):
-        print('--> _edit_comment_item', to_update, item_no)
-        checked = self._check_existence()
-        data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
-                                                 '', QLineEdit.Normal, getattr(checked, item_no))
-        print('--> _edit_comment_item', checked, data_)
-        if ok_pressed:
-            if item_no == 'issue_date':
-                self._dbu.update_other(to_update[0], (data_, checked.file_id))
-            else:
-                self._dbu.update_other(to_update[0], (data_, checked.comment_id))
-            self._dbu.update_other('COMMENT_DATE', (checked[0],))
-            self._populate_comment_field(checked[:4])  # file_id, dir_id, comment_id, issue_date
-
     def _check_existence(self):
         """
         Check if comment record already created for file
-        :return: (file_id, dir_id, comment_id, issue_date, comment, book_title)
+        Note: user_data = (FileID, DirID, CommentID, ExtID, PlaceId)
+        :return: (file_id, dir_id, comment_id, comment, book_title)
         """
         file_comment = namedtuple('file_comment',
-                                  'file_id dir_id comment_id issue_date comment book_title')
+                                  'file_id dir_id comment_id comment book_title')
+
         curr_idx = self.view.filesList.currentIndex()
-        # user_data = (FileID, DirID, CommentID, ExtID, PlaceId)
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-        issue_date = self._dbu.select_other('ISSUE_DATE', (user_data[0],)).fetchone()
-        issue_date = str(issue_date[0])
-        res = file_comment._make(user_data[:3] + (issue_date, '', ''))
+        res = file_comment._make(user_data[:3] + ('', ''))
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
-        print('--> _check_existence', res)
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
-            print(comment_id)
             self._dbu.update_other('FILE_COMMENT', (res.comment_id, res.file_id))
-            print(' updated')
             self.view.filesList.model().update(curr_idx,
                                                user_data[:2] + (comment_id,)
                                                + user_data[3:], Qt.UserRole)
-
-        print('--> _check_ AFTER', user_data, comment)
 
         return res._replace(comment=comment[0], book_title=comment[1])
 
@@ -553,22 +533,25 @@ class MyController():
             self.view.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _edit_title(self):
-        self._edit_comment_item(('BOOK_TITLE', 'Input book title'), 'book_title')
-        #    _edit_comment_item(self, to_update, item_no):
-        # checked = self._check_existence()
-        # data_, ok_pressed = QInputDialog.getText(self.view.extList, to_update[1],
-        #                                          '', QLineEdit.Normal, getattr(checked, item_no))
-        # print('--> _edit_comment_item', checked, data_)
-        # if ok_pressed:
-        #     if item_no == 'issue_date':
-        #         self._dbu.update_other(to_update[0], (data_, checked.file_id))
-        #     else:
-        #         self._dbu.update_other(to_update[0], (data_, checked.comment_id))
-        #     self._dbu.update_other('COMMENT_DATE', (checked[0],))
-        #     self._populate_comment_field(checked[:4])  # file_id, dir_id, comment_id, issue_date
+        checked = self._check_existence()
+        data_, ok_pressed = QInputDialog.getText(self.view.extList, 'Input book title',
+                                                 '', QLineEdit.Normal, getattr(checked, 'book_title'))
+        if ok_pressed:
+            self._dbu.update_other('BOOK_TITLE', (data_, checked.comment_id))
+            self._dbu.update_other('COMMENT_DATE', (checked.file_id,))
+            self._populate_comment_field(checked[:3])
 
     def _edit_comment(self):
-        self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
+        # self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
+        #    _edit_comment_item(self, to_update, item_no):
+        checked = self._check_existence()
+        data_, ok_pressed = QInputDialog.getText(self.view.extList, 'Input comment',
+                                                 '', QLineEdit.Normal, getattr(checked, 'comment'))
+        if ok_pressed:
+            self._dbu.update_other('COMMENT', (data_, checked.comment_id))
+            self._dbu.update_other('COMMENT_DATE', (checked.file_id,))
+            self._populate_comment_field(checked[:3])
+
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
@@ -705,9 +688,9 @@ class MyController():
             data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
             self._populate_comment_field(data)
 
-    def _populate_comment_field(self, data):
-        file_id = data[0]
-        comment_id = data[2]
+    def _populate_comment_field(self, user_data):
+        file_id = user_data[0]
+        comment_id = user_data[2]
         if file_id:
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
@@ -721,18 +704,18 @@ class MyController():
                 comment = ('', '')
 
             self.view.commentField.setText(''.join((
-                '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'.format(
-                    ', '.join([tag[0] for tag in tags])),
-                '<p><a href="Edit authors">Authors</a>: {}</p>'.format(
-                    ', '.join([author[0] for author in authors])),
+                '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'
+                    .format(', '.join([tag[0] for tag in tags])),
+                '<p><a href="Edit authors">Authors</a>: {}</p>'
+                    .format(', '.join([author[0] for author in authors])),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
-                '<p><a href="Edit comment">Comment</a> {}</p></body></html>'.format(
-                    comment[0]))))
+                '<p><a href="Edit comment">Comment</a> {}</p></body></html>'
+                    .format(comment[0]))))
 
             if not self.file_list_source == MyController.FOLDER:
                 f_idx = self.view.filesList.currentIndex()
-                file_id, dir_id, _, _, _ = self.view.filesList.model().data(
-                    f_idx, role=Qt.UserRole)
+                file_id, dir_id, _, _, _ = \
+                    self.view.filesList.model().data(f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
                 self.view.statusbar.showMessage(path[0])
 
