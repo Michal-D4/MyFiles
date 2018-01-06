@@ -1,6 +1,6 @@
 # view.set_fields.py
 
-from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import Qt, QModelIndex
 
 from controller.table_model import TableModel
@@ -18,8 +18,8 @@ class SetFields(QDialog):
         self.ui = Ui_SelectorFields()
         self.ui.setupUi(self)
 
-        self.aval_fields = [it for it in SetFields.Heads if it not in current.headers]
-        self.used_fields = current.headers
+        self.aval_fields = [it for it in SetFields.Heads[1:] if it not in current.headers]
+        self.used_fields = current.headers[1:]
 
         self.left_m = TableModel()
         self.right_m = TableModel()
@@ -41,11 +41,8 @@ class SetFields(QDialog):
         item = self.right_m.get_row(idx.row())
 
         if item:
-            if item[0][0] == 'File':
-                QMessageBox.critical(self, 'File field', 'File field must be used!')
-            else:
-                self.left_m.insert_row(self.ui.fieldsAval.currentIndex(), item[0], item[1])
-                self.right_m.removeRows(idx.row())
+            self.left_m.insert_row(self.ui.fieldsAval.currentIndex(), item[0], item[1])
+            self.right_m.removeRows(idx.row())
 
     def _setup_models(self, current):
         for it in self.aval_fields:
@@ -64,9 +61,9 @@ class SetFields(QDialog):
 
     def get_result(self):
         co1 = self.right_m.rowCount(QModelIndex())
-        heads = []
-        fields = []
-        idx = []
+        heads = ['File']
+        fields = ['FileName']
+        idx = [0]
         for i in range(co1):
             it = self.right_m.get_row(i)
             heads.append(it[0][0])
@@ -99,7 +96,7 @@ if __name__ == "__main__":
     fields_set = SetFields(curr)
     if fields_set.exec_():
         print(fields_set.get_result())
-        sys.exit(0)
+    sys.exit(0)
 
     sys.exit(app.exec_())
 
