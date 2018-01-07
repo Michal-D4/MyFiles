@@ -76,19 +76,6 @@ if __name__ == "__main__":
     import sys
     from PyQt5.QtWidgets import QApplication
 
-    sys._excepthook = sys.excepthook
-
-
-    def my_exception_hook (exctype, value, traceback):
-        # Print the error and traceback
-        print(exctype, value, traceback)
-        # Call the normal Exception hook after
-        sys._excepthook(exctype, value, traceback)
-        sys.exit(1)
-
-
-    sys.excepthook = my_exception_hook
-
     app = QApplication(sys.argv)
 
     curr = Fields._make((SetFields.FileFields[:4], SetFields.Heads[:4], range(4)))

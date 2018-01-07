@@ -9,17 +9,17 @@ from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionRange, QAbstractItemMode
 from controller.table_model import TableModel
 from controller.tree_model import TreeItem, TreeModel
 
-sys._excepthook = sys.excepthook
-
-
-def my_exception_hook(exctype, value, traceback):
-    # Print the error and traceback
-    print(exctype, value, traceback)
-    # Call the normal Exception hook after
-    sys._excepthook(exctype, value, traceback)
-    sys.exit(1)
-
-sys.excepthook = my_exception_hook
+# sys._excepthook = sys.excepthook
+#
+#
+# def my_exception_hook(exctype, value, traceback):
+#     # Print the error and traceback
+#     print(exctype, value, traceback)
+#     # Call the normal Exception hook after
+#     sys._excepthook(exctype, value, traceback)
+#     sys.exit(1)
+#
+# sys.excepthook = my_exception_hook
 
 
 class TreeModelChainUp(TreeModel):
@@ -129,7 +129,7 @@ class MethodsTree():
         line = line.strip()
         qq = re.match(r'\bdef |\bclass |#|"""|if __name__', line)
         if qq:
-            rr = MethodsTree._check_paters(line, qq)
+            rr = MethodsTree._check_patterns(line, qq)
         else:
             rr = MethodsTree._check_for_skipping(line)
         return rr
@@ -176,7 +176,7 @@ class MethodsTree():
         return rr
 
     @staticmethod
-    def _check_paters(line, re_match):
+    def _check_patterns(line, re_match):
         """
         check for starting class, method, doc-lines, line-comment
         :param line:
@@ -264,7 +264,6 @@ class MethodsTree():
 
         return text
 
-
     def method_caller(self, text):
         methods = []
         for item in text:
@@ -274,18 +273,21 @@ class MethodsTree():
         data = []
         for met in methods:
             grp3, pat = self._set_re_pattern(met)
+            # print('--> met {}, grp3 {}, pat {}'.format(met, grp3, pat))
             found = False
             for item in text:
+                # print('    ', item[:2])
                 # recursion not allowed, method name not searched in its body
                 if (item[0] != met[0]) | (item[1] != met[1]):
                     ss = re.search(pat, item[2])
                     if ss:
+                        # print('   group: {}'.format(ss.group()))
                         if ss.group() == grp3:
                             if (met[1] == '') | (met[1] != item[1]):
                                 data.append((met[0], met[1], item[0], item[1]))
                                 found = True
                         else:
-                            if met[1] == item[1]:
+                            if (met[1] == item[1]) | (item[1] == ''):
                                 data.append((met[0], met[1], item[0], item[1]))
                                 found = True
             if not found:
@@ -336,19 +338,20 @@ if __name__ == "__main__":
     dir_w = r'D:\Users\PycharmProjects\MyFiles'         # Work
 
     # todo if there are methods with the same name in different class
-    file_ = 'controller/my_controller.py'
+    # file_ = 'controller/my_controller.py'
+    # file_ = 'controller/places.py'
     # file_ = 'controller/table_model.py'
     # file_ = 'controller/tree_model.py'
-    # file_ = 'controller/places.py'
+    # file_ = 'model/file_info.py'
+    # file_ = 'model/utilities.py'
     # file_ = 'model/utils/create_db.py'
     # file_ = 'model/utils/load_db_data.py'
-    # file_ = 'model/utilities.py'
-    # file_ = 'model/file_info.py'
+    # file_ = 'view/input_date.py'
     # file_ = 'view/item_edit.py'
     # file_ = 'view/main_flow.py'
     # file_ = 'view/my_db_choice.py'
     # file_ = 'view/sel_opt.py'
-    # file_ = 'test_app.py'
+    file_ = 'view/set_fields.py'
     # file_ = 'tst_app_cl.py'
 
     dir_ = dir_h if socket.gethostname() == 'thenote' else dir_w
