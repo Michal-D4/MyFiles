@@ -45,7 +45,7 @@ class ItemEdit(QDialog):
 
     def get_result(self):
         if self.pattern:
-            return re.findall(self.pattern, self.view.in_field.toPlainText())
+            return re.findall("([\w]*\w)", self.view.in_field.toPlainText())
         return [str.lstrip(item) for item in self.view.in_field.toPlainText().split(',')]
 
     def resize_event(self, event):
