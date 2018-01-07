@@ -94,7 +94,8 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'FILE_COMMENT': 'update Files set CommentID = ? where FileID = ?;',
           'PAGES': 'update Files set Pages = ? where FileID = ?;',
           'OPEN_DATE': "update Files set Opened = date('now') where FileID = ?;",
-          'COMMENT_DATE': "update Files set Commented = date('now') where FileID = ?;"
+          'COMMENT_DATE': "update Files set Commented = date('now') where FileID = ?;",
+          'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
