@@ -41,12 +41,14 @@ class ProxyModel2(ProxyModel):
 
         return left_data < right_data
 
+    def get_headers(self):
+        return self.sourceModel().header
 
 
 class TableModel(QAbstractTableModel):
     def __init__(self, parent=None, *args):
         super(TableModel, self).__init__(parent)
-        self.__header = ()
+        self.header = ()
         self.__data = []
         self.__user_data = []
         self.column_count = 0
@@ -137,15 +139,15 @@ class TableModel(QAbstractTableModel):
         return True
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if not self.__header:
+        if not self.header:
             return None
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.__header[section]
+            return self.header[section]
 
     def setHeaderData(self, p_int, orientation, value, role=None):
         if isinstance(value, str):
             value = value.split(' ')
-        self.__header = value
+        self.header = value
         self.column_count = len(value)
 
     def setData(self, index, value, role):
@@ -163,6 +165,9 @@ class TableModel(QAbstractTableModel):
 
 
 class TableModel2(TableModel):
+    """
+    for edit tags / authors assigned to file
+    """
     def __init__(self, parent=None, *args):
         super().__init__(parent, *args)
 
