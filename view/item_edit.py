@@ -8,10 +8,12 @@ from controller.table_model import TableModel2
 
 
 class ItemEdit(QDialog):
-    def __init__(self, titles, items, selected_items, parent=None):
+    def __init__(self, titles, items, selected_items, re_=False, parent=None):
         super(ItemEdit, self).__init__(parent)
         self.view = Ui_ItemChoice()
         self.view.setupUi(self)
+
+        self.pattern = re_
 
         self.view.label_1.setText(titles[0])
         self.view.label_2.setText(titles[1])
@@ -41,8 +43,10 @@ class ItemEdit(QDialog):
         else:
             self.max_width = 20
 
-    def get_result( self ):
-        return self.view.in_field.toPlainText()
+    def get_result(self):
+        if self.pattern:
+            return re.findall(self.pattern, self.view.in_field.toPlainText())
+        return [str.lstrip(item) for item in self.view.in_field.toPlainText().split(',')]
 
     def resize_event(self, event):
         w = event.size().width()
