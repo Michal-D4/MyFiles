@@ -86,7 +86,16 @@ class MyController():
             settings.setValue('FIELDS', self.fields)
 
     def _tag_rename(self):
-        print('--> _tag_rename')
+        idx = self.view.tagsList.currentIndex()
+        if idx.isValid():
+            tag = self.view.tagsList.model().data(idx, role=Qt.DisplayRole)
+            id = self.view.tagsList.model().data(idx, role=Qt.UserRole)
+            tag, ok = QInputDialog.getText(self.view.extList,
+                                           'Input new name',
+                                           '', QLineEdit.Normal, tag)
+            if ok:
+                self._dbu.update_other('UPDATE_TAG', (tag, id))
+                self.view.tagsList.model().update(idx, tag, Qt.DisplayRole)
 
     def _copy_file_name(self):
         idx = self.view.filesList.currentIndex()
@@ -409,38 +418,40 @@ class MyController():
         curr_idx = self.view.filesList.currentIndex()
         u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
 
-        titles = ('Enter new tags separated by commas',
-                  'Select tags from list', 'Apply key words / tags')
+        titles = ('Enter new tags', 'Select tags from list',
+                  'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
         sel_tags = self._dbu.select_other('FILE_TAGS', (u_data[0],)).fetchall()
 
         edit_tags = ItemEdit(titles,
                              [tag[0] for tag in tag_list],
-                             [tag[0] for tag in sel_tags])
+                             [tag[0] for tag in sel_tags], re_=True)
 
         if edit_tags.exec_():
             res = edit_tags.get_result()
-            sql_list = (('TAG_FILE', 'TAG_FILES', 'TAG'),
-                        ('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
-            self._save_edited_items(new_items=res, old_items=sel_tags,
-                                    file_id=u_data[0], sql_list=sql_list)
+
+            to_del, to_add = self._del_add_items(res, sel_tags)
+
+            self._del_item_links(to_del, file_id=u_data[0],
+                                 sqls=('TAG_FILE', 'TAG_FILES', 'TAG'))
+            self._add_item_links(to_add, file_id=u_data[0],
+                                 sqls=('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
 
             self._populate_tag_list()
             self._populate_comment_field(u_data)
 
-    def _save_edited_items(self, new_items, old_items, file_id, sql_list):
-        old_words_set = set([item[0] for item in old_items])
-        new_words_set = set([str.lstrip(item) for item in new_items.split(', ')])
+    @staticmethod
+    def _del_add_items(new_list, old_list):
+        old_words_set = set([item[0] for item in old_list])
+        new_words_set = set(new_list)
 
         to_del = old_words_set.difference(new_words_set)
-        to_del_ids = [item[1] for item in old_items if item[0] in to_del]
-        self._del_item_links(to_del_ids, file_id, sql_list[0])
+        to_del_ids = [item[1] for item in old_list if item[0] in to_del]
 
         old_words_set.add('')
         to_add = new_words_set.difference(old_words_set)
-        self._add_item_links(to_add, file_id, sql_list[1])
 
-        self._dbu.update_other('COMMENT_DATE', (file_id,))
+        return to_del_ids, to_add
 
     def _del_item_links(self, items2del, file_id, sqls):
         for item in items2del:
@@ -479,13 +490,18 @@ class MyController():
 
         if edit_authors.exec_():
             res = edit_authors.get_result()
-            sql_list = (('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'),
-                        ('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
-            self._save_edited_items(new_items=res, old_items=sel_authors,
-                                    file_id=u_data[0], sql_list=sql_list)
+
+            to_del, to_add = self._del_add_items(res, sel_authors)
+
+            self._del_item_links(to_del, file_id=u_data[0],
+                                 sqls=('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'))
+            self._add_item_links(to_add, file_id=u_data[0],
+                                 sqls=('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
 
             self._populate_author_list()
             self._populate_comment_field(u_data)
+            # self.view.filesList.model().update(curr_idx, )
+
 
     def _check_existence(self):
         """
