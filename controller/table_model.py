@@ -44,6 +44,9 @@ class ProxyModel2(ProxyModel):
     def get_headers(self):
         return self.sourceModel().header
 
+    def update(self, index, data, role=Qt.DisplayRole):
+        self.sourceModel().update(index, data)
+
 
 class TableModel(QAbstractTableModel):
     def __init__(self, parent=None, *args):
@@ -67,7 +70,7 @@ class TableModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
-                if len(self.__data[index.row()]) > index.column():
+                if len(self.__data[index.row()]) > index.column():  # row length > current column
                     return self.__data[index.row()][index.column()]
                 return None
             elif role == Qt.UserRole:

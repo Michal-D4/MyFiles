@@ -4,7 +4,6 @@ import sqlite3
 import os
 import re
 import webbrowser
-from collections import namedtuple
 
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog,
                              QFontDialog, QApplication)
@@ -396,6 +395,13 @@ class MyController():
                 try:
                     os.startfile(full_file_name)
                     self._dbu.update_other('OPEN_DATE', (file_id,))
+                    model = self.view.filesList.model()
+                    heads = model.get_headers()
+                    if 'Opened' in heads:
+                        idx = model.sourceModel().createIndex(
+                            self.view.filesList.currentIndex().row(), heads.index('Opened'))
+                        cur_date = QDate.currentDate().toString(Qt.ISODate)
+                        model.update(idx, cur_date)
                 except OSError:
                     pass
             else:
@@ -438,7 +444,7 @@ class MyController():
                                  sqls=('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
 
             self._populate_tag_list()
-            self._populate_comment_field(u_data)
+            self._populate_comment_field(u_data, edit=True)
 
     @staticmethod
     def _del_add_items(new_list, old_list):
@@ -499,9 +505,7 @@ class MyController():
                                  sqls=('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
 
             self._populate_author_list()
-            self._populate_comment_field(u_data)
-            # self.view.filesList.model().update(curr_idx, )
-
+            self._populate_comment_field(u_data, edit=True)
 
     def _check_existence(self):
         """
@@ -554,8 +558,7 @@ class MyController():
                                                  '', QLineEdit.Normal, getattr(checked, 'book_title'))
         if ok_pressed:
             self._dbu.update_other('BOOK_TITLE', (data_, checked.comment_id))
-            self._dbu.update_other('COMMENT_DATE', (checked.file_id,))
-            self._populate_comment_field(checked[:3])
+            self._populate_comment_field(checked, edit=True)
 
     def _edit_comment(self):
         # self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
@@ -565,8 +568,7 @@ class MyController():
                                                  '', QLineEdit.Normal, getattr(checked, 'comment'))
         if ok_pressed:
             self._dbu.update_other('COMMENT', (data_, checked.comment_id))
-            self._dbu.update_other('COMMENT_DATE', (checked.file_id,))
-            self._populate_comment_field(checked[:3])
+            self._populate_comment_field(checked, edit=True)
 
 
     def _populate_ext_list(self):
@@ -704,7 +706,7 @@ class MyController():
             data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
             self._populate_comment_field(data)
 
-    def _populate_comment_field(self, user_data):
+    def _populate_comment_field(self, user_data, edit=False):
         file_id = user_data[0]
         comment_id = user_data[2]
         if file_id:
@@ -734,6 +736,19 @@ class MyController():
                     self.view.filesList.model().data(f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
                 self.view.statusbar.showMessage(path[0])
+
+            if edit:
+                self._update_commented_date(file_id)
+
+    def _update_commented_date(self, file_id):
+        self._dbu.update_other('COMMENT_DATE', (file_id,))
+        model = self.view.filesList.model()
+        heads = model.get_headers()
+        if "Commented" in heads:
+            idx = model.sourceModel().createIndex(
+                self.view.filesList.currentIndex().row(), heads.index("Commented"))
+            cur_date = QDate.currentDate().toString(Qt.ISODate)
+            model.update(idx, cur_date)
 
     def _populate_all_widgets(self):
         self._cb_places.populate_cb_places()
