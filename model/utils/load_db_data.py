@@ -45,6 +45,7 @@ class LoadDBData:
         self.place_id = current_place[0]
         self.place_status = current_place[2]
         self.insert_current_place(current_place)
+        self.updated_dirs = set()
 
     def insert_current_place(self, current_place: Places.CurrPlace):
         '''
@@ -61,6 +62,9 @@ class LoadDBData:
         else:
             self.place_id = place_id[0]
 
+    def get_updated_dirs(self):
+        return self.updated_dirs
+
     def load_data(self, data):
         """
         Load data in data base
@@ -73,6 +77,7 @@ class LoadDBData:
             if self.place_status == Places.MOUNTED:
                 line = line.partition(os.altsep)[2]         # remove mount point, ie disk letter with ":/"
             idx = self.insert_dir(line)
+            self.updated_dirs.add(str(idx))
             self.insert_file(idx, line)
         self.conn.commit()
 

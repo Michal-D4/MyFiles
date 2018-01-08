@@ -19,10 +19,9 @@ INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
 
 INSERT_COMMENT = 'insert into Comments (BookTitle, Comment) values (?, ?);'
 
-FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path',
-                               'from Files f, Dirs d',
-                               'where f.PlaceId = :place_id and',
-                               'f.Size = 0 and f.DirID = d.DirID;'))
+FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path from',
+                               'Files f, Dirs d where f.DirID = d.DirID',
+                               'and d.DirID in ({});'))
 
 UPDATE_FILE = ' '.join(('update Files set',
                         'CommentID = :comm_id,',
@@ -41,12 +40,17 @@ class LoadFiles(QObject):
         self.cur_place = cur_place
         self.conn = conn
         self.data = data_
+        self.updated_dirs = None
 
     @pyqtSlot()
     def run(self):
         files = LoadDBData(self.conn, self.cur_place)
         files.load_data(self.data)
+        self.updated_dirs = files.get_updated_dirs()
         self.finished.emit()
+
+    def get_updated_dirs(self):
+        return self.updated_dirs
 
 
 class FileInfo(QObject):
@@ -56,10 +60,11 @@ class FileInfo(QObject):
     def run(self):
         self.update_files()
         self.finished.emit()           # 'Updating of files is finished'
-        print('--> FileInfo.run finished')
+        # print('--> FileInfo.run finished')
 
-    def __init__(self, conn, place_inst):
+    def __init__(self, conn, place_inst, updated_dirs):
         super().__init__()
+        self.upd_dirs = updated_dirs
         self.places = place_inst
         self.conn = conn
         self.cursor = conn.cursor()
@@ -115,7 +120,7 @@ class FileInfo(QObject):
         if os.path.isfile(full_file_name):
             st = os.stat(full_file_name)
             self.file_info.append(st.st_size)
-            self.file_info.append(datetime.datetime.fromtimestamp(st.st_ctime).date().isoformat())
+            self.file_info.append(datetime.datetime.fromtimestamp(st.st_mtime).date().isoformat())
             if get_file_extension(full_file_name) == 'pdf':
                 self.get_pdf_info(full_file_name)
         else:
@@ -167,8 +172,9 @@ class FileInfo(QObject):
 
     def update_files(self):
         cur_place = self.places.get_curr_place()
-        file_list = self.cursor.execute(FILES_WITHOUT_INFO,
-                                        {'place_id': cur_place[1][0]}).fetchall()
+        dir_ids = ','.join(self.upd_dirs)
+        file_list = self.cursor.execute(FILES_WITHOUT_INFO.
+                                        format(dir_ids)).fetchall()
         if cur_place[2] == Places.MOUNTED:
             root = self.places.get_mount_point()
             full_path = lambda x: os.altsep.join((root, x))

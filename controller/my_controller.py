@@ -51,6 +51,7 @@ class MyController():
                 'Copy file name': self._copy_file_name,
                 'Copy full path': self._copy_full_path,
                 'Delete': self._delete_file,
+                'Dirs Rescan dir': self._rescan_dir,
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
@@ -123,15 +124,15 @@ class MyController():
         :param extensions: list of extensions
         :return: generator
         """
+        ext_ = tuple(x.strip('. ') for x in extensions.split(','))
         for dir_name, _, file_names in os.walk(root):
-            if extensions:
-                ext_ = tuple(x.strip('. ') for x in extensions.split(','))
+            if (not extensions) | (extensions == '*'):
+                for filename in file_names:
+                    yield os.path.join(dir_name, filename)
+            else:
                 for filename in file_names:
                     if get_file_extension(filename) in ext_:
                         yield os.path.join(dir_name, filename)
-            else:
-                for filename in file_names:
-                    yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create):
         """
@@ -273,10 +274,11 @@ class MyController():
         return all_id
 
     def _dir_update(self):
+        updated_dirs = self.obj_thread.get_updated_dirs()
         self._populate_directory_tree()
         self._populate_ext_list()
 
-        self.obj_thread = FileInfo(self._connection, self._cb_places)
+        self.obj_thread = FileInfo(self._connection, self._cb_places, updated_dirs)
         self._run_in_qthread(self._finish_thread)
 
     def _run_in_qthread(self, finish):
@@ -804,13 +806,13 @@ class MyController():
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
 
-        # if self._cb_places.get_disk_state() == Places.MOUNTED:
-        #     root = self._cb_places.get_mount_point()
-        #     for rr in dir_tree:
-        #         dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
-        # else:
-        for rr in dir_tree:
-            dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
+        if self._cb_places.get_disk_state() == Places.MOUNTED:
+            root = self._cb_places.get_mount_point()
+            for rr in dir_tree:
+                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
+        else:
+            for rr in dir_tree:
+                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
     def _cur_dir_changed(self, selected):  # , unselected):
@@ -855,6 +857,18 @@ class MyController():
             parent = idx
         return parent
 
+    def _rescan_dir(self):
+        idx = self.view.dirTree.currentIndex()
+        dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
+        ext_ = self._get_selected_ext()
+        ext_item, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
+                                                    'Input extensions (* - all)',
+                                                    QLineEdit.Normal, ext_)
+        if ok_pressed:
+            files = MyController._yield_files(dir_[2], ext_item.strip())
+            if files:
+                self._load_files(files)
+
     def on_scan_files(self):
         """
         The purpose is to fill the data base with files by means of
@@ -864,12 +878,14 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             _data = self._scan_file_system()
             if _data:
-                curr_place = self._cb_places.get_curr_place()
-
-                self.obj_thread = LoadFiles(self._connection, curr_place, _data)
-                self._run_in_qthread(self._dir_update)
+                self._load_files(_data)
         else:
             self._show_message("Can't scan disk for files. Disk is not accessible.")
+
+    def _load_files(self, files):
+        curr_place = self._cb_places.get_curr_place()
+        self.obj_thread = LoadFiles(self._connection, curr_place, files)
+        self._run_in_qthread(self._dir_update)
 
     def _scan_file_system(self):
         ext_ = self._get_selected_ext()

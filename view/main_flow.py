@@ -124,7 +124,7 @@ class MainFlow(QMainWindow):
 
     def _dir_menu(self, pos):
         menu = QMenu(self)
-        menu.addAction('Update tree')
+        menu.addAction('Rescan dir')
         action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
         if action:
             act = 'Dirs {}'.format(action.text())
