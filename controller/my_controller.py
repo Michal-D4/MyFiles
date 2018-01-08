@@ -564,8 +564,9 @@ class MyController():
         # self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
         #    _edit_comment_item(self, to_update, item_no):
         checked = self._check_existence()
-        data_, ok_pressed = QInputDialog.getText(self.view.extList, 'Input comment',
-                                                 '', QLineEdit.Normal, getattr(checked, 'comment'))
+        data_, ok_pressed = QInputDialog.getMultiLineText(self.view.extList,
+                                                          'Input comment', '',
+                                                          getattr(checked, 'comment'))
         if ok_pressed:
             self._dbu.update_other('COMMENT', (data_, checked.comment_id))
             self._populate_comment_field(checked, edit=True)
