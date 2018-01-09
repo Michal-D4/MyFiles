@@ -59,8 +59,8 @@ class MainFlow(QMainWindow):
         sel_opt.triggered.connect(lambda: self.change_data_signal.emit('Selection options'))
 
     def calc_collumns_width(self):
-        lines = ['9999-99-99 99', 'Pages 99', '9 999 999 999 ']
-        return [self.ui.filesList.fontMetrics().boundingRect(line).width() for line in lines]
+        col_count = self.ui.filesList.model().columnCount()
+        return [col_count, self.ui.filesList.fontMetrics().boundingRect('9999-99-99 99').width()]
 
     def setup_context_menu(self):
         self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -142,22 +142,19 @@ class MainFlow(QMainWindow):
         settings.setValue("MainFlow/Size", QVariant(self.size()))
 
     def resize_event(self, event):
-        widths = self.calc_collumns_width()
-        old_width = event.oldSize().width()
+        col_count, widths = self.calc_collumns_width()
         w = event.size().width()
-        w1 = self.ui.filesList.width()
-        if w != self.old_size.width():
-            self.ui.filesList.blockSignals(True)
-            ww = [sum(widths)] + widths
-            if w > ww[0]*2:
-                ww[0] = w - ww[0]
+        if col_count > 1:
+            if w > widths * col_count:
+                w0 = w - widths*(col_count-1)
             else:
-                ww[0] = w * 0.75
-            for k in range(4):
-                self.ui.filesList.setColumnWidth(k, ww[k])
-            self.ui.filesList.blockSignals(False)
-
-        super().resizeEvent(event)
+                w0 = w * 0.5
+                widths = w*0.5 / (col_count-1)
+            self.ui.filesList.setColumnWidth(0, w0)
+            for k in range(1, col_count):
+                self.ui.filesList.setColumnWidth(k, widths)
+        else:
+            self.ui.filesList.setColumnWidth(0, w)
 
     def changeEvent(self, event, **kwargs):
         if event.type() == QEvent.WindowStateChange:
