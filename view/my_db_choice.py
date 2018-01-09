@@ -62,8 +62,6 @@ class MyDBChoice(QDialog):
 
     def accept(self):
         self.emit_open_dialog()
-        # self.init_data[0] = 0
-        # self._save_settings()
         super(MyDBChoice, self).accept()
 
     def new_db(self):
@@ -101,8 +99,9 @@ class MyDBChoice(QDialog):
         self.ui_db_choice.okButton.setDisabled(False)
 
     def emit_open_dialog(self):
-        file_name = self.ui_db_choice.listOfBDs.currentItem().text()
-        self.open_DB_signal.emit(file_name, False)
+        if self.ui_db_choice.listOfBDs.currentIndex().isValid():
+            file_name = self.ui_db_choice.listOfBDs.currentItem().text()
+            self.open_DB_signal.emit(file_name, False)
 
     def initiate_window(self, init_data):
         '''
