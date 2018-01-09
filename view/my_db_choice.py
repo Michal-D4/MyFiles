@@ -15,7 +15,7 @@ ORG_NAME = 'Fake organization'
 
 
 class MyDBChoice(QDialog):
-    open_DB_signal = pyqtSignal(str, bool)
+    open_DB_signal = pyqtSignal(str, bool, bool)
 
     def __init__(self, parent=None):
         super(MyDBChoice, self).__init__(parent)
@@ -23,8 +23,8 @@ class MyDBChoice(QDialog):
         self.ui_db_choice = Ui_ChoiceDB()
         self.ui_db_choice.setupUi(self)
 
-        self.ui_db_choice.newButton.clicked.connect(self.new_db)
         self.ui_db_choice.okButton.clicked.connect(self.accept)
+        self.ui_db_choice.newButton.clicked.connect(self.new_db)
         self.ui_db_choice.addButton.clicked.connect(self.add)
         self.ui_db_choice.delButton.clicked.connect(self.delete)
         self.ui_db_choice.listOfBDs.currentRowChanged.connect(self.row_changed)
@@ -36,6 +36,7 @@ class MyDBChoice(QDialog):
         self.ui_db_choice.listOfBDs.setSelectionMode(1)
 
         self.init_data = None
+        self.last_db_no = -1
         self.load_init_data()
         self.initiate_window(self.init_data)
 
@@ -76,7 +77,7 @@ class MyDBChoice(QDialog):
         if file_name:
             if not (file_name in self.init_data[2]):
                 self.create_db(file_name)
-                self.open_DB_signal.emit(file_name, True)
+                self.open_DB_signal.emit(file_name, True, False)
                 # self.init_data[0] = 0
                 # self._save_settings()
                 super(MyDBChoice, self).accept()
@@ -101,7 +102,7 @@ class MyDBChoice(QDialog):
     def emit_open_dialog(self):
         if self.ui_db_choice.listOfBDs.currentIndex().isValid():
             file_name = self.ui_db_choice.listOfBDs.currentItem().text()
-            self.open_DB_signal.emit(file_name, False)
+            self.open_DB_signal.emit(file_name, False, self.last_db_no == self.init_data[1])
 
     def initiate_window(self, init_data):
         '''
@@ -131,6 +132,7 @@ class MyDBChoice(QDialog):
             _data = setting.value('DB/init_data', [0, 0, []])
         else:
             _data = [0, 0, []]
+        self.last_db_no = _data[1]
         self.init_data = _data
 
     def save_init_data(self):

@@ -8,7 +8,7 @@ import webbrowser
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog,
                              QFontDialog, QApplication)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
-                          QVariant, QItemSelection, QThread)
+                          QDateTime, QVariant, QItemSelection, QThread)
 
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
@@ -34,6 +34,7 @@ class MyController():
         self.view = view.ui
 
         self.fields = Fields._make(((),(),()))
+        self.same_db = False
         self.thread = None
         self.obj_thread = None
         self.file_list_source = MyController.FOLDER
@@ -135,13 +136,15 @@ class MyController():
                     if get_file_extension(filename) in ext_:
                         yield os.path.join(dir_name, filename)
 
-    def on_open_db(self, file_name, create):
+    def on_open_db(self, file_name, create, the_same):
         """
         Open or Create DB
         :param file_name: full file name of DB
         :param create: bool, Create DB if True, otherwise - Open
+        :param the_same: bool if the same db is opened
         :return: None
         """
+        self.same_db = the_same
         if create:
             self._connection = sqlite3.connect(file_name, check_same_thread=False,
                                                detect_types=DETECT_TYPES)
@@ -403,7 +406,8 @@ class MyController():
                     if 'Opened' in heads:
                         idx = model.sourceModel().createIndex(
                             self.view.filesList.currentIndex().row(), heads.index('Opened'))
-                        cur_date = QDate.currentDate().toString(Qt.ISODate)
+                        cur_date = QDateTime.currentDate().toString(Qt.ISODate)[:16]
+                        cur_date = cur_date.replace('T', ' ')
                         model.update(idx, cur_date)
                 except OSError:
                     pass
@@ -535,9 +539,13 @@ class MyController():
         return res
 
     def _restore_file_list(self, curr_dir_idx):
-        settings = QSettings()
-        self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
-        row = settings.value('FILE_IDX', -1)
+        if self.same_db:
+            settings = QSettings()
+            self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
+            row = settings.value('FILE_IDX', -1)
+        else:
+            self.file_list_source = MyController.FOLDER
+            row = -1
 
         if self.file_list_source == MyController.FAVORITE:
             self._favorite_file_list()
@@ -633,12 +641,13 @@ class MyController():
         settings.setValue('TAG_SEL_LIST', sel)
 
     def _restore_tag_selection(self):
-        settings = QSettings()
-        sel = settings.value('TAG_SEL_LIST', [])
-        model = self.view.tagsList.model()
-        for ss in sel:
-            idx = model.index(ss[0], 0, QModelIndex())
-            self.view.tagsList.selectionModel().select(idx, QItemSelectionModel.Select)
+        if self.same_db:
+            settings = QSettings()
+            sel = settings.value('TAG_SEL_LIST', [])
+            model = self.view.tagsList.model()
+            for ss in sel:
+                idx = model.index(ss[0], 0, QModelIndex())
+                self.view.tagsList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_author_list(self):
         author_list = self._dbu.select_other('AUTHORS')
@@ -659,12 +668,13 @@ class MyController():
         settings.setValue('AUTHOR_SEL_LIST', sel)
 
     def _restore_author_selection(self):
-        settings = QSettings()
-        sel = settings.value('AUTHOR_SEL_LIST', [])
-        model = self.view.authorsList.model()
-        for ss in sel:
-            idx = model.index(ss[0], 0, QModelIndex())
-            self.view.authorsList.selectionModel().select(idx, QItemSelectionModel.Select)
+        if self.same_db:
+            settings = QSettings()
+            sel = settings.value('AUTHOR_SEL_LIST', [])
+            model = self.view.authorsList.model()
+            for ss in sel:
+                idx = model.index(ss[0], 0, QModelIndex())
+                self.view.authorsList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_file_list(self, dir_idx):
         """
@@ -766,19 +776,20 @@ class MyController():
         self._populate_directory_tree()
 
     def _restore_ext_selection(self):
-        settings = QSettings()
-        sel = settings.value('EXT_SEL_LIST', [])
-        model = self.view.extList.model()
-        for ss in sel:
-            if ss[1] == -1:
-                parent = QModelIndex()
-            else:
-                parent = model.index(ss[1], 0)
-                self.view.extList.setExpanded(parent, True)
+        if self.same_db:
+            settings = QSettings()
+            sel = settings.value('EXT_SEL_LIST', [])
+            model = self.view.extList.model()
+            for ss in sel:
+                if ss[1] == -1:
+                    parent = QModelIndex()
+                else:
+                    parent = model.index(ss[1], 0)
+                    self.view.extList.setExpanded(parent, True)
 
-            idx = model.index(ss[0], 0, parent)
+                idx = model.index(ss[0], 0, parent)
 
-            self.view.extList.selectionModel().select(idx, QItemSelectionModel.Select)
+                self.view.extList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_directory_tree(self):
         dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
@@ -846,18 +857,23 @@ class MyController():
         restore expand state and current index of dirTree
         :return: current index
         """
-        settings = QSettings()
-        aux = settings.value('TREE_SEL_IDX', [0])
         model = self.view.dirTree.model()
-        parent = QModelIndex()
-        for id in aux:
-            if parent.isValid():
-                if not self.view.dirTree.isExpanded(parent):
-                    self.view.dirTree.setExpanded(parent, True)
-            idx = model.index(int(id), 0, parent)
-            self.view.dirTree.setCurrentIndex(idx)
-            parent = idx
-        return parent
+        if self.same_db:
+            settings = QSettings()
+            aux = settings.value('TREE_SEL_IDX', [0])
+            parent = QModelIndex()
+            for id in aux:
+                if parent.isValid():
+                    if not self.view.dirTree.isExpanded(parent):
+                        self.view.dirTree.setExpanded(parent, True)
+                idx = model.index(int(id), 0, parent)
+                self.view.dirTree.setCurrentIndex(idx)
+                parent = idx
+            return parent
+
+        idx = model.index(0, 0, QModelIndex())
+        self.view.dirTree.setCurrentIndex(idx)
+        return idx
 
     def _del_empty_dirs(self):
         self._dbu.delete_other('DEL_EMPTY_DIRS', ())
