@@ -89,7 +89,7 @@ class FileInfo(QObject):
             self.cursor.execute(INSERT_FILEAUTHOR, (file_id, auth_id))
             self.conn.commit()
 
-    def _insert_comment(self):
+    def _insert_comment(self, _file):
         if len(self.file_info) > 2:
             try:
                 pages = self.file_info[2]
@@ -102,20 +102,14 @@ class FileInfo(QObject):
             self.conn.commit()
             comm_id = self.cursor.lastrowid
         else:
-            comm_id = 0
-            pages = ''
-            issue_date = ''
+            comm_id = _file.comment_id
+            pages = _file.pages
+            issue_date = _file.issue_date
         return comm_id, pages, issue_date
 
     def _get_file_info(self, full_file_name):
         """
-        Store info in self.file_info:
-            0 - size,
-            1 - year,  further - pdf-info
-            2 - pages,
-            3 - author,
-            4 - CreationDate from PDF
-            5 - Title
+        Store info in self.file_info
         :param full_file_name:
         :return: None
         """
@@ -162,6 +156,11 @@ class FileInfo(QObject):
         self._get_file_info(file_.full_name)
         if file_.comment_id == 0:
             comm_id, pages, issue_date = self._insert_comment(file_)
+        else:
+            comm_id = file_.comment_id
+            pages = file_.pages
+            issue_date = file_.issue_data
+        print('--> _update_file', comm_id, pages, issue_date)
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
                                           'date': self.file_info[1],
@@ -175,11 +174,12 @@ class FileInfo(QObject):
 
     def _update_files(self):
         db_file_info = namedtuple('db_file_info',
-                                  'file_id full_name comment_id issue_date, pages')
-        cur_place = self.places.get_curr_place()
+                                  'file_id full_name comment_id issue_date pages')
         dir_ids = ','.join(self.upd_dirs)
         file_list = self.cursor.execute(FILES_IN_LOAD.
                                         format(dir_ids)).fetchall()
+
+        cur_place = self.places.get_curr_place()
         if cur_place[2] == Places.MOUNTED:
             root = self.places.get_mount_point()
             full_path = lambda x: os.altsep.join((root, x))
@@ -189,5 +189,5 @@ class FileInfo(QObject):
         # file_id, file_name, path, comment_id, issue_date
         for it in file_list:
             file_name = os.path.join(full_path(it[2]), it[1])
-            file_ = db_file_info._make((it[0], file_name) + it[-2:])
-            self._update_file(it)
+            file_ = db_file_info._make((it[0], file_name) + it[-3:])
+            self._update_file(file_)
