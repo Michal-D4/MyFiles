@@ -52,6 +52,7 @@ class MyController():
                 'Copy full path': self._copy_full_path,
                 'Delete': self._delete_file,
                 'Dirs Rescan dir': self._rescan_dir,
+                'Dirs Remove empty': self._del_empty_dirs,
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
@@ -861,6 +862,9 @@ class MyController():
             self.view.dirTree.setCurrentIndex(idx)
             parent = idx
         return parent
+
+    def _del_empty_dirs(self):
+        self._dbu.delete_other('DEL_EMPTY_DIRS', ())
 
     def _rescan_dir(self):
         idx = self.view.dirTree.currentIndex()

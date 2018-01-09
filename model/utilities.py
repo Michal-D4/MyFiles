@@ -117,7 +117,9 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'AUTHOR_FILE_BY_FILE': 'delete from FileAuthor where FileID=?;',
           'TAG_FILE': 'delete from FileTag where TagID=:tag_id and FileID=:file_id;',
           'TAG_FILE_BY_FILE': 'delete from FileTag where FileID = ?;',
-          'TAG': 'delete from Tags where TagID=:tag_id;'
+          'TAG': 'delete from Tags where TagID=:tag_id;',
+          'DEL_EMPTY_DIRS': ' '.join(('delete from Dirs where Fake = 0 and NOT EXISTS (select *',
+                                      'from Files where DirID = Dirs.DirID);'))
           }
 
 
