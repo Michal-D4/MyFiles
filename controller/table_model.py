@@ -45,7 +45,7 @@ class ProxyModel2(ProxyModel):
         return self.sourceModel().header
 
     def update(self, index, data, role=Qt.DisplayRole):
-        self.sourceModel().update(index, data)
+        self.sourceModel().update(self.mapFromSource(index), data)
 
 
 class TableModel(QAbstractTableModel):

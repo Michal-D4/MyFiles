@@ -400,14 +400,14 @@ class MyController():
             if os.path.isfile(full_file_name):
                 try:
                     os.startfile(full_file_name)
-                    self._dbu.update_other('OPEN_DATE', (file_id,))
+                    cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[:16]
+                    cur_date = cur_date.replace('T', ' ')
+                    self._dbu.update_other('OPEN_DATE', (cur_date, file_id))
                     model = self.view.filesList.model()
                     heads = model.get_headers()
                     if 'Opened' in heads:
                         idx = model.sourceModel().createIndex(
                             self.view.filesList.currentIndex().row(), heads.index('Opened'))
-                        cur_date = QDateTime.currentDate().toString(Qt.ISODate)[:16]
-                        cur_date = cur_date.replace('T', ' ')
                         model.update(idx, cur_date)
                 except OSError:
                     pass
