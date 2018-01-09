@@ -17,11 +17,13 @@ FILE_AUTHOR = 'select * from FileAuthor where FileID=? and AuthorID=?'
 
 INSERT_FILEAUTHOR = 'insert into FileAuthor (FileID, AuthorID) values (?, ?);'
 
+SELECT_COMMENT = 'select BookTitle from Comments where CommentID=?;'
+
 INSERT_COMMENT = 'insert into Comments (BookTitle, Comment) values (?, ?);'
 
-FILES_WITHOUT_INFO = ' '.join(('select f.FileID, f.FileName, d.Path from',
-                               'Files f, Dirs d where f.DirID = d.DirID',
-                               'and d.DirID in ({});'))
+FILES_IN_LOAD = ' '.join(('select f.FileID, f.FileName, d.Path, f.CommentID,',
+                          'f.IssueDate, f.Pages from Files f, Dirs d',
+                          'where f.DirID = d.DirID and d.DirID in ({});'))
 
 UPDATE_FILE = ' '.join(('update Files set',
                         'CommentID = :comm_id,',
@@ -58,7 +60,7 @@ class FileInfo(QObject):
 
     @pyqtSlot()
     def run(self):
-        self.update_files()
+        self._update_files()
         self.finished.emit()           # 'Updating of files is finished'
         # print('--> FileInfo.run finished')
 
@@ -90,21 +92,22 @@ class FileInfo(QObject):
     def _insert_comment(self):
         if len(self.file_info) > 2:
             try:
+                pages = self.file_info[2]
                 issue_date = self.file_info[4]
                 book_title = self.file_info[5]
             except IndexError:
                 print('IndexError ', len(self.file_info))
+
             self.cursor.execute(INSERT_COMMENT, (book_title, ''))
             self.conn.commit()
             comm_id = self.cursor.lastrowid
-            pages = self.file_info[2]
         else:
             comm_id = 0
             pages = ''
             issue_date = ''
         return comm_id, pages, issue_date
 
-    def get_file_info(self, full_file_name):
+    def _get_file_info(self, full_file_name):
         """
         Store info in self.file_info:
             0 - size,
@@ -122,12 +125,12 @@ class FileInfo(QObject):
             self.file_info.append(st.st_size)
             self.file_info.append(datetime.datetime.fromtimestamp(st.st_mtime).date().isoformat())
             if get_file_extension(full_file_name) == 'pdf':
-                self.get_pdf_info(full_file_name)
+                self._get_pdf_info(full_file_name)
         else:
             self.file_info.append('')
             self.file_info.append('')
 
-    def get_pdf_info(self, file):
+    def _get_pdf_info(self, file):
         with (open(file, "rb")) as pdf_file:
             try:
                 fr = PdfFileReader(pdf_file, strict=False)
@@ -138,42 +141,44 @@ class FileInfo(QObject):
             else:
                 if fi is not None:
                     self.file_info.append(fi.getText('/Author'))
-                    self.file_info.append(FileInfo.pdf_creation_date(fi))
+                    self.file_info.append(FileInfo._pdf_creation_date(fi))
                     self.file_info.append(fi.getText('/Title'))
                 else:
                     self.file_info += ['', '', '']
 
     @staticmethod
-    def pdf_creation_date(fi):
+    def _pdf_creation_date(fi):
         ww = fi.getText('/CreationDate')
         if ww:
             return '-'.join((ww[2:6], ww[6:8], ww[8:10]))
         return ''
 
-    def update_file(self, file_id, full_file_name):
+    def _update_file(self, file_):
         """
         Update file info in tables Files, Authors and Comments
-        :param file_id:
-        :param full_file_name:
+        :param file_: file_id, full_name, comment_id, issue_date, pages
         :return: None
         """
-        self.get_file_info(full_file_name)
-        comm_id, pages, issue_date = self._insert_comment()
+        self._get_file_info(file_.full_name)
+        if file_.comment_id == 0:
+            comm_id, pages, issue_date = self._insert_comment(file_)
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
                                           'date': self.file_info[1],
                                           'page': pages,
                                           'size': self.file_info[0],
                                           'issue_date': issue_date,
-                                          'file_id': file_id})
+                                          'file_id': file_.file_id})
         self.conn.commit()
         if len(self.file_info) > 3 and self.file_info[3]:
-            self._insert_author(file_id)
+            self._insert_author(file_.file_id)
 
-    def update_files(self):
+    def _update_files(self):
+        db_file_info = namedtuple('db_file_info',
+                                  'file_id full_name comment_id issue_date, pages')
         cur_place = self.places.get_curr_place()
         dir_ids = ','.join(self.upd_dirs)
-        file_list = self.cursor.execute(FILES_WITHOUT_INFO.
+        file_list = self.cursor.execute(FILES_IN_LOAD.
                                         format(dir_ids)).fetchall()
         if cur_place[2] == Places.MOUNTED:
             root = self.places.get_mount_point()
@@ -181,6 +186,8 @@ class FileInfo(QObject):
         else:
             full_path = lambda x: x
 
-        for file_id, file, path in file_list:
-            file_name = os.path.join(full_path(path), file)
-            self.update_file(file_id, file_name)
+        # file_id, file_name, path, comment_id, issue_date
+        for it in file_list:
+            file_name = os.path.join(full_path(it[2]), it[1])
+            file_ = db_file_info._make((it[0], file_name) + it[-2:])
+            self._update_file(it)
