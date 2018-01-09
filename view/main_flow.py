@@ -60,7 +60,7 @@ class MainFlow(QMainWindow):
 
     def calc_collumns_width(self):
         col_count = self.ui.filesList.model().columnCount()
-        return [col_count, self.ui.filesList.fontMetrics().boundingRect('9999-99-99 99').width()]
+        return [col_count, self.ui.filesList.fontMetrics().boundingRect('9999-99-99 99:999').width()]
 
     def setup_context_menu(self):
         self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
