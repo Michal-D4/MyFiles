@@ -521,20 +521,17 @@ class MyController():
 
         curr_idx = self.view.filesList.currentIndex()
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-        res = file_comment._make(user_data[:3] + ('', ''))
-        comment = self._dbu.select_other("FILE_COMMENT", (res.comment_id,)).fetchone()
-        print('--> _check_existence', comment)
+        comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
+        res = file_comment._make(user_data[:3] + comment)
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
-            print('  c_id: {}, f_id: {}'.format(comment_id, res.file_id))
-            self._dbu.update_other('FILE_COMMENT', (res.comment_id, res.file_id))
+            self._dbu.update_other('FILE_COMMENT', (comment_id, res.file_id))
             self.view.filesList.model().update(curr_idx,
                                                user_data[:2] + (comment_id,)
                                                + user_data[3:], Qt.UserRole)
             res = res._replace(comment_id=comment_id,
                                comment=comment[0], book_title=comment[1])
-        print('   ', res)
         return res
 
     def _restore_file_list(self, curr_dir_idx):
@@ -564,7 +561,6 @@ class MyController():
         data_, ok_pressed = QInputDialog.getText(self.view.extList, 'Input book title',
                                                  '', QLineEdit.Normal, getattr(checked, 'book_title'))
         if ok_pressed:
-            print('--> _edit_title', data_, checked.comment_id)
             self._dbu.update_other('BOOK_TITLE', (data_, checked.comment_id))
             self._populate_comment_field(checked, edit=True)
 
