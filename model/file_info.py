@@ -159,8 +159,7 @@ class FileInfo(QObject):
         else:
             comm_id = file_.comment_id
             pages = file_.pages
-            issue_date = file_.issue_data
-        print('--> _update_file', comm_id, pages, issue_date)
+            issue_date = file_.issue_date
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
                                           'date': self.file_info[1],
