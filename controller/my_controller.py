@@ -406,11 +406,10 @@ class MyController():
                     model = self.view.filesList.model()
                     heads = model.get_headers()
                     if 'Opened' in heads:
-                        idx = model.sourceModel().createIndex(
-                            self.view.filesList.currentIndex().row(), heads.index('Opened'))
-                        model.update(idx, cur_date)
+                        model.update(self.view.filesList.currentIndex(),
+                                     cur_date, column=heads.index('Opened'))
                 except OSError:
-                    pass
+                    self._show_message('Can\'t open file "{}"'.format(full_file_name))
             else:
                 self._show_message("Can't find file {}".format(full_file_name))
         else:

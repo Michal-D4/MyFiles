@@ -12,14 +12,17 @@ class ProxyModel(QSortFilterProxyModel):
     def append_row(self, row, user_data=None):
         self.sourceModel().append_row(row, user_data)
 
-    def update(self, index, data, role=Qt.DisplayRole):
-        self.sourceModel().update(self.mapToSource(index), data, role)
+    def update(self, index, data, role=Qt.DisplayRole, column=-1):
+        self.sourceModel().update(self.mapToSource(index), data, role, column)
 
     def delete_row(self, index):
         self.sourceModel().delete_row(self.mapToSource(index))
 
     def setHeaderData(self, value):
         self.sourceModel().setHeaderData(0, Qt.Horizontal, value)
+
+    def get_headers(self):
+        return self.sourceModel().header
 
 
 class ProxyModel2(ProxyModel):
@@ -40,12 +43,6 @@ class ProxyModel2(ProxyModel):
             right_data = int(right_data) or 0
 
         return left_data < right_data
-
-    def get_headers(self):
-        return self.sourceModel().header
-
-    def update(self, index, data, role=Qt.DisplayRole):
-        self.sourceModel().update(self.mapFromSource(index), data)
 
 
 class TableModel(QAbstractTableModel):
@@ -80,16 +77,16 @@ class TableModel(QAbstractTableModel):
                     return Qt.AlignLeft
                 return Qt.AlignRight
 
-    def update(self, index, data, role=Qt.DisplayRole):
+    def update(self, index, data, role=Qt.DisplayRole, column=-1):
         if index.isValid():
             if role == Qt.DisplayRole:
-                if len(self.__data[index.row()]) > index.column():
-                    i = index.column()
+                i = index.column() if column <= -1 else column
+                if len(self.__data[index.row()]) > i:
                     if i + 1 < len(self.__data[index.row()]):
                         self.__data[index.row()] = self.__data[index.row()][:i] + \
                                                    (data,) + self.__data[index.row()][(i+1):]
                     else:
-                        self.__data[index.row()] = self.__data[index.row()][:i] + (data,)
+                        self.__data[index.row()] = self.__data[index.row()][:-1] + (data,)
             elif role == Qt.UserRole:
                 self.__user_data[index.row()] = data
 
