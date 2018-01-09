@@ -75,7 +75,7 @@ class LoadDBData:
         for line in data:
             line = line.translate(trantab)
             if self.place_status == Places.MOUNTED:
-                line = line.partition(os.altsep)[2]         # remove mount point, ie disk letter with ":/"
+                line = line.partition(os.altsep)[2]    # path without disk letter for removable disks
             idx = self.insert_dir(line)
             self.updated_dirs.add(str(idx))
             self.insert_file(idx, line)
