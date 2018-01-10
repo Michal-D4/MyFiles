@@ -169,7 +169,7 @@ class MyController():
         try:
             self._on_data_methods()[action]()
         except KeyError:
-            print('Action "{}" not implemented'.format(action))
+            self._show_message('Action "{}" not implemented'.format(action), 5000)
 
     def _scan_for_tags(self):
         """
@@ -895,7 +895,8 @@ class MyController():
         scanning the file system
         :return: None
         """
-        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
+        if self._cb_places.get_disk_state() & \
+                (Places.MOUNTED | Places.NOT_REMOVAL | Places.NOT_DEFINED):
             _data = self._scan_file_system()
             if _data:
                 self._load_files(_data)
@@ -913,14 +914,15 @@ class MyController():
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
+            # TODO check for valid scaning in removable disk
             if root:
                 self._cb_places.update_place_name(root)
                 return MyController._yield_files(root, ext_item)
 
         return ()  # not ok_pressed or root is empty
 
-    def _show_message(self, message):
-        self.view.statusbar.showMessage(message, 3000)
+    def _show_message(self, message, time=3000):
+        self.view.statusbar.showMessage(message, time)
 
     @staticmethod
     def get_selected_items(view):
