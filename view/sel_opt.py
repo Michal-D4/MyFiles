@@ -27,7 +27,7 @@ class SelOpt(QDialog):
         self.ui.eDate.textEdited.connect(self._text_edited)
 
     def _text_edited(self, ed_str):
-        print('|--> _text_edited', ed_str)
+        # print('|--> _text_edited', ed_str)
         self.not_older = int(ed_str)
 
     def _restore_state(self):

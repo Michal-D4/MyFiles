@@ -234,11 +234,11 @@ class DBUtils:
         return self.curs
 
     def insert_other(self, sql, data):
-        print('|---> insert_other', sql, data)
+        # print('|---> insert_other', sql, data)
         self.curs.execute(Insert[sql], data)
         jj = self.curs.lastrowid
         self.conn.commit()
-        print('  comment_id:', jj)
+        # print('  comment_id:', jj)
         return jj
 
     def update_other(self, sql, data):
