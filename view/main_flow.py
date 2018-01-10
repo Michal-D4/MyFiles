@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEven
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
+from view.set_fields import SetFields
 
 
 class MainFlow(QMainWindow):
@@ -59,8 +60,14 @@ class MainFlow(QMainWindow):
         sel_opt.triggered.connect(lambda: self.change_data_signal.emit('Selection options'))
 
     def calc_collumns_width(self):
-        col_count = self.ui.filesList.model().columnCount()
-        return [col_count, self.ui.filesList.fontMetrics().boundingRect('9999-99-99 99:999').width()]
+        width = [0]
+        font_metrics = self.ui.filesList.fontMetrics()
+        heads = self.ui.filesList.model().get_headers()
+        if len(heads) > 1:
+            for head in heads[1:]:
+                ind = SetFields.Heads.index(head)
+                width.append(font_metrics.boundingRect(SetFields.Masks[ind]).width())
+        return width
 
     def setup_context_menu(self):
         self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -142,17 +149,19 @@ class MainFlow(QMainWindow):
         settings.setValue("MainFlow/Size", QVariant(self.size()))
 
     def resize_event(self, event):
-        col_count, widths = self.calc_collumns_width()
+        widths = self.calc_collumns_width()
         w = event.size().width()
-        if col_count > 1:
-            if w > widths * col_count:
-                w0 = w - widths*(col_count-1)
+        if len(widths) > 1:
+            ww = w * 0.75
+            sum_w = sum(widths)
+            if ww > sum_w:
+                widths[0] = w - sum_w
             else:
-                w0 = w * 0.5
-                widths = w*0.5 / (col_count-1)
-            self.ui.filesList.setColumnWidth(0, w0)
-            for k in range(1, col_count):
-                self.ui.filesList.setColumnWidth(k, widths)
+                widths[0] = w * 0.25
+                for i in range(1, len(widths)):
+                    widths[i] = ww / sum_w * widths[i]
+            for k in range(0, len(widths)):
+                self.ui.filesList.setColumnWidth(k, widths[k])
         else:
             self.ui.filesList.setColumnWidth(0, w)
 

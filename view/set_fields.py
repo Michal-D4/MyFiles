@@ -12,6 +12,8 @@ class SetFields(QDialog):
     FileFields = ['FileName', 'FileDate', 'Pages', 'Size', 'IssueDate',
                   'Opened', 'Commented']
     Heads = ['File', 'Date', 'Pages', 'Size', 'Issued', 'Opened', 'Commented']
+    Masks = ['', '9999-99-99 9', '  99999', '99 999 999', '9999-99-99 9',
+             '9999-99-99 99:999', '9999-99-99 9']
 
     def __init__(self, current: Fields, parent=None):
         super().__init__(parent)
