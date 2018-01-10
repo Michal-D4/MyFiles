@@ -2,6 +2,7 @@
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent
+from PyQt5.QtGui import QResizeEvent
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
@@ -148,22 +149,24 @@ class MainFlow(QMainWindow):
         settings = QSettings()
         settings.setValue("MainFlow/Size", QVariant(self.size()))
 
-    def resize_event(self, event):
-        widths = self.calc_collumns_width()
+    def resize_event(self, event: QResizeEvent):
+        old_w = event.oldSize().width()
         w = event.size().width()
-        if len(widths) > 1:
-            ww = w * 0.75
-            sum_w = sum(widths)
-            if ww > sum_w:
-                widths[0] = w - sum_w
+        if not old_w == w:
+            widths = self.calc_collumns_width()
+            if len(widths) > 1:
+                ww = w * 0.75
+                sum_w = sum(widths)
+                if ww > sum_w:
+                    widths[0] = w - sum_w
+                else:
+                    widths[0] = w * 0.25
+                    for i in range(1, len(widths)):
+                        widths[i] = ww / sum_w * widths[i]
+                for k in range(0, len(widths)):
+                    self.ui.filesList.setColumnWidth(k, widths[k])
             else:
-                widths[0] = w * 0.25
-                for i in range(1, len(widths)):
-                    widths[i] = ww / sum_w * widths[i]
-            for k in range(0, len(widths)):
-                self.ui.filesList.setColumnWidth(k, widths[k])
-        else:
-            self.ui.filesList.setColumnWidth(0, w)
+                self.ui.filesList.setColumnWidth(0, w)
 
     def changeEvent(self, event, **kwargs):
         if event.type() == QEvent.WindowStateChange:
