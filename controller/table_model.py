@@ -12,8 +12,8 @@ class ProxyModel(QSortFilterProxyModel):
     def append_row(self, row, user_data=None):
         self.sourceModel().append_row(row, user_data)
 
-    def update(self, index, data, role=Qt.DisplayRole, column=-1):
-        self.sourceModel().update(self.mapToSource(index), data, role, column)
+    def update(self, index, data, role=Qt.DisplayRole):
+        self.sourceModel().update(self.mapToSource(index), data, role)
 
     def delete_row(self, index):
         self.sourceModel().delete_row(self.mapToSource(index))
@@ -77,11 +77,11 @@ class TableModel(QAbstractTableModel):
                     return Qt.AlignLeft
                 return Qt.AlignRight
 
-    def update(self, index, data, role=Qt.DisplayRole, column=-1):
+    def update(self, index, data, role=Qt.DisplayRole):
         if index.isValid():
             if role == Qt.DisplayRole:
-                i = index.column() if column <= -1 else column
-                if len(self.__data[index.row()]) > i:
+                if len(self.__data[index.row()]) > index.column():
+                    i = index.column()
                     if i + 1 < len(self.__data[index.row()]):
                         self.__data[index.row()] = self.__data[index.row()][:i] + \
                                                    (data,) + self.__data[index.row()][(i+1):]

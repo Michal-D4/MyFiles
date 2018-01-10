@@ -406,8 +406,9 @@ class MyController():
                     model = self.view.filesList.model()
                     heads = model.get_headers()
                     if 'Opened' in heads:
-                        model.update(self.view.filesList.currentIndex(),
-                                     cur_date, column=heads.index('Opened'))
+                        idx = model.mapToSource(self.view.filesList.currentIndex())
+                        idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
+                        model.sourceModel().update(idx_s, cur_date)
                 except OSError:
                     self._show_message('Can\'t open file "{}"'.format(full_file_name))
             else:
@@ -521,16 +522,10 @@ class MyController():
         """
         file_comment = namedtuple('file_comment',
                                   'file_id dir_id comment_id comment book_title')
-        print('--> _check_existence')
         curr_idx = self.view.filesList.currentIndex()
-        print('   1')
         user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
-        print('   2', user_data)
-        print(self.view.filesList.model().data(curr_idx, Qt.DisplayRole))
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
-        print('   3', comment)
         res = file_comment._make(user_data[:3] + (comment if comment else ('', '')))
-        print('--> _check_existence', res)
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
@@ -569,12 +564,10 @@ class MyController():
             self.view.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _edit_title(self):
-        print('--> _edit_title')
         checked = self._check_existence()
         data_, ok_pressed = QInputDialog.getText(self.view.extList, 'Input book title',
                                                  '', QLineEdit.Normal, getattr(checked, 'book_title'))
         if ok_pressed:
-            print('--> _edit_title', data_, checked.comment_id)
             self._dbu.update_other('BOOK_TITLE', (data_, checked.comment_id))
             self._populate_comment_field(checked, edit=True)
 
@@ -730,7 +723,6 @@ class MyController():
     def _populate_comment_field(self, user_data, edit=False):
         file_id = user_data[0]
         comment_id = user_data[2]
-        print('--> _populate_comment_field', file_id, comment_id)
         if file_id:
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
