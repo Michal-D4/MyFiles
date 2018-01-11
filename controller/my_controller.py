@@ -812,6 +812,7 @@ class MyController():
                 self._show_message('Files are in an inaccessible place')
 
         self.view.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
+        self._resize_columns()
 
     def _get_dirs(self, place_id):
         """
