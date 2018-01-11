@@ -66,6 +66,7 @@ class MyController():
                 'get_sel_files': self._list_of_selected_files,
                 'Open folder': self._open_folder,
                 'Open': self._open_file,
+                'Resize columns': self._resize_columns,
                 'Selection options': self._selection_options,
                 'Set fields': self._set_fields,
                 'Tag Remove unused': self._tag_remove_unused,
@@ -79,6 +80,8 @@ class MyController():
                                                   (['FileName', 'FileDate', 'Pages', 'Size'],
                                                    ['File', 'Date', 'Pages', 'Size'],
                                                    [0, 1, 2, 3])))
+        self._set_file_model()
+        self._resize_columns()
 
     def _set_fields(self):
         set_fields_dialog = SetFields(self.fields)
@@ -698,16 +701,16 @@ class MyController():
         model = TableModel(parent=self.view.filesList)
         proxy_model = ProxyModel2()
         proxy_model.setSourceModel(model)
+        model.setHeaderData(0, Qt.Horizontal, getattr(self.fields, 'headers'))
+        self.view.filesList.setModel(proxy_model)
         return proxy_model
 
     def _show_files(self, files, model):
         idx = getattr(self.fields, 'indexes')
-        model.setHeaderData(getattr(self.fields, 'headers'))
         for ff in files:
             ff1 = [ff[i] for i in idx]
             model.append_row(tuple(ff1), ff[-5:])
 
-        self.view.filesList.setModel(model)
         self.view.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
         self.view.filesList.setCurrentIndex(index_)
@@ -950,3 +953,30 @@ class MyController():
             res.sort()
             return ', '.join(res)
         return ''
+
+    def _resize_columns(self):
+        w = self.view.filesList.width()
+        widths = self._calc_collumns_width()
+        if len(widths) > 1:
+            ww = w * 0.75
+            sum_w = sum(widths)
+            if ww > sum_w:
+                widths[0] = w - sum_w
+            else:
+                widths[0] = w * 0.25
+                for i in range(1, len(widths)):
+                    widths[i] = ww / sum_w * widths[i]
+            for k in range(0, len(widths)):
+                self.view.filesList.setColumnWidth(k, widths[k])
+        else:
+            self.view.filesList.setColumnWidth(0, w)
+
+    def _calc_collumns_width(self):
+        width = [0]
+        font_metrics = self.view.filesList.fontMetrics()
+        heads = self.view.filesList.model().get_headers()
+        if len(heads) > 1:
+            for head in heads[1:]:
+                ind = SetFields.Heads.index(head)
+                width.append(font_metrics.boundingRect(SetFields.Masks[ind]).width())
+        return width
