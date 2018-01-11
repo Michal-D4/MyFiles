@@ -89,6 +89,8 @@ class MyController():
             self.fields = set_fields_dialog.get_result()
             settings = QSettings()
             settings.setValue('FIELDS', self.fields)
+            self._restore_file_list(self.view.dirTree.currentIndex())
+            self._resize_columns()
 
     def _tag_rename(self):
         idx = self.view.tagsList.currentIndex()
@@ -694,7 +696,6 @@ class MyController():
             self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2],
                                                              model.rowCount(QModelIndex())))
         else:
-            self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
     def _set_file_model(self):
