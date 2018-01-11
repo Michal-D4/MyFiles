@@ -60,16 +60,6 @@ class MainFlow(QMainWindow):
         self.ui.btnGetFiles.setMenu(menu2)
         sel_opt.triggered.connect(lambda: self.change_data_signal.emit('Selection options'))
 
-    def calc_collumns_width(self):
-        width = [0]
-        font_metrics = self.ui.filesList.fontMetrics()
-        heads = self.ui.filesList.model().get_headers()
-        if len(heads) > 1:
-            for head in heads[1:]:
-                ind = SetFields.Heads.index(head)
-                width.append(font_metrics.boundingRect(SetFields.Masks[ind]).width())
-        return width
-
     def setup_context_menu(self):
         self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.filesList.customContextMenuRequested.connect(self._file_menu)
@@ -153,20 +143,7 @@ class MainFlow(QMainWindow):
         old_w = event.oldSize().width()
         w = event.size().width()
         if not old_w == w:
-            widths = self.calc_collumns_width()
-            if len(widths) > 1:
-                ww = w * 0.75
-                sum_w = sum(widths)
-                if ww > sum_w:
-                    widths[0] = w - sum_w
-                else:
-                    widths[0] = w * 0.25
-                    for i in range(1, len(widths)):
-                        widths[i] = ww / sum_w * widths[i]
-                for k in range(0, len(widths)):
-                    self.ui.filesList.setColumnWidth(k, widths[k])
-            else:
-                self.ui.filesList.setColumnWidth(0, w)
+            self.change_data_signal.emit('Resize columns')
 
     def changeEvent(self, event, **kwargs):
         if event.type() == QEvent.WindowStateChange:

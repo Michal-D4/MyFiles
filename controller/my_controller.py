@@ -66,6 +66,7 @@ class MyController():
                 'get_sel_files': self._list_of_selected_files,
                 'Open folder': self._open_folder,
                 'Open': self._open_file,
+                'Resize columns': self._resize_columns,
                 'Selection options': self._selection_options,
                 'Set fields': self._set_fields,
                 'Tag Remove unused': self._tag_remove_unused,
@@ -808,6 +809,7 @@ class MyController():
                 self._show_message('Files are in an inaccessible place')
 
         self.view.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
+        self._resize_columns()
 
     def _get_dirs(self, place_id):
         """
@@ -950,3 +952,30 @@ class MyController():
             res.sort()
             return ', '.join(res)
         return ''
+
+    def _resize_columns(self):
+        w = self.view.filesList.width()
+        widths = self._calc_collumns_width()
+        if len(widths) > 1:
+            ww = w * 0.75
+            sum_w = sum(widths)
+            if ww > sum_w:
+                widths[0] = w - sum_w
+            else:
+                widths[0] = w * 0.25
+                for i in range(1, len(widths)):
+                    widths[i] = ww / sum_w * widths[i]
+            for k in range(0, len(widths)):
+                self.view.filesList.setColumnWidth(k, widths[k])
+        else:
+            self.view.filesList.setColumnWidth(0, w)
+
+    def _calc_collumns_width(self):
+        width = [0]
+        font_metrics = self.view.filesList.fontMetrics()
+        heads = self.view.filesList.model().get_headers()
+        if len(heads) > 1:
+            for head in heads[1:]:
+                ind = SetFields.Heads.index(head)
+                width.append(font_metrics.boundingRect(SetFields.Masks[ind]).width())
+        return width
