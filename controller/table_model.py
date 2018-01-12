@@ -24,6 +24,9 @@ class ProxyModel(QSortFilterProxyModel):
     def get_headers(self):
         return self.sourceModel().header
 
+    def rowCount(self, parent=QModelIndex()):
+        return self.sourceModel().rowCount(parent)
+
 
 class ProxyModel2(ProxyModel):
     """

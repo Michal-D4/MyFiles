@@ -302,16 +302,15 @@ class MyController():
         self._show_message('Updating of files is finished')  #
 
     def _favorite_file_list(self):
+        self.file_list_source = MyController.FAVORITE
+        settings = QSettings()
+        settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
-            self.file_list_source = MyController.FAVORITE
-            settings = QSettings()
-            settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
             self._show_files(files, model)
             self.view.statusbar.showMessage('Favorite files')
         else:
-            self.view.filesList.setModel(model)
             self.view.statusbar.showMessage('No data')
 
     def _selection_options(self):
@@ -546,20 +545,20 @@ class MyController():
         if self.same_db:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
-            row = settings.value('FILE_IDX', -1)
+            row = settings.value('FILE_IDX', 0)
         else:
             self.file_list_source = MyController.FOLDER
-            row = -1
+            row = 0
 
         if self.file_list_source == MyController.FAVORITE:
             self._favorite_file_list()
         elif self.file_list_source == MyController.FOLDER:
             dir_idx = self.view.dirTree.model().data(curr_dir_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
-        else:
+        else:                       # MyController.ADVANCE
             self._list_of_selected_files()
 
-        if row == -1:
+        if self.view.filesList.model().rowCount() == 0:
             idx = QModelIndex()
         else:
             idx = self.view.filesList.model().index(row, 0)
