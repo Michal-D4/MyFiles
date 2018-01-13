@@ -36,11 +36,12 @@ class MainFlow(QMainWindow):
         self.ui.actionScanFiles.triggered.connect(
             lambda: self.scan_files_signal.emit())
         self.ui.actionGetFiles.triggered.connect(
-            lambda: self.change_data_signal.emit('get_sel_files'))
+            lambda: self.change_data_signal.emit('Select files'))
         self.ui.actionFavorites.triggered.connect(
             lambda: self.change_data_signal.emit('Favorites'))
 
-        self.ui.cb_places.currentIndexChanged.connect(self.change_place)
+        self.ui.cb_places.currentIndexChanged.connect(
+            lambda: self.change_data_signal.emit('Change place'))
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
         self.ui.filesList.doubleClicked.connect(
             lambda: self.change_data_signal.emit('File_doubleClicked'))
@@ -91,7 +92,7 @@ class MainFlow(QMainWindow):
         menu.addAction('Delete file')
         action = menu.exec_(self.ui.filesList.mapToGlobal(pos))
         if action:
-            self.change_data_signal.emit(action.text())
+            self.change_data_signal.emit('File {}'.format(action.text()))
 
     def _ext_menu(self, pos):
         menu = QMenu(self)
@@ -99,8 +100,7 @@ class MainFlow(QMainWindow):
         menu.addAction('Create group')
         action = menu.exec_(self.ui.extList.mapToGlobal(pos))
         if action:
-            act = 'Ext {}'.format(action.text())
-            self.change_data_signal.emit(act)
+            self.change_data_signal.emit('Ext {}'.format(action.text()))
 
     def _tag_menu(self, pos):
         menu = QMenu(self)
@@ -109,16 +109,14 @@ class MainFlow(QMainWindow):
         menu.addAction('Rename')
         action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
         if action:
-            act = 'Tag {}'.format(action.text())
-            self.change_data_signal.emit(act)
+            self.change_data_signal.emit('Tag {}'.format(action.text()))
 
     def _author_menu(self, pos):
         menu = QMenu(self)
         menu.addAction('Remove unused')
         action = menu.exec_(self.ui.authorsList.mapToGlobal(pos))
         if action:
-            act = 'Author {}'.format(action.text())
-            self.change_data_signal.emit(act)
+            self.change_data_signal.emit('Author {}'.format(action.text()))
 
     def _dir_menu(self, pos):
         menu = QMenu(self)
@@ -126,12 +124,11 @@ class MainFlow(QMainWindow):
         menu.addAction('Remove empty')
         action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
         if action:
-            act = 'Dirs {}'.format(action.text())
-            self.change_data_signal.emit(act)
+            self.change_data_signal.emit('Dirs {}'.format(action.text()))
 
-    def ref_clicked(self, argv_1):
+    def ref_clicked(self, href):
         self.ui.commentField.setSource(QUrl())
-        self.change_data_signal.emit(argv_1.toString())
+        self.change_data_signal.emit(href.toString())
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -145,7 +142,7 @@ class MainFlow(QMainWindow):
         if not old_w == w:
             self.change_data_signal.emit('Resize columns')
 
-    def changeEvent(self, event, **kwargs):
+    def changeEvent(self, event):
         if event.type() == QEvent.WindowStateChange:
             settings = QSettings()
             if event.oldState() == Qt.WindowMaximized:
@@ -165,9 +162,6 @@ class MainFlow(QMainWindow):
         settings = QSettings()
         settings.setValue("MainFlow/Position", QVariant(self.pos()))
         super().moveEvent(event)
-
-    def change_place(self, idx):
-        self.change_data_signal.emit('Change place')
 
     def restore_setting(self):
         settings = QSettings()
