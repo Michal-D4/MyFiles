@@ -14,7 +14,7 @@ class TestMyControllerViewDbu(unittest.TestCase):
         self.controller = my_controller.MyController(app)
 
         self.mock_view = Mock()
-        self.controller.view = self.mock_view
+        self.controller.ui = self.mock_view
 
         self.mock_dbu = Mock(spec_set=DBUtils)
         self.controller._dbu = self.mock_dbu

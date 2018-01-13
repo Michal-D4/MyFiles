@@ -50,7 +50,7 @@ class SelOpt(QDialog):
 
     def author_toggle(self):
         if self.ui.chAuthor.isChecked():
-            self.ui.eAuthors.setText(self.ctrl.get_selected_items(self.ctrl.view.authorsList))
+            self.ui.eAuthors.setText(self.ctrl.get_selected_items(self.ctrl.ui.authorsList))
         else:
             self.ui.eAuthors.setText('')
 
@@ -68,7 +68,7 @@ class SelOpt(QDialog):
 
     def dir_toggle(self):
         if self.ui.chDirs.isChecked():
-            self.ui.lDir.setText(self.ctrl.get_selected_items(self.ctrl.view.dirTree))
+            self.ui.lDir.setText(self.ctrl.get_selected_items(self.ctrl.ui.dirTree))
             if self.ui.lDir.text():
                 self.ui.sbLevel.setEnabled(True)
         else:
@@ -77,14 +77,15 @@ class SelOpt(QDialog):
 
     def ext_toggle(self):
         if self.ui.chExt.isChecked():
-            self.ui.eExt.setText(self.ctrl.get_selected_items(self.ctrl.view.extList))
+            self.ui.eExt.setText(self.ctrl.get_selected_items(self.ctrl.ui.extList))
         else:
             self.ui.eExt.setText('')
 
     def tag_toggle(self):
+        print('--> tag_toggle')
         state = self.ui.chTags.isChecked()
         if state:
-            self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.view.tagsList))
+            self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.ui.tagsList))
         else:
             self.ui.eTags.setText('')
 
@@ -126,8 +127,8 @@ class SelOpt(QDialog):
     def _get_dir_ids(self):
         if self.ui.chDirs.isChecked():
             lvl = 0
-            idx = self.ctrl.view.dirTree.currentIndex()
-            root_id = int(self.ctrl.view.dirTree.model().data(idx, Qt.UserRole)[0])
+            idx = self.ctrl.ui.dirTree.currentIndex()
+            root_id = int(self.ctrl.ui.dirTree.model().data(idx, Qt.UserRole)[0])
             place_id = self.ctrl.get_place_instance().get_curr_place()[1][0]
 
             ids = ','.join([str(id_[0]) for id_ in
@@ -137,8 +138,8 @@ class SelOpt(QDialog):
 
     def _get_ext_ids( self ):
         if self.ui.chExt.isChecked():
-            sel_idx = self.ctrl.view.extList.selectedIndexes()
-            model = self.ctrl.view.extList.model()
+            sel_idx = self.ctrl.ui.extList.selectedIndexes()
+            model = self.ctrl.ui.extList.model()
             aux = []
             for id_ in sel_idx:
                 aux.append(model.data(id_, Qt.UserRole))
@@ -164,7 +165,7 @@ class SelOpt(QDialog):
 
     def _get_tags_id(self):
         if self.ui.chTags.isChecked():
-            tags = self._get_items_id(self.ctrl.view.tagsList)
+            tags = self._get_items_id(self.ctrl.ui.tagsList)
             if tags:
                 if self.ui.tagAll.isChecked():
                     num = len(tags.split(','))
@@ -181,7 +182,7 @@ class SelOpt(QDialog):
 
     def _get_authors_id(self):
         if self.ui.chAuthor.isChecked():
-            auth_ids = self._get_items_id(self.ctrl.view.authorsList)
+            auth_ids = self._get_items_id(self.ctrl.ui.authorsList)
             file_ids = self.ctrl.get_db_utils().select_other2('FILE_IDS_AUTHORS',
                                                               (auth_ids,)).fetchall()
             return ','.join(str(ix[0]) for ix in file_ids)

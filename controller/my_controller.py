@@ -31,7 +31,8 @@ class MyController():
 
     def __init__(self, view):
         self._connection = None
-        self.view = view.ui
+        self.ui = view.ui
+        self._win = view
 
         self.fields = Fields._make(((),(),()))
         self.same_db = False
@@ -89,25 +90,25 @@ class MyController():
             self.fields = set_fields_dialog.get_result()
             settings = QSettings()
             settings.setValue('FIELDS', self.fields)
-            self._restore_file_list(self.view.dirTree.currentIndex())
+            self._restore_file_list(self.ui.dirTree.currentIndex())
             self._resize_columns()
 
     def _tag_rename(self):
-        idx = self.view.tagsList.currentIndex()
+        idx = self.ui.tagsList.currentIndex()
         if idx.isValid():
-            tag = self.view.tagsList.model().data(idx, role=Qt.DisplayRole)
-            id = self.view.tagsList.model().data(idx, role=Qt.UserRole)
-            tag, ok = QInputDialog.getText(self.view.extList,
+            tag = self.ui.tagsList.model().data(idx, role=Qt.DisplayRole)
+            id = self.ui.tagsList.model().data(idx, role=Qt.UserRole)
+            tag, ok = QInputDialog.getText(self.ui.extList,
                                            'Input new name',
                                            '', QLineEdit.Normal, tag)
             if ok:
                 self._dbu.update_other('UPDATE_TAG', (tag, id))
-                self.view.tagsList.model().update(idx, tag, Qt.DisplayRole)
+                self.ui.tagsList.model().update(idx, tag, Qt.DisplayRole)
 
     def _copy_file_name(self):
-        idx = self.view.filesList.currentIndex()
+        idx = self.ui.filesList.currentIndex()
         if idx.column() == 0:
-            txt = self.view.filesList.model().data(idx, role=Qt.DisplayRole)
+            txt = self.ui.filesList.model().data(idx, role=Qt.DisplayRole)
             QApplication.clipboard().setText(txt)
 
     def _copy_full_path(self):
@@ -115,7 +116,7 @@ class MyController():
         QApplication.clipboard().setText(path)
 
     def get_places_view(self):
-        return self.view.cb_places
+        return self.ui.cb_places
 
     def get_db_utils(self):
         return self._dbu
@@ -162,6 +163,7 @@ class MyController():
                 self._show_message("Data base does not exist")
                 return
 
+        self._win.setWindowTitle('File organizer - ' + file_name)
         self._dbu.set_connection(self._connection)
         self._populate_all_widgets()
 
@@ -182,7 +184,7 @@ class MyController():
         :return:
         """
         self._show_message('Scan in files with selected extensions')
-        ext_idx = MyController._selected_db_indexes(self.view.extList)
+        ext_idx = MyController._selected_db_indexes(self.ui.extList)
         all_id = self._collect_all_ext(ext_idx)
 
         sel_tag = self.get_selected_tags()
@@ -198,12 +200,12 @@ class MyController():
                         pass
 
     def get_selected_tags(self):
-        idxs = self.view.tagsList.selectedIndexes()
+        idxs = self.ui.tagsList.selectedIndexes()
         t_ids = []
         tag_s = []
         rb = r'\b'
         if idxs:
-            model = self.view.tagsList.model()
+            model = self.ui.tagsList.model()
             for i in idxs:
                 t_ids.append(model.data(i, Qt.UserRole))
                 tag_s.append(rb + model.data(i, Qt.DisplayRole) + rb)
@@ -211,7 +213,7 @@ class MyController():
         return []
 
     def _ask_for_change_font(self):
-        font, ok_ = QFontDialog.getFont(self.view.dirTree.font(), self.view.dirTree)
+        font, ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
         if ok_:
             self._change_font(font)
             settings = QSettings()
@@ -224,12 +226,12 @@ class MyController():
             self._change_font(font)
 
     def _change_font(self, font):
-        self.view.dirTree.setFont(font)
-        self.view.extList.setFont(font)
-        self.view.filesList.setFont(font)
-        self.view.tagsList.setFont(font)
-        self.view.authorsList.setFont(font)
-        self.view.commentField.setFont(font)
+        self.ui.dirTree.setFont(font)
+        self.ui.extList.setFont(font)
+        self.ui.filesList.setFont(font)
+        self.ui.tagsList.setFont(font)
+        self.ui.authorsList.setFont(font)
+        self.ui.commentField.setFont(font)
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -245,9 +247,9 @@ class MyController():
         self._populate_ext_list()
 
     def _ext_create_group(self):
-        ids = self._selected_db_indexes(self.view.extList)
+        ids = self._selected_db_indexes(self.ui.extList)
         if ids:
-            group_name, ok_pressed = QInputDialog.getText(self.view.extList,
+            group_name, ok_pressed = QInputDialog.getText(self.ui.extList,
                                                           'Input group name',
                                                           '', QLineEdit.Normal,
                                                           '')
@@ -309,9 +311,9 @@ class MyController():
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
             self._show_files(files, model)
-            self.view.statusbar.showMessage('Favorite files')
+            self.ui.statusbar.showMessage('Favorite files')
         else:
-            self.view.statusbar.showMessage('No data')
+            self.ui.statusbar.showMessage('No data')
 
     def _selection_options(self):
         """
@@ -340,13 +342,13 @@ class MyController():
             self._show_message("Nothing found. Change you choices.")
 
     def _add_file_to_favorites(self):
-        f_idx = self.view.filesList.currentIndex()
-        file_id, _, _, _, _ = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        f_idx = self.ui.filesList.currentIndex()
+        file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
         self._dbu.insert_other('FAVORITES', (file_id,))
 
     def _delete_file(self):
-        f_idx = self.view.filesList.currentIndex()
-        u_data = self.view.filesList.model().data(f_idx, Qt.UserRole)
+        f_idx = self.ui.filesList.currentIndex()
+        u_data = self.ui.filesList.model().data(f_idx, Qt.UserRole)
         if self.file_list_source == MyController.FAVORITE:
             self._dbu.delete_other('FAVORITES', (u_data[0],))
         else:
@@ -355,7 +357,7 @@ class MyController():
             self._dbu.delete_other('COMMENT', (u_data[2],))
             self._dbu.delete_other('FILE', (u_data[0],))
 
-        self.view.filesList.model().delete_row(f_idx)
+        self.ui.filesList.model().delete_row(f_idx)
 
     def _open_folder(self):
         path, _, state, _ = self._file_path()
@@ -363,17 +365,17 @@ class MyController():
             webbrowser.open(''.join(('file://', path)))
 
     def _double_click_file(self):
-        f_idx = self.view.filesList.currentIndex()
-        column_head = self.view.filesList.model().headerData(f_idx.column(), Qt.Horizontal)
+        f_idx = self.ui.filesList.currentIndex()
+        column_head = self.ui.filesList.model().headerData(f_idx.column(), Qt.Horizontal)
         if column_head == 'File':
             self._open_file()
         elif column_head == 'Pages':
-            pages = self.view.filesList.model().data(f_idx)
-            file_id, _, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+            pages = self.ui.filesList.model().data(f_idx)
+            file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
             self._update_pages(f_idx, file_id, pages)
         elif column_head == 'Issued':
-            issue_date = self.view.filesList.model().data(f_idx)
-            file_id, _, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+            issue_date = self.ui.filesList.model().data(f_idx)
+            file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
             self._update_issue_date(f_idx, file_id, issue_date)
 
     def _update_issue_date(self, f_idx, file_id, issue_date):
@@ -386,16 +388,16 @@ class MyController():
         _date, ok_ = DateInputDialog.getDate(issue_date)
         if ok_:
             self._dbu.update_other('ISSUE_DATE', (_date, file_id))
-            self.view.filesList.model().update(f_idx, _date)
+            self.ui.filesList.model().update(f_idx, _date)
 
     def _update_pages(self, f_idx, file_id, page_number):
         if not page_number:
             page_number = 0
-        pages, ok_pressed = QInputDialog.getInt(self.view.extList, 'Input page number',
+        pages, ok_pressed = QInputDialog.getInt(self.ui.extList, 'Input page number',
                                                 '', int(page_number))
         if ok_pressed:
             self._dbu.update_other('PAGES', (pages, file_id))
-            self.view.filesList.model().update(f_idx, pages)
+            self.ui.filesList.model().update(f_idx, pages)
 
     def _open_file(self):
         path, file_name, status, file_id = self._file_path()
@@ -407,10 +409,10 @@ class MyController():
                     cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[:16]
                     cur_date = cur_date.replace('T', ' ')
                     self._dbu.update_other('OPEN_DATE', (cur_date, file_id))
-                    model = self.view.filesList.model()
+                    model = self.ui.filesList.model()
                     heads = model.get_headers()
                     if 'Opened' in heads:
-                        idx = model.mapToSource(self.view.filesList.currentIndex())
+                        idx = model.mapToSource(self.ui.filesList.currentIndex())
                         idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
                         model.sourceModel().update(idx_s, cur_date)
                 except OSError:
@@ -421,9 +423,9 @@ class MyController():
             self._show_message('File/disk is inaccessible')
 
     def _file_path(self):
-        f_idx = self.view.filesList.currentIndex()
-        file_name = self.view.filesList.model().data(f_idx)
-        file_id, dir_id, _, _, _ = self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+        f_idx = self.ui.filesList.currentIndex()
+        file_name = self.ui.filesList.model().data(f_idx)
+        file_id, dir_id, _, _, _ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
         path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
         state = self._cb_places.get_state(place_id)
         if state == Places.MOUNTED:
@@ -432,8 +434,8 @@ class MyController():
         return path, file_name, state, file_id
 
     def _edit_key_words(self):
-        curr_idx = self.view.filesList.currentIndex()
-        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        curr_idx = self.ui.filesList.currentIndex()
+        u_data = self.ui.filesList.model().data(curr_idx, Qt.UserRole)
 
         titles = ('Enter new tags', 'Select tags from list',
                   'Apply key words / tags')
@@ -493,8 +495,8 @@ class MyController():
         """
         model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, ExtID, PlaceId)
         """
-        curr_idx = self.view.filesList.currentIndex()
-        u_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        curr_idx = self.ui.filesList.currentIndex()
+        u_data = self.ui.filesList.model().data(curr_idx, Qt.UserRole)
 
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
@@ -526,17 +528,17 @@ class MyController():
         """
         file_comment = namedtuple('file_comment',
                                   'file_id dir_id comment_id comment book_title')
-        curr_idx = self.view.filesList.currentIndex()
-        user_data = self.view.filesList.model().data(curr_idx, Qt.UserRole)
+        curr_idx = self.ui.filesList.currentIndex()
+        user_data = self.ui.filesList.model().data(curr_idx, Qt.UserRole)
         comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
         res = file_comment._make(user_data[:3] + (comment if comment else ('', '')))
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
             self._dbu.update_other('FILE_COMMENT', (comment_id, res.file_id))
-            self.view.filesList.model().update(curr_idx,
+            self.ui.filesList.model().update(curr_idx,
                                                user_data[:2] + (comment_id,)
-                                               + user_data[3:], Qt.UserRole)
+                                             + user_data[3:], Qt.UserRole)
             res = res._replace(comment_id=comment_id,
                                comment=comment[0], book_title=comment[1])
         return res
@@ -553,23 +555,23 @@ class MyController():
         if self.file_list_source == MyController.FAVORITE:
             self._favorite_file_list()
         elif self.file_list_source == MyController.FOLDER:
-            dir_idx = self.view.dirTree.model().data(curr_dir_idx, Qt.UserRole)
+            dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
         else:                       # MyController.ADVANCE
             self._list_of_selected_files()
 
-        if self.view.filesList.model().rowCount() == 0:
+        if self.ui.filesList.model().rowCount() == 0:
             idx = QModelIndex()
         else:
-            idx = self.view.filesList.model().index(row, 0)
+            idx = self.ui.filesList.model().index(row, 0)
 
         if idx.isValid():
-            self.view.filesList.setCurrentIndex(idx)
-            self.view.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
+            self.ui.filesList.setCurrentIndex(idx)
+            self.ui.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _edit_title(self):
         checked = self._check_existence()
-        data_, ok_pressed = QInputDialog.getText(self.view.extList, 'Input book title',
+        data_, ok_pressed = QInputDialog.getText(self.ui.extList, 'Input book title',
                                                  '', QLineEdit.Normal, getattr(checked, 'book_title'))
         if ok_pressed:
             self._dbu.update_other('BOOK_TITLE', (data_, checked.comment_id))
@@ -579,7 +581,7 @@ class MyController():
         # self._edit_comment_item(('COMMENT', 'Input comment'), 'comment')
         #    _edit_comment_item(self, to_update, item_no):
         checked = self._check_existence()
-        data_, ok_pressed = QInputDialog.getMultiLineText(self.view.extList,
+        data_, ok_pressed = QInputDialog.getMultiLineText(self.ui.extList,
                                                           'Input comment', '',
                                                           getattr(checked, 'comment'))
         if ok_pressed:
@@ -592,8 +594,8 @@ class MyController():
         model = TreeModel()
         model.append_model_data(ext_list)
         model.setHeaderData(0, Qt.Horizontal, "Extensions")
-        self.view.extList.setModel(model)
-        self.view.extList.selectionModel().selectionChanged.connect(self._ext_sel_changed)
+        self.ui.extList.setModel(model)
+        self.ui.extList.selectionModel().selectionChanged.connect(self._ext_sel_changed)
 
     def _ext_sel_changed(self, selected: QItemSelection, deselected: QItemSelection):
         """
@@ -602,22 +604,22 @@ class MyController():
         :param deselected: QItemSelection
         :return: None
         """
-        model = self.view.extList.model()
+        model = self.ui.extList.model()
         for id in selected.indexes():
             if model.rowCount(id) > 0:
-                self.view.extList.setExpanded(id, True)
+                self.ui.extList.setExpanded(id, True)
                 sel = QItemSelection(model.index(0, 0, id),
                                      model.index(model.rowCount(id) - 1, model.columnCount(id) - 1, id))
-                self.view.extList.selectionModel().select(sel, QItemSelectionModel.Select)
+                self.ui.extList.selectionModel().select(sel, QItemSelectionModel.Select)
 
         for id in deselected.indexes():
             if id.parent().isValid():
-                self.view.extList.selectionModel().select(id.parent(), QItemSelectionModel.Deselect)
+                self.ui.extList.selectionModel().select(id.parent(), QItemSelectionModel.Deselect)
 
         self._save_ext_selection()
 
     def _save_ext_selection(self):
-        idxs = self.view.extList.selectedIndexes()
+        idxs = self.ui.extList.selectedIndexes()
         sel = []
         for ss in idxs:
             sel.append((ss.row(), ss.parent().row()))
@@ -631,11 +633,11 @@ class MyController():
         model.setHeaderData(0, Qt.Horizontal, ("Tags",))
         for tag, id_ in tag_list:
             model.append_row(tag, id_)
-        self.view.tagsList.setModel(model)
-        self.view.tagsList.selectionModel().selectionChanged.connect(self._tag_sel_changed)
+        self.ui.tagsList.setModel(model)
+        self.ui.tagsList.selectionModel().selectionChanged.connect(self._tag_sel_changed)
 
     def _tag_sel_changed(self):
-        idxs = self.view.tagsList.selectedIndexes()
+        idxs = self.ui.tagsList.selectedIndexes()
         sel = []
         for ss in idxs:
             sel.append((ss.row(), ss.parent().row()))
@@ -647,10 +649,10 @@ class MyController():
         if self.same_db:
             settings = QSettings()
             sel = settings.value('TAG_SEL_LIST', [])
-            model = self.view.tagsList.model()
+            model = self.ui.tagsList.model()
             for ss in sel:
                 idx = model.index(ss[0], 0, QModelIndex())
-                self.view.tagsList.selectionModel().select(idx, QItemSelectionModel.Select)
+                self.ui.tagsList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_author_list(self):
         author_list = self._dbu.select_other('AUTHORS')
@@ -658,11 +660,11 @@ class MyController():
         model.setHeaderData(0, Qt.Horizontal, "Authors")
         for author, id_ in author_list:
             model.append_row(author, id_)
-        self.view.authorsList.setModel(model)
-        self.view.authorsList.selectionModel().selectionChanged.connect(self._author_sel_changed)
+        self.ui.authorsList.setModel(model)
+        self.ui.authorsList.selectionModel().selectionChanged.connect(self._author_sel_changed)
 
     def _author_sel_changed(self):
-        idxs = self.view.authorsList.selectedIndexes()
+        idxs = self.ui.authorsList.selectedIndexes()
         sel = []
         for ss in idxs:
             sel.append((ss.row(), ss.parent().row()))
@@ -674,10 +676,10 @@ class MyController():
         if self.same_db:
             settings = QSettings()
             sel = settings.value('AUTHOR_SEL_LIST', [])
-            model = self.view.authorsList.model()
+            model = self.ui.authorsList.model()
             for ss in sel:
                 idx = model.index(ss[0], 0, QModelIndex())
-                self.view.authorsList.selectionModel().select(idx, QItemSelectionModel.Select)
+                self.ui.authorsList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_file_list(self, dir_idx):
         """
@@ -692,17 +694,17 @@ class MyController():
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
 
-            self.view.statusbar.showMessage('{} ({})'.format(dir_idx[2],
-                                                             model.rowCount(QModelIndex())))
+            self.ui.statusbar.showMessage('{} ({})'.format(dir_idx[2],
+                                                           model.rowCount(QModelIndex())))
         else:
-            self.view.statusbar.showMessage('No data')
+            self.ui.statusbar.showMessage('No data')
 
     def _set_file_model(self):
-        model = TableModel(parent=self.view.filesList)
+        model = TableModel(parent=self.ui.filesList)
         proxy_model = ProxyModel2()
         proxy_model.setSourceModel(model)
         model.setHeaderData(0, Qt.Horizontal, getattr(self.fields, 'headers'))
-        self.view.filesList.setModel(proxy_model)
+        self.ui.filesList.setModel(proxy_model)
         return proxy_model
 
     def _show_files(self, files, model):
@@ -711,16 +713,16 @@ class MyController():
             ff1 = [ff[i] for i in idx]
             model.append_row(tuple(ff1), ff[-5:])
 
-        self.view.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
+        self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
-        self.view.filesList.setCurrentIndex(index_)
-        self.view.filesList.setFocus()
+        self.ui.filesList.setCurrentIndex(index_)
+        self.ui.filesList.setFocus()
 
     def _cur_file_changed(self, curr_idx):
         settings = QSettings()
         settings.setValue('FILE_IDX', curr_idx.row())
         if curr_idx.isValid():
-            data = self.view.filesList.model().data(curr_idx, role=Qt.UserRole)
+            data = self.ui.filesList.model().data(curr_idx, role=Qt.UserRole)
             self._populate_comment_field(data)
 
     def _populate_comment_field(self, user_data, edit=False):
@@ -738,7 +740,7 @@ class MyController():
             else:
                 comment = ('', '')
 
-            self.view.commentField.setText(''.join((
+            self.ui.commentField.setText(''.join((
                 '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'
                     .format(', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'
@@ -748,22 +750,22 @@ class MyController():
                     .format(comment[0]))))
 
             if not self.file_list_source == MyController.FOLDER:
-                f_idx = self.view.filesList.currentIndex()
+                f_idx = self.ui.filesList.currentIndex()
                 file_id, dir_id, _, _, _ = \
-                    self.view.filesList.model().data(f_idx, role=Qt.UserRole)
+                    self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-                self.view.statusbar.showMessage(path[0])
+                self.ui.statusbar.showMessage(path[0])
 
             if edit:
                 self._update_commented_date(file_id)
 
     def _update_commented_date(self, file_id):
         self._dbu.update_other('COMMENT_DATE', (file_id,))
-        model = self.view.filesList.model()
+        model = self.ui.filesList.model()
         heads = model.get_headers()
         if "Commented" in heads:
             idx = model.sourceModel().createIndex(
-                self.view.filesList.currentIndex().row(), heads.index("Commented"))
+                self.ui.filesList.currentIndex().row(), heads.index("Commented"))
             cur_date = QDate.currentDate().toString(Qt.ISODate)
             model.update(idx, cur_date)
 
@@ -781,17 +783,17 @@ class MyController():
         if self.same_db:
             settings = QSettings()
             sel = settings.value('EXT_SEL_LIST', [])
-            model = self.view.extList.model()
+            model = self.ui.extList.model()
             for ss in sel:
                 if ss[1] == -1:
                     parent = QModelIndex()
                 else:
                     parent = model.index(ss[1], 0)
-                    self.view.extList.setExpanded(parent, True)
+                    self.ui.extList.setExpanded(parent, True)
 
                 idx = model.index(ss[0], 0, parent)
 
-                self.view.extList.selectionModel().select(idx, QItemSelectionModel.Select)
+                self.ui.extList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_directory_tree(self):
         dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
@@ -800,7 +802,7 @@ class MyController():
         model.append_model_data(dirs)
 
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
-        self.view.dirTree.setModel(model)
+        self.ui.dirTree.setModel(model)
 
         cur_dir_idx = self._restore_path()
 
@@ -810,7 +812,7 @@ class MyController():
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 self._show_message('Files are in an inaccessible place')
 
-        self.view.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
+        self.ui.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
         self._resize_columns()
 
     def _get_dirs(self, place_id):
@@ -840,7 +842,7 @@ class MyController():
         idx = selected.indexes()
         if idx:  # dir_idx = (DirID, ParentID, Full path)
             MyController._save_path(idx[0])
-            dir_idx = self.view.dirTree.model().data(idx[0], Qt.UserRole)
+            dir_idx = self.ui.dirTree.model().data(idx[0], Qt.UserRole)
             self._populate_file_list(dir_idx)
 
     @staticmethod
@@ -860,32 +862,32 @@ class MyController():
         restore expand state and current index of dirTree
         :return: current index
         """
-        model = self.view.dirTree.model()
+        model = self.ui.dirTree.model()
         if self.same_db:
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
             parent = QModelIndex()
             for id in aux:
                 if parent.isValid():
-                    if not self.view.dirTree.isExpanded(parent):
-                        self.view.dirTree.setExpanded(parent, True)
+                    if not self.ui.dirTree.isExpanded(parent):
+                        self.ui.dirTree.setExpanded(parent, True)
                 idx = model.index(int(id), 0, parent)
-                self.view.dirTree.setCurrentIndex(idx)
+                self.ui.dirTree.setCurrentIndex(idx)
                 parent = idx
             return parent
 
         idx = model.index(0, 0, QModelIndex())
-        self.view.dirTree.setCurrentIndex(idx)
+        self.ui.dirTree.setCurrentIndex(idx)
         return idx
 
     def _del_empty_dirs(self):
         self._dbu.delete_other('DEL_EMPTY_DIRS', ())
 
     def _rescan_dir(self):
-        idx = self.view.dirTree.currentIndex()
-        dir_ = self.view.dirTree.model().data(idx, Qt.UserRole)
+        idx = self.ui.dirTree.currentIndex()
+        dir_ = self.ui.dirTree.model().data(idx, Qt.UserRole)
         ext_ = self._get_selected_ext()
-        ext_item, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
+        ext_item, ok_pressed = QInputDialog.getText(self.ui.extList, "Input extensions",
                                                     'Input extensions (* - all)',
                                                     QLineEdit.Normal, ext_)
         if ok_pressed:
@@ -914,10 +916,10 @@ class MyController():
 
     def _scan_file_system(self):
         ext_ = self._get_selected_ext()
-        ext_item, ok_pressed = QInputDialog.getText(self.view.extList, "Input extensions",
+        ext_item, ok_pressed = QInputDialog.getText(self.ui.extList, "Input extensions",
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
-            root = QFileDialog().getExistingDirectory(self.view.extList, 'Select root folder')
+            root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
             # TODO check for valid scaning in removable disk
             if root:
                 self._cb_places.update_place_name(root)
@@ -926,7 +928,7 @@ class MyController():
         return ()  # not ok_pressed or root is empty
 
     def _show_message(self, message, time=3000):
-        self.view.statusbar.showMessage(message, time)
+        self.ui.statusbar.showMessage(message, time)
 
     @staticmethod
     def get_selected_items(view):
@@ -939,10 +941,10 @@ class MyController():
         return items_str
 
     def _get_selected_ext(self):
-        idxs = self.view.extList.selectedIndexes()
+        idxs = self.ui.extList.selectedIndexes()
         res = set()
         if idxs:
-            model = self.view.extList.model()
+            model = self.ui.extList.model()
             for i in idxs:
                 tt = model.data(i, Qt.UserRole)
                 if tt[0] > PLUS_EXT_ID:
@@ -956,7 +958,7 @@ class MyController():
         return ''
 
     def _resize_columns(self):
-        w = self.view.filesList.width()
+        w = self.ui.filesList.width()
         widths = self._calc_collumns_width()
         if len(widths) > 1:
             ww = w * 0.75
@@ -968,14 +970,14 @@ class MyController():
                 for i in range(1, len(widths)):
                     widths[i] = ww / sum_w * widths[i]
             for k in range(0, len(widths)):
-                self.view.filesList.setColumnWidth(k, widths[k])
+                self.ui.filesList.setColumnWidth(k, widths[k])
         else:
-            self.view.filesList.setColumnWidth(0, w)
+            self.ui.filesList.setColumnWidth(0, w)
 
     def _calc_collumns_width(self):
         width = [0]
-        font_metrics = self.view.filesList.fontMetrics()
-        heads = self.view.filesList.model().get_headers()
+        font_metrics = self.ui.filesList.fontMetrics()
+        heads = self.ui.filesList.model().get_headers()
         if len(heads) > 1:
             for head in heads[1:]:
                 ind = SetFields.Heads.index(head)
