@@ -87,9 +87,10 @@ class MainFlow(QMainWindow):
         menu.addAction('Copy file name')
         menu.addAction('Copy full path')
         menu.addSeparator()
-        menu.addAction('Copy file')
-        menu.addAction('Move file')
-        menu.addAction('Delete file')
+        menu.addAction('Rename file')
+        menu.addAction('Copy file(s)')
+        menu.addAction('Move file(s)')
+        menu.addAction('Delete file(s)')
         action = menu.exec_(self.ui.filesList.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit('File {}'.format(action.text()))

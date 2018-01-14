@@ -61,10 +61,14 @@ class MyController():
                 'Favorites': self._favorite_file_list,
                 'File Add to favorites': self._add_file_to_favorites,
                 'File Copy file name': self._copy_file_name,
+                'File Copy file(s)': self._copy_files,
                 'File Copy full path': self._copy_full_path,
                 'File Delete': self._delete_file,
+                'File Delete file(s)': self._delete_files,
+                'File Move file(s)': self._move_files,
                 'File Open folder': self._open_folder,
                 'File Open': self._open_file,
+                'File Rename file': self._rename_file,
                 'File_doubleClicked': self._double_click_file,
                 'Resize columns': self._resize_columns,
                 'Select files': self._list_of_selected_files,
@@ -74,6 +78,44 @@ class MyController():
                 'Tag Rename': self._tag_rename,
                 'Tag Scan in names': self._scan_for_tags
                 }
+
+    def _selected_files(self):
+        files = []
+        indexes = self.ui.filesList.selectionModel().selectedIndexes()
+        model = self.ui.filesList.model()
+        for idx in indexes:
+            if idx.row() == 0:
+                files.append((idx, model.data(idx),
+                              model.data(idx, Qt.UserRole)))
+        return files
+
+    def _copy_to(self, to, file):
+        pass
+
+    def _copy_files(self):
+        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
+            to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
+            if to_path:
+                selected_files = self._selected_files()
+                for file in selected_files:
+                    self._copy_to(to_path, file)
+
+    def _delete_files(self):
+        pass
+
+    def _move_files(self):
+        pass
+
+    def _rename_file(self):
+        path, file_name, status, file_id, idx = self._file_path()
+        if status & (Places.MOUNTED | Places.NOT_REMOVAL):
+            new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+                                                 'Input new name', '',
+                                                 QLineEdit.Normal, file_name)
+            if ok_:
+                self.ui.filesList.model().sourceModel().update(idx, new_name)
+                os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
+                self._dbu.update_other('FILE_NAME', (new_name, file_id))
 
     def _restore_fields(self):
         settings = QSettings()
@@ -112,7 +154,7 @@ class MyController():
             QApplication.clipboard().setText(txt)
 
     def _copy_full_path(self):
-        path, _, _, _ = self._file_path()
+        path, _, _, _, _ = self._file_path()
         QApplication.clipboard().setText(path)
 
     def get_places_view(self):
@@ -360,7 +402,7 @@ class MyController():
         self.ui.filesList.model().delete_row(f_idx)
 
     def _open_folder(self):
-        path, _, state, _ = self._file_path()
+        path, _, state, _, _ = self._file_path()
         if state & (Places.MOUNTED | Places.NOT_REMOVAL):
             webbrowser.open(''.join(('file://', path)))
 
@@ -400,7 +442,7 @@ class MyController():
             self.ui.filesList.model().update(f_idx, pages)
 
     def _open_file(self):
-        path, file_name, status, file_id = self._file_path()
+        path, file_name, status, file_id, idx = self._file_path()
         if status & (Places.MOUNTED | Places.NOT_REMOVAL):
             full_file_name = os.altsep.join((path, file_name))
             if os.path.isfile(full_file_name):
@@ -412,7 +454,7 @@ class MyController():
                     model = self.ui.filesList.model()
                     heads = model.get_headers()
                     if 'Opened' in heads:
-                        idx = model.mapToSource(self.ui.filesList.currentIndex())
+                        idx = model.mapToSource(idx)
                         idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
                         model.sourceModel().update(idx_s, cur_date)
                 except OSError:
@@ -424,14 +466,20 @@ class MyController():
 
     def _file_path(self):
         f_idx = self.ui.filesList.currentIndex()
-        file_name = self.ui.filesList.model().data(f_idx)
-        file_id, dir_id, _, _, _ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
-        path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-        state = self._cb_places.get_state(place_id)
-        if state == Places.MOUNTED:
-            root = self._cb_places.get_mount_point()
-            path = os.altsep.join((root, path))
-        return path, file_name, state, file_id
+        if f_idx.isValid():
+            model = self.ui.filesList.model()
+            f_idx = model.mapToSource(f_idx)
+            if not f_idx.column() == 0:
+                f_idx = model.sourceModel().createIndex(idx.row(), 0)
+            file_name = model.sourceModel().data(f_idx)
+            file_id, dir_id, _, _, _ = model.sourceModel().data(f_idx, role=Qt.UserRole)
+            path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
+            state = self._cb_places.get_state(place_id)
+            if state == Places.MOUNTED:
+                root = self._cb_places.get_mount_point()
+                path = os.altsep.join((root, path))
+            return path, file_name, state, file_id, f_idx
+        return '', '', Places.NOT_DEFINED, 0, f_idx
 
     def _edit_key_words(self):
         curr_idx = self.ui.filesList.currentIndex()
