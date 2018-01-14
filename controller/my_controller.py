@@ -719,6 +719,11 @@ class MyController():
         self.ui.filesList.setFocus()
 
     def _cur_file_changed(self, curr_idx):
+        """
+        currentRowChanged in filesList
+        :param curr_idx:
+        :return:
+        """
         settings = QSettings()
         settings.setValue('FILE_IDX', curr_idx.row())
         if curr_idx.isValid():
@@ -812,7 +817,7 @@ class MyController():
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 self._show_message('Files are in an inaccessible place')
 
-        self.ui.dirTree.selectionModel().selectionChanged.connect(self._cur_dir_changed)
+        self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
         self._resize_columns()
 
     def _get_dirs(self, place_id):
@@ -833,16 +838,15 @@ class MyController():
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
         return dirs
 
-    def _cur_dir_changed(self, selected):  # , unselected):
+    def _cur_dir_changed(self, curr_idx):
         """
-        Changed selection in dirTree
-        :param selected:  QItemSelection
+        currentRowChanged in dirTree
+        :param curr_idx:
         :return: None
         """
-        idx = selected.indexes()
-        if idx:  # dir_idx = (DirID, ParentID, Full path)
-            MyController._save_path(idx[0])
-            dir_idx = self.ui.dirTree.model().data(idx[0], Qt.UserRole)
+        if curr_idx:
+            MyController._save_path(curr_idx)
+            dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
 
     @staticmethod
@@ -920,7 +924,7 @@ class MyController():
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
-            # TODO check for valid scaning in removable disk
+            # TODO check for valid scanning in removable disk
             if root:
                 self._cb_places.update_place_name(root)
                 return MyController._yield_files(root, ext_item)
@@ -958,7 +962,7 @@ class MyController():
         return ''
 
     def _resize_columns(self):
-        w = self.ui.filesList.width()
+        w = self.ui.filesList.width() - 2
         widths = self._calc_collumns_width()
         if len(widths) > 1:
             ww = w * 0.75
