@@ -130,14 +130,14 @@ class Places:
         """
         self._check_disk_state()
         if self._curr_place.disk_state == self.NOT_DEFINED:
-            place_info = self.get_place_name(root)
+            place_name, state = self.get_place_name(root)
 
-            if self._is_not_registered_place(place_info[0]):
-                self._dbu.update_other('PLACE', (place_info[0], self._curr_place.db_row[0]))
+            if self.is_not_registered_place(place_name):
+                self._dbu.update_other('PLACE', (place_name, self._curr_place.db_row[0]))
                 self._curr_place = self._curr_place._replace(db_row=(self._curr_place.db_row[0],
-                                                                     place_info[0],
+                                                                     place_name,
                                                                      self._curr_place.db_row[2]),
-                                                             disk_state=place_info[1])
+                                                             disk_state=state)
                 self._places[self._curr_place.view_idx] = self._curr_place.db_row
                 return True
 
@@ -156,7 +156,7 @@ class Places:
             place_name, state = (socket.gethostname(), self.NOT_REMOVAL)    # computer name
         return place_name, state
 
-    def _is_not_registered_place(self, place_name):
+    def is_not_registered_place(self, place_name):
         """
         Check if exists in DB
         :param place_name: "name of computer" or "label of USB"
