@@ -224,7 +224,7 @@ class TestPlaces(unittest.TestCase):
         res = Places._get_vol_name('any')   # GetVolumeInformationW: RC = 0
         self.assertEqual(res, '')
 
-    @patch.object(Places, '_is_not_registered_place')
+    @patch.object(Places, 'is_not_registered_place')
     @patch.object(Places, 'get_place_name')
     @patch.object(Places, 'get_disk_state')
     @patch('controller.places.psutil.os.path', spec_set=psutil.os.path)
@@ -269,10 +269,10 @@ class TestPlaces(unittest.TestCase):
         disk_label = 'label'
 
         self.tested_places._dbu.select_other().fetchone.side_effect = ('label', None)
-        res = self.tested_places._is_not_registered_place(disk_label)
+        res = self.tested_places.is_not_registered_place(disk_label)
         self.assertFalse(res, msg='Label already in DB, but return None!!!')
 
-        res = self.tested_places._is_not_registered_place('aaa')
+        res = self.tested_places.is_not_registered_place('aaa')
         self.assertTrue(res, msg='Label is not in DB, but return !!!')
 
     @patch.object(Places, '_get_vol_name')
