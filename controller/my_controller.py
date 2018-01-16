@@ -102,7 +102,7 @@ class MyController():
         if not registered_place:
             QMessageBox.critical(self.ui.filesList, 'Path problem',
                                  'Please create place before copy to {}'.format(to_path))
-            return -1
+            return 0
 
         tmp_place = Places.CurrPlace(0, registered_place, state)
         ld = LoadDBData(self._connection, tmp_place)
@@ -114,10 +114,10 @@ class MyController():
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
                 dir_id = self._get_dir_id(to_path)
-
-                selected_files = self._selected_files()
-                for file in selected_files:
-                    self._copy_to(dir_id, to_path, file)
+                if dir_id > 0:
+                    selected_files = self._selected_files()
+                    for file in selected_files:
+                        self._copy_to(dir_id, to_path, file)
 
     def _delete_files(self):
         # todo  - delete from file-system
@@ -406,7 +406,7 @@ class MyController():
             settings = QSettings()
             settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         else:
-            self._show_message("Nothing found. Change you choices.")
+            self._show_message("Nothing found. Change you choices.", 5000)
 
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
