@@ -86,17 +86,24 @@ class MyController():
         model = self.ui.filesList.model()
         for idx in indexes:
             if idx.column() == 0:
-                files.append((idx, model.data(idx),
-                              model.data(idx, Qt.UserRole)))
+                file_name = model.data(idx)
+                u_dat = model.data(idx, Qt.UserRole)
+                file_path = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
+                # todo insert disk letter in case of MOUNTED disk
+                files.append((idx, os.path.join(file_path[0], file_name), u_dat))
         return files
 
-    def _copy_to(self, dir_id, to_path, file):
+    def _copy_to(self, dir_id, place_id, to_path, file):
         # todo shutil.copyfile
-        #      in DB copy records with only change of dir_id, and may be place_id
+        #      in copy records of Files table with only change of dir_id, and may be place_id
         import shutil
-        print('--> _copy_to', dir_id, to_path, file)
+        # shutil.copyfile(file, to_path)
+        print('--> _copy_to', dir_id, place_id, to_path, file)
+
+        # todo populate dirTree = self._populate_directory_tree()
 
     def _get_dir_id(self, to_path):
+        print('--> _get_dir_id', to_path)
         place_name, state = self._cb_places.get_place_name(to_path)
         registered_place = self._cb_places.get_place_by_name(place_name)
         if not registered_place:
@@ -105,19 +112,32 @@ class MyController():
             return 0
 
         tmp_place = Places.CurrPlace(0, registered_place, state)
+
+        return self._find_or_create_dir_id(tmp_place, to_path), tmp_place.db_row[0]
+
+    def _find_or_create_dir_id(self, tmp_place, to_path):
+        print('--> _find_or_create_dir_id', tmp_place)
+        trantab = str.maketrans(os.sep, os.altsep)
+        path = to_path.translate(trantab)
+        if tmp_place.disk_state == Places.MOUNTED:
+            path = path.partition(os.altsep)[2]
+
+        print('   ', path)
         ld = LoadDBData(self._connection, tmp_place)
-        return ld.insert_dir(to_path)
+        print(' --> after LoadDBData')
+        return ld.insert_dir(path)
 
     def _copy_files(self):
         print('--> _copy_files')
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
-                dir_id = self._get_dir_id(to_path)
+                dir_id, place_id = self._get_dir_id(to_path)
+                print('   dir_id: {}, place_id: {}'.format(dir_id, place_id))
                 if dir_id > 0:
                     selected_files = self._selected_files()
                     for file in selected_files:
-                        self._copy_to(dir_id, to_path, file)
+                        self._copy_to(dir_id, place_id, to_path, file)
 
     def _delete_files(self):
         # todo  - delete from file-system
