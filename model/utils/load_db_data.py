@@ -42,8 +42,8 @@ class LoadDBData:
         """
         self.conn = connection
         self.cursor = self.conn.cursor()
-        self.place_id = current_place[0]
-        self.place_status = current_place[2]
+        self.place_id = current_place.view_idx
+        self.place_status = current_place.disk_state
         self.insert_current_place(current_place)
         self.updated_dirs = set()
 
@@ -53,7 +53,7 @@ class LoadDBData:
         :return:  None
         '''
         place_id = self.cursor.execute('select PlaceId from Places where Place = :loc;',
-                                    (current_place[1][1],)).fetchone()
+                                    (current_place.db_row[1],)).fetchone()
         if place_id is None:
             self.cursor.execute('''insert into Places (Place, Title)
             values (:place, :title)''', current_place.db_row[1:])
@@ -127,6 +127,7 @@ class LoadDBData:
         idx = self.cursor.lastrowid
 
         self.change_parent(idx, path)
+        self.conn.commit()
         return idx
 
     def change_parent(self, new_parent_id, path):
