@@ -76,7 +76,8 @@ class LoadDBData:
             line = line.translate(trantab)
             if self.place_status == Places.MOUNTED:
                 line = line.partition(os.altsep)[2]    # path without disk letter for removable disks
-            idx = self.insert_dir(line)
+            path = line.rpartition(os.altsep)[0]
+            idx = self.insert_dir(path)
             self.updated_dirs.add(str(idx))
             self.insert_file(idx, line)
         self.conn.commit()
@@ -112,13 +113,12 @@ class LoadDBData:
             idx = 0
         return idx, ext
 
-    def insert_dir(self, full_file_name):
+    def insert_dir(self, path):
         '''
         Insert directory into Dirs table
-        :param full_file_name:
+        :param path:
         :return: row ID of file dir
         '''
-        path = full_file_name.rpartition(os.altsep)[0]
         idx, parent_path = self.search_closest_parent(path)
         if parent_path == path:
             return idx
