@@ -130,14 +130,14 @@ class Places:
         """
         self._check_disk_state()
         if self._curr_place.disk_state == self.NOT_DEFINED:
-            place_info = self.get_place_name(root)
+            place_name, state = self.get_place_name(root)
 
-            if self._is_not_registered_place(place_info[0]):
-                self._dbu.update_other('PLACE', (place_info[0], self._curr_place.db_row[0]))
+            if self._is_not_registered_place(place_name):
+                self._dbu.update_other('PLACE', (place_name, self._curr_place.db_row[0]))
                 self._curr_place = self._curr_place._replace(db_row=(self._curr_place.db_row[0],
-                                                                     place_info[0],
+                                                                     place_name,
                                                                      self._curr_place.db_row[2]),
-                                                             disk_state=place_info[1])
+                                                             disk_state=state)
                 self._places[self._curr_place.view_idx] = self._curr_place.db_row
                 return True
 
@@ -164,6 +164,9 @@ class Places:
         """
         res = self._dbu.select_other('IS_EXIST', (place_name,)).fetchone()
         return res is None
+
+    def get_place_by_name(self, place_name):
+        return self._dbu.select_other('IS_EXIST', (place_name,)).fetchone()
 
     def _change_place(self, data):
         """
