@@ -6,7 +6,7 @@ import re
 import webbrowser
 
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog,
-                             QFontDialog, QApplication)
+                             QFontDialog, QApplication, QMessageBox)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QDateTime, QVariant, QItemSelection, QThread)
 
@@ -22,6 +22,7 @@ from view.sel_opt import SelOpt
 from view.set_fields import SetFields
 from view.input_date import DateInputDialog
 from model.helpers import Fields
+from model.utils.load_db_data import LoadDBData
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
@@ -84,26 +85,50 @@ class MyController():
         indexes = self.ui.filesList.selectionModel().selectedIndexes()
         model = self.ui.filesList.model()
         for idx in indexes:
-            if idx.row() == 0:
+            if idx.column() == 0:
                 files.append((idx, model.data(idx),
                               model.data(idx, Qt.UserRole)))
         return files
 
-    def _copy_to(self, to, file):
-        pass
+    def _copy_to(self, dir_id, to_path, file):
+        # todo shutil.copyfile
+        #      in DB copy records with only change of dir_id, and may be place_id
+        import shutil
+        print('--> _copy_to', dir_id, to_path, file)
+
+    def _get_dir_id(self, to_path):
+        place_name, state = self._cb_places.get_place_name(to_path)
+        registered_place = self._cb_places.get_place_by_name(place_name)
+        if not registered_place:
+            QMessageBox.critical(self.ui.filesList, 'Path problem',
+                                 'Please create place before copy to {}'.format(to_path))
+            return -1
+
+        tmp_place = Places.CurrPlace(0, registered_place, state)
+        ld = LoadDBData(self._connection, tmp_place)
+        return ld.insert_dir(to_path)
 
     def _copy_files(self):
+        print('--> _copy_files')
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
+                dir_id = self._get_dir_id(to_path)
+
                 selected_files = self._selected_files()
                 for file in selected_files:
-                    self._copy_to(to_path, file)
+                    self._copy_to(dir_id, to_path, file)
 
     def _delete_files(self):
+        # todo  - delete from file-system
+        #         delete from DB
+        #         remove from model
         pass
 
     def _move_files(self):
+        # todo  - os.move
+        #         in DB change dir_id
+        #         remove from model
         pass
 
     def _rename_file(self):
