@@ -27,12 +27,25 @@ class Places:
         return self._curr_place
 
     def get_mount_point(self):
+        """
+        Get mount point for current place
+        :return:
+        """
         return self._mount_point
 
     def get_disk_state(self):
+        """
+        Get disk state for current place
+        :return:
+        """
         return self._curr_place.disk_state
 
     def get_state(self, place_id):
+        """
+        Get disk state by place_id
+        :param place_id:
+        :return:
+        """
         id = [place[0] for place in self._places].index(place_id)
         place = self._places[id][1]
         return self._state(place)
@@ -40,7 +53,6 @@ class Places:
     def _check_disk_state(self):
         """
         Set NOT_DEFINED, NOT_REMOVAL, MOUNTED, NOT_MOUNTED state of disk
-        Has side effect - saves mount point in self._mount_point
         :return: None
         """
         idx = self._view.currentIndex()
@@ -123,12 +135,12 @@ class Places:
         if prev_id != self._curr_place.view_idx:
             self.controller.on_change_data('dirTree')
 
-    def update_place_name(self, root):
+    def _update_place_name(self, root):
         """
         Update only if 1) info is missing (NOT_DEFINED)
         and if 2) the place is not registered yet in data base
         :param root: any path, used only "volume letter"/"mount point"
-        :return: True / False
+        :return: True - if updated / False - if not updated
         """
         self._check_disk_state()
         if self._curr_place.disk_state == self.NOT_DEFINED:
@@ -249,7 +261,7 @@ class Places:
         root = QFileDialog.getExistingDirectory(parent=self._view,
                                                 caption='Select root folder')
         if root:
-            self.update_place_name(root)
+            self._update_place_name(root)
 
     def _rename_place(self, data):
         """
