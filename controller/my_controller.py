@@ -5,7 +5,7 @@ import os
 import re
 import webbrowser
 
-from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog,
+from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
                              QFontDialog, QApplication, QMessageBox)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QDateTime, QVariant, QItemSelection, QThread)
@@ -34,6 +34,9 @@ class MyController():
         self._connection = None
         self.ui = view.ui
         self._win = view
+
+        self.status_label = QLabel(view)
+        self.ui.statusbar.addPermanentWidget(self.status_label)
 
         self.fields = Fields._make(((),(),()))
         self.same_db = False
@@ -96,8 +99,6 @@ class MyController():
         return files
 
     def _copy_to(self, dir_id, place_id, to_path, file):
-        # todo shutil.copyfile
-        #      in copy records of Files table with only change of dir_id, and may be place_id
         import shutil
         print('--> _copy_to', dir_id, place_id, to_path, file)
         try:
@@ -409,9 +410,11 @@ class MyController():
         files = self._dbu.select_other('FAVORITES').fetchall()
         if files:
             self._show_files(files, model)
-            self.ui.statusbar.showMessage('Favorite files')
+            self.status_label.setText('Favorite files')
+            # self.ui.statusbar.showMessage('Favorite files')
         else:
-            self.ui.statusbar.showMessage('No data')
+            self.status_label.setText('No data')
+            # self.ui.statusbar.showMessage('No data')
 
     def _selection_options(self):
         """
@@ -798,10 +801,13 @@ class MyController():
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
 
-            self.ui.statusbar.showMessage('{} ({})'.format(dir_idx[2],
-                                                           model.rowCount(QModelIndex())))
+            self.status_label.setText('{} ({})'.format(dir_idx[2],
+                                                       model.rowCount(QModelIndex())))
+            # self.ui.statusbar.showMessage('{} ({})'.format(dir_idx[2],
+            #                                                model.rowCount(QModelIndex())))
         else:
-            self.ui.statusbar.showMessage('No data')
+            self.status_label.setText('No data')
+            # self.ui.statusbar.showMessage('No data')
 
     def _set_file_model(self):
         model = TableModel(parent=self.ui.filesList)
@@ -863,7 +869,8 @@ class MyController():
                 file_id, dir_id, _, _, _ = \
                     self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-                self.ui.statusbar.showMessage(path[0])
+                self.status_label.setText(path[0])
+                # self.ui.statusbar.showMessage(path[0])
 
             if edit:
                 self._update_commented_date(file_id)
@@ -1028,12 +1035,16 @@ class MyController():
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
-            # TODO check for valid scanning in removable disk
             if root:
-                self._cb_places.update_place_name(root)
-                return MyController._yield_files(root, ext_item)
+                # TODO check if root in the current place
+                place_name, _ = self._cb_places.get_place_name(root)
+                cur_place = self._cb_places.get_curr_place()
+                if place_name == cur_place.db_row[1]:
+                    return MyController._yield_files(root, ext_item)
+                self._show_message('Folder "{}" not in the place "{}"'.
+                                   format(root, cur_place.db_row[2]), 5000)
 
-        return ()  # not ok_pressed or root is empty
+        return ()  # not ok_pressed or root is empty or root is not in current place
 
     def _show_message(self, message, time=3000):
         self.ui.statusbar.showMessage(message, time)
