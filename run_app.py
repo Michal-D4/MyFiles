@@ -12,20 +12,20 @@ from controller.my_controller import MyController
 def main():
     app = QApplication(sys.argv)
     dlg = MyDBChoice()
-    my_app = MainFlow(open_dialog=dlg)
+    main_window = MainFlow(open_dialog=dlg)
 
-    _controller = MyController(my_app)
-    my_app.scan_files_signal.connect(_controller.on_scan_files)
+    _controller = MyController(main_window)
+    main_window.scan_files_signal.connect(_controller.on_scan_files)
 
     # when data changed on any widget
-    my_app.change_data_signal.connect(_controller.on_change_data)
+    main_window.change_data_signal.connect(_controller.on_change_data)
 
     # signal from open_dialog=dlg
-    my_app.open_dialog.open_DB_signal.connect(_controller.on_open_db)
+    main_window.open_dialog.open_DB_signal.connect(_controller.on_open_db)
 
-    my_app.first_open_data_base()
+    main_window.first_open_data_base()
 
-    my_app.show()
+    main_window.show()
     sys.exit(app.exec_())
 
 
