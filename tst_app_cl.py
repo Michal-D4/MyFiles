@@ -40,15 +40,19 @@ class TreeModelChainUp(TreeModel):
             class_ = self.data(idx1, role=Qt.DisplayRole)
             chain.append('.'.join((class_, method_)))
             index = idx
-        chain.reverse()
-        return chain
+        # chain.reverse()
+        return chain, len(chain)
 
     def print_all_chains(self):
         print('|--> print_all_chains', len(self.leaves))
+        max_len = 0
         chains = []
         for leaf in self.leaves:
-            chains.append(self.chain_up(leaf))
+            chain, len_ = self.chain_up(leaf)
+            max_len = max(len_, max_len)
+            chains.append(chain)
 
+        print('    max length of chain:', max_len)
         for chain in sorted(chains, key=lambda x: ''.join(x)):
             print(chain)
 
@@ -338,7 +342,7 @@ if __name__ == "__main__":
     dir_w = r'D:\Users\PycharmProjects\MyFiles'         # Work
 
     # todo if there are methods with the same name in different class
-    # file_ = 'controller/my_controller.py'
+    file_ = 'controller/my_controller.py'
     # file_ = 'controller/places.py'
     # file_ = 'controller/table_model.py'
     # file_ = 'controller/tree_model.py'
@@ -351,7 +355,7 @@ if __name__ == "__main__":
     # file_ = 'view/main_flow.py'
     # file_ = 'view/my_db_choice.py'
     # file_ = 'view/sel_opt.py'
-    file_ = 'view/set_fields.py'
+    # file_ = 'view/set_fields.py'
     # file_ = 'tst_app_cl.py'
 
     dir_ = dir_h if socket.gethostname() == 'thenote' else dir_w
