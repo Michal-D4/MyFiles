@@ -84,23 +84,31 @@ class MyController():
         files = []
         indexes = self.ui.filesList.selectionModel().selectedIndexes()
         model = self.ui.filesList.model()
+        disk_letter = self._cb_places.get_mount_point()
         for idx in indexes:
             if idx.column() == 0:
                 file_name = model.data(idx)
                 u_dat = model.data(idx, Qt.UserRole)
-                file_path = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
-                # todo insert disk letter in case of MOUNTED disk
-                files.append((idx, os.path.join(file_path[0], file_name), u_dat))
+                file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
+                if disk_letter:
+                    file_path = os.altsep.join((disk_letter, file_path))
+                files.append((idx, os.path.join(file_path, file_name), u_dat))
         return files
 
     def _copy_to(self, dir_id, place_id, to_path, file):
         # todo shutil.copyfile
         #      in copy records of Files table with only change of dir_id, and may be place_id
         import shutil
-        # shutil.copyfile(file, to_path)
         print('--> _copy_to', dir_id, place_id, to_path, file)
+        try:
+            shutil.copy2(file[1], to_path)
+            self._dbu.insert_other('COPY_FILE', ((dir_id, place_id, file[2][0])))
+            # todo - copy tags and authors information
+        except IOError:
+            self._show_message("Can't copy file \"{}\" into folder \"{}\"".
+                               format(file[1], to_path), 5000)
 
-        # todo populate dirTree = self._populate_directory_tree()
+        print('<---->')
 
     def _get_dir_id(self, to_path):
         print('--> _get_dir_id', to_path)
@@ -138,6 +146,9 @@ class MyController():
                     selected_files = self._selected_files()
                     for file in selected_files:
                         self._copy_to(dir_id, place_id, to_path, file)
+
+                    if place_id == self._cb_places.get_curr_place().db_row[0]:
+                        self._populate_directory_tree()
 
     def _delete_files(self):
         # todo  - delete from file-system
@@ -406,10 +417,10 @@ class MyController():
         """
         Show files according optional conditions
         1) folder and nested sub-folders up to n-th level
-        2) list of file extensions
-        3) list of key words (match all/mutch any)
-        4) list of authors
-        5) date of file/book creation - after/before
+        2) list of extensions
+        3) list of tags (match all/mutch any)
+        4) list of authors - match any
+        5) date of "file modification" / "book issue" - after/before
         :return:
         """
         if self._opt.exec_():
@@ -419,7 +430,7 @@ class MyController():
         res = self._opt.get_result()
         model = self._set_file_model()
 
-        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place()[1][0]).fetchall()
+        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().db_row[0]).fetchall()
         if curs:
             self._show_files(curs, model)
             self.file_list_source = MyController.ADVANCE
@@ -894,7 +905,7 @@ class MyController():
                 self.ui.extList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_directory_tree(self):
-        dirs = self._get_dirs(self._cb_places.get_curr_place()[1][0])
+        dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
         model = TreeModel()
         model.append_model_data(dirs)
