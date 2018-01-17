@@ -49,9 +49,11 @@ class Places:
 
     def _state(self, place_name):
         if not place_name:  # impossible to check if mounted
+            self._mount_point = ''
             return self.NOT_DEFINED
         loc = socket.gethostname()
         if place_name == loc:  # always mounted
+            self._mount_point = ''
             return self.NOT_REMOVAL
         self._mount_point = Places._get_mount_point(place_name)
         if self._mount_point:  # mount point exists
