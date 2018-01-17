@@ -244,15 +244,15 @@ class TestPlaces(unittest.TestCase):
         mock__get_place_name.return_value = disk_label
         mock_is_not_registered_place.side_effect = (False, True)
 
-        res = self.tested_places.update_place_name(root)
+        res = self.tested_places._update_place_name(root)
         self.assertFalse(res,
                          msg='Disk info is already in data base, updated, but should not!!!')
 
-        res = self.tested_places.update_place_name(root)
+        res = self.tested_places._update_place_name(root)
         self.assertFalse(res,
                          msg='Disk info is already in other place, updated, but should not!!!')
 
-        res = self.tested_places.update_place_name(root)
+        res = self.tested_places._update_place_name(root)
         self.assertTrue(res, msg='Disk info is not updated, but SHOULD !!!')
         self.tested_places._dbu.update_other.assert_called_once_with('REMOVAL_DISK_INFO',
                                                            (disk_label, idx))
