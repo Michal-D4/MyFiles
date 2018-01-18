@@ -103,8 +103,10 @@ class MyController():
         print('--> _copy_to', dir_id, place_id, to_path, file)
         try:
             shutil.copy2(file[1], to_path)
-            self._dbu.insert_other('COPY_FILE', ((dir_id, place_id, file[2][0])))
-            # todo - copy tags and authors information
+            new_file_id = self._dbu.insert_other2('COPY_FILE',
+                                                  ((dir_id, place_id, file[2][0])))
+            self._dbu.insert_other2('COPY_TAGS', (new_file_id, file[2][0]))
+            self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file[2][0]))
         except IOError:
             self._show_message("Can't copy file \"{}\" into folder \"{}\"".
                                format(file[1], to_path), 5000)
@@ -1030,7 +1032,6 @@ class MyController():
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
             if root:
-                # TODO check if root in the current place
                 place_name, _ = self._cb_places.get_place_name(root)
                 cur_place = self._cb_places.get_curr_place()
                 if place_name == cur_place.db_row[1]:

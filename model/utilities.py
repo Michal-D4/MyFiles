@@ -83,7 +83,18 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'AUTHORS': 'insert into Authors (Author) values (:author);',
           'AUTHOR_FILE': 'insert into FileAuthor (AuthorID, FileID) values (:author_id, :file_id);',
           'TAGS': 'insert into Tags (Tag) values (:tag);',
-          'TAG_FILE': 'insert into FileTag (TagID, FileID) values (:tag_id, :file_id);'}
+          'TAG_FILE': 'insert into FileTag (TagID, FileID) values (:tag_id, :file_id);',
+          'COPY_TAGS': ' '.join(('insert into FileTag (TagID, FileID) select TagID,',
+                                 '{} from FileTag where FileID = {};')),
+          'COPY_AUTHORS': ' '.join(('insert into FileAuthor (AuthorID, FileID) select AuthorID,',
+                                    '{} from FileAuthor where FileID = {};')),
+          'COPY_FILE': ' '.join(('insert into Files (DirID, PlaceId, ExtID,',
+                                 'FileName, CommentID, FileDate, Pages, Size,',
+                                 'IssueDate, Opened, Commented) SELECT {}, {},',
+                                 'ExtID, FileName, CommentID, FileDate, Pages,',
+                                 'Size, IssueDate, Opened, Commented FROM Files',
+                                 'WHERE FileID = {};'))
+          }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
           'PLACE': 'update Places set Place = ? where PlaceId = ?;',
@@ -96,13 +107,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'PAGES': 'update Files set Pages = ? where FileID = ?;',
           'OPEN_DATE': "update Files set Opened = ? where FileID = ?;",
           'COMMENT_DATE': "update Files set Commented = date('now') where FileID = ?;",
-          'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;',
-          'COPY_FILE': ' '.join(('insert into Files (DirID, PlaceId, ExtID,',
-                                 'FileName, CommentID, FileDate, Pages, Size,',
-                                 'IssueDate, Opened, Commented) SELECT {}, {},',
-                                 'ExtID, FileName, CommentID, FileDate, Pages,',
-                                 'Size, IssueDate, Opened, Commented FROM Files',
-                                 'WHERE FileID = {};'))
+          'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
@@ -256,6 +261,14 @@ class DBUtils:
         jj = self.curs.lastrowid
         self.conn.commit()
         # print('  comment_id:', jj)
+        return jj
+
+    def insert_other2(self, sql, data):
+        print('|---> insert_other2', Insert[sql].format(*data))
+        self.curs.execute(Insert[sql].format(*data))
+        jj = self.curs.lastrowid
+        self.conn.commit()
+        print('  _id:', jj)
         return jj
 
     def update_other(self, sql, data):
