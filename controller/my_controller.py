@@ -100,7 +100,6 @@ class MyController():
 
     def _copy_to(self, dir_id, place_id, to_path, file):
         import shutil
-        print('--> _copy_to', dir_id, place_id, to_path, file)
         try:
             shutil.copy2(file[1], to_path)
             new_file_id = self._dbu.insert_other2('COPY_FILE',
@@ -111,10 +110,7 @@ class MyController():
             self._show_message("Can't copy file \"{}\" into folder \"{}\"".
                                format(file[1], to_path), 5000)
 
-        print('<---->')
-
     def _get_dir_id(self, to_path):
-        print('--> _get_dir_id', to_path)
         place_name, state = self._cb_places.get_place_name(to_path)
         registered_place = self._cb_places.get_place_by_name(place_name)
         if not registered_place:
@@ -127,24 +123,19 @@ class MyController():
         return self._find_or_create_dir_id(tmp_place, to_path), tmp_place.db_row[0]
 
     def _find_or_create_dir_id(self, tmp_place, to_path):
-        print('--> _find_or_create_dir_id', tmp_place)
         trantab = str.maketrans(os.sep, os.altsep)
         path = to_path.translate(trantab)
         if tmp_place.disk_state == Places.MOUNTED:
             path = path.partition(os.altsep)[2]
 
-        print('   ', path)
         ld = LoadDBData(self._connection, tmp_place)
-        print(' --> after LoadDBData')
         return ld.insert_dir(path)
 
     def _copy_files(self):
-        print('--> _copy_files')
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
                 dir_id, place_id = self._get_dir_id(to_path)
-                print('   dir_id: {}, place_id: {}'.format(dir_id, place_id))
                 if dir_id > 0:
                     selected_files = self._selected_files()
                     for file in selected_files:
@@ -153,11 +144,18 @@ class MyController():
                     if place_id == self._cb_places.get_curr_place().db_row[0]:
                         self._populate_directory_tree()
 
-    def _delete_files(self):
-        # todo  - delete from file-system
-        #         delete from DB
+    def _remove_file(self, file):
+        # todo  - os.remove  to remove from file-system; FileNotFoundError
+        #         delete from DB - Files, FileTag, FileAuthor and, check and del Comments
         #         remove from model
+        self._delete_file()
         pass
+
+    def _delete_files(self):
+        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
+            selected_files = self._selected_files()
+            for file in selected_files:
+                self._remove_file(file)
 
     def _move_files(self):
         # todo  - os.move
