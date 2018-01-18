@@ -411,10 +411,8 @@ class MyController():
         if files:
             self._show_files(files, model)
             self.status_label.setText('Favorite files')
-            # self.ui.statusbar.showMessage('Favorite files')
         else:
             self.status_label.setText('No data')
-            # self.ui.statusbar.showMessage('No data')
 
     def _selection_options(self):
         """
@@ -433,7 +431,7 @@ class MyController():
         res = self._opt.get_result()
         model = self._set_file_model()
 
-        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().db_row[0]).fetchall()
+        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().db_row[0])
         if curs:
             self._show_files(curs, model)
             self.file_list_source = MyController.ADVANCE
@@ -803,11 +801,8 @@ class MyController():
 
             self.status_label.setText('{} ({})'.format(dir_idx[2],
                                                        model.rowCount(QModelIndex())))
-            # self.ui.statusbar.showMessage('{} ({})'.format(dir_idx[2],
-            #                                                model.rowCount(QModelIndex())))
         else:
             self.status_label.setText('No data')
-            # self.ui.statusbar.showMessage('No data')
 
     def _set_file_model(self):
         model = TableModel(parent=self.ui.filesList)
@@ -870,7 +865,6 @@ class MyController():
                     self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
                 self.status_label.setText(path[0])
-                # self.ui.statusbar.showMessage(path[0])
 
             if edit:
                 self._update_commented_date(file_id)
@@ -1016,8 +1010,8 @@ class MyController():
         scanning the file system
         :return: None
         """
-        if self._cb_places.get_disk_state() & \
-                (Places.MOUNTED | Places.NOT_REMOVAL | Places.NOT_DEFINED):
+        if (self._cb_places.get_disk_state()
+                & (Places.MOUNTED | Places.NOT_REMOVAL | Places.NOT_DEFINED)):
             _data = self._scan_file_system()
             if _data:
                 self._load_files(_data)
