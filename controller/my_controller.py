@@ -8,7 +8,8 @@ import webbrowser
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
                              QFontDialog, QApplication, QMessageBox)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
-                          QDateTime, QVariant, QItemSelection, QThread)
+                          QDateTime, QVariant, QItemSelection, QThread,
+                          QPersistentModelIndex)
 
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
@@ -66,8 +67,8 @@ class MyController():
                 'File Copy file name': self._copy_file_name,
                 'File Copy file(s)': self._copy_files,
                 'File Copy full path': self._copy_full_path,
-                'File Delete': self._delete_file,
-                'File Delete file(s)': self._delete_files,
+                'File Delete': self._delete_files,
+                'File Delete file(s)': self._remove_files,
                 'File Move file(s)': self._move_files,
                 'File Open folder': self._open_folder,
                 'File Open': self._open_file,
@@ -150,12 +151,12 @@ class MyController():
         print('--> _remove_file', file)
         try:
             os.remove(file[1])
+            self._delete_from_db(file[2])
+            self.ui.filesList.model().delete_row(file[0])
         except FileNotFoundError:
             self._show_message('File "{}" not found'.format(file[1]))
-        self._delete_file()
-        pass
 
-    def _delete_files(self):
+    def _remove_files(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             selected_files = self._selected_files()
             for file in selected_files:
@@ -452,22 +453,35 @@ class MyController():
         file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
         self._dbu.insert_other('FAVORITES', (file_id,))
 
-    def _delete_file(self):
-        indexes = self.ui.filesList.selectionModel().selectedIndexes()
-        model = self.ui.filesList.model()
+    def _delete_files(self):
+        indexes = self._persistent_row_indexes(self.ui.filesList)
+        model = self.ui.filesList.model().sourceModel()
         for f_idx in indexes:
-            if f_idx.column() == 0:
-                u_data = self.ui.filesList.model().data(f_idx, Qt.UserRole)
-
+            if f_idx.isValid():
+                u_data = model.data(f_idx, Qt.UserRole)
                 if self.file_list_source == MyController.FAVORITE:
                     self._dbu.delete_other('FAVORITES', (u_data[0],))
                 else:
-                    self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
-                    self._dbu.delete_other('TAG_FILE_BY_FILE', (u_data[0],))
-                    self._dbu.delete_other('COMMENT', (u_data[2],))
-                    self._dbu.delete_other('FILE', (u_data[0],))
+                    self._delete_from_db(u_data)
 
-                self.ui.filesList.model().delete_row(f_idx)
+                model.delete_row(f_idx)
+
+    @staticmethod
+    def _persistent_row_indexes(view):
+        indexes = view.selectionModel().selectedRows()
+        model = view.model()
+        list_rows = []
+        for idx in indexes:
+            list_rows.append(QPersistentModelIndex(model.mapToSource(idx)))
+        return list_rows
+
+    def _delete_from_db(self, file_ids):
+        self._dbu.delete_other('FAVORITES', (file_ids[0],))
+        self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_ids[0],))
+        self._dbu.delete_other('TAG_FILE_BY_FILE', (file_ids[0],))
+        self._dbu.delete_other('FILE', (file_ids[0],))
+        # when file for this comment not exist in DB
+        self._dbu.delete_other2('COMMENT', (file_ids[2], file_ids[2]))
 
     def _open_folder(self):
         path, _, state, _, _ = self._file_path()

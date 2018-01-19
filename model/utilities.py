@@ -122,7 +122,8 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
                                   'from Files where ExtID = Extensions.ExtID);')),
           'FAVORITES': 'delete from Favorites where FileID = ?',
           'PLACES': 'delete from Places where PlaceId = ?;',
-          'COMMENT': 'delete from Comments where CommentID = ?;',
+          'COMMENT': ' '.join(('delete from Comments where CommentID = {} and',
+                               'not exists (select * from Files where CommentID = {});')),
           'FILE': 'delete from Files where FileID = ?;',
           'AUTHOR_FILE': 'delete from FileAuthor where AuthorID=:author_id and FileID=:file_id;',
           'AUTHOR': 'delete from Authors where AuthorID=:author_id;',
@@ -279,4 +280,9 @@ class DBUtils:
     def delete_other(self, sql, data):
         # print('|---> delete_other:', sql, data)
         self.curs.execute(Delete[sql], data)
+        self.conn.commit()
+
+    def delete_other2(self, sql, data):
+        # print('|---> delete_other:', sql, data)
+        self.curs.execute(Delete[sql].format(*data))
         self.conn.commit()
