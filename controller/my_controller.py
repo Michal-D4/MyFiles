@@ -85,8 +85,8 @@ class MyController():
 
     def _selected_files(self):
         files = []
-        indexes = self.ui.filesList.selectionModel().selectedIndexes()
-        model = self.ui.filesList.model()
+        indexes = self._persistent_row_indexes(self.ui.filesList)
+        model = self.ui.filesList.model().sourceModel()
         disk_letter = self._cb_places.get_mount_point()
         for idx in indexes:
             if idx.column() == 0:
@@ -145,14 +145,10 @@ class MyController():
                         self._populate_directory_tree()
 
     def _remove_file(self, file):
-        # todo  - os.remove - to remove from file-system; FileNotFoundError
-        #         delete from DB - Files, FileTag, FileAuthor and, check and del Comments
-        #         remove from model
-        print('--> _remove_file', file)
         try:
             os.remove(file[1])
             self._delete_from_db(file[2])
-            self.ui.filesList.model().delete_row(file[0])
+            self.ui.filesList.model().sourceModel().delete_row(file[0])
         except FileNotFoundError:
             self._show_message('File "{}" not found'.format(file[1]))
 
@@ -389,7 +385,6 @@ class MyController():
         return all_id
 
     def _dir_update(self):
-        print('--> _dir_update')
         updated_dirs = self.obj_thread.get_updated_dirs()
         self._populate_directory_tree()
         self._populate_ext_list()
@@ -398,13 +393,11 @@ class MyController():
         self._run_in_qthread(self._finish_thread)
 
     def _run_in_qthread(self, finish):
-        print('--> _run_in_qthread', getattr(finish, '__name__'))
         self.thread = QThread()
         self.obj_thread.moveToThread(self.thread)
         self.obj_thread.finished.connect(self.thread.quit)
         self.thread.finished.connect(finish)
         self.thread.started.connect(self.obj_thread.run)
-        print('  before  thread.start()')
         self.thread.start()
 
     def _finish_thread(self):
@@ -547,12 +540,13 @@ class MyController():
             self._show_message('File/disk is inaccessible')
 
     def _file_path(self):
+        # todo   is it exist currentRow() method ?
         f_idx = self.ui.filesList.currentIndex()
         if f_idx.isValid():
             model = self.ui.filesList.model()
             f_idx = model.mapToSource(f_idx)
             if not f_idx.column() == 0:
-                f_idx = model.sourceModel().createIndex(idx.row(), 0)
+                f_idx = model.sourceModel().createIndex(f_idx.row(), 0)
             file_name = model.sourceModel().data(f_idx)
             file_id, dir_id, _, _, _ = model.sourceModel().data(f_idx, role=Qt.UserRole)
             path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
@@ -1046,7 +1040,6 @@ class MyController():
     def _load_files(self, files):
         curr_place = self._cb_places.get_curr_place()
         self.obj_thread = LoadFiles(self._connection, curr_place, files)
-        print('--> _load_files')     # , getattr(self.obj_thread, '__name__'))
         self._run_in_qthread(self._dir_update)
 
     def _scan_file_system(self):
