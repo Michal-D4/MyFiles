@@ -40,7 +40,6 @@ class MyController():
 
         self.fields = Fields._make(((),(),()))
         self.same_db = False
-        self.thread = None
         self.obj_thread = None
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
@@ -145,9 +144,14 @@ class MyController():
                         self._populate_directory_tree()
 
     def _remove_file(self, file):
-        # todo  - os.remove  to remove from file-system; FileNotFoundError
+        # todo  - os.remove - to remove from file-system; FileNotFoundError
         #         delete from DB - Files, FileTag, FileAuthor and, check and del Comments
         #         remove from model
+        print('--> _remove_file', file)
+        try:
+            os.remove(file[1])
+        except FileNotFoundError:
+            self._show_message('File "{}" not found'.format(file[1]))
         self._delete_file()
         pass
 
@@ -384,6 +388,7 @@ class MyController():
         return all_id
 
     def _dir_update(self):
+        print('--> _dir_update')
         updated_dirs = self.obj_thread.get_updated_dirs()
         self._populate_directory_tree()
         self._populate_ext_list()
@@ -392,11 +397,13 @@ class MyController():
         self._run_in_qthread(self._finish_thread)
 
     def _run_in_qthread(self, finish):
+        print('--> _run_in_qthread', getattr(finish, '__name__'))
         self.thread = QThread()
         self.obj_thread.moveToThread(self.thread)
         self.obj_thread.finished.connect(self.thread.quit)
         self.thread.finished.connect(finish)
         self.thread.started.connect(self.obj_thread.run)
+        print('  before  thread.start()')
         self.thread.start()
 
     def _finish_thread(self):
@@ -446,17 +453,21 @@ class MyController():
         self._dbu.insert_other('FAVORITES', (file_id,))
 
     def _delete_file(self):
-        f_idx = self.ui.filesList.currentIndex()
-        u_data = self.ui.filesList.model().data(f_idx, Qt.UserRole)
-        if self.file_list_source == MyController.FAVORITE:
-            self._dbu.delete_other('FAVORITES', (u_data[0],))
-        else:
-            self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
-            self._dbu.delete_other('TAG_FILE_BY_FILE', (u_data[0],))
-            self._dbu.delete_other('COMMENT', (u_data[2],))
-            self._dbu.delete_other('FILE', (u_data[0],))
+        indexes = self.ui.filesList.selectionModel().selectedIndexes()
+        model = self.ui.filesList.model()
+        for f_idx in indexes:
+            if f_idx.column() == 0:
+                u_data = self.ui.filesList.model().data(f_idx, Qt.UserRole)
 
-        self.ui.filesList.model().delete_row(f_idx)
+                if self.file_list_source == MyController.FAVORITE:
+                    self._dbu.delete_other('FAVORITES', (u_data[0],))
+                else:
+                    self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (u_data[0],))
+                    self._dbu.delete_other('TAG_FILE_BY_FILE', (u_data[0],))
+                    self._dbu.delete_other('COMMENT', (u_data[2],))
+                    self._dbu.delete_other('FILE', (u_data[0],))
+
+                self.ui.filesList.model().delete_row(f_idx)
 
     def _open_folder(self):
         path, _, state, _, _ = self._file_path()
@@ -1021,6 +1032,7 @@ class MyController():
     def _load_files(self, files):
         curr_place = self._cb_places.get_curr_place()
         self.obj_thread = LoadFiles(self._connection, curr_place, files)
+        print('--> _load_files')     # , getattr(self.obj_thread, '__name__'))
         self._run_in_qthread(self._dir_update)
 
     def _scan_file_system(self):
