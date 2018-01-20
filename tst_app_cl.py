@@ -36,9 +36,10 @@ class TreeModelChainUp(TreeModel):
             idx = index.parent()
             idx0 = self.index(index.row(), 0, idx)
             idx1 = self.index(index.row(), 1, idx)
-            method_ = self.data(idx0, role=Qt.DisplayRole)
-            class_ = self.data(idx1, role=Qt.DisplayRole)
-            chain.append('.'.join((class_, method_)))
+            if idx0.isValid():
+                method_ = self.data(idx0, role=Qt.DisplayRole)
+                class_ = self.data(idx1, role=Qt.DisplayRole)
+                chain.append('.'.join((class_, method_)))
             index = idx
         # chain.reverse()
         return chain, len(chain)
@@ -76,8 +77,8 @@ class TreeModelChainUp(TreeModel):
                 items_list[id_[1]].appendChild(ite)
 
         for ite in items_list.values():
-            idx = self.createIndex(ite.row(), 0, ite)
-            if self.rowCount(idx) == 0:
+            if ite.parent():        # it's essential
+                idx = self.createIndex(ite.row(), 0, ite)
                 self.leaves.append(idx)
 
 
