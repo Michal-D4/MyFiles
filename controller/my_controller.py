@@ -95,7 +95,7 @@ class MyController():
                 file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
                 if disk_letter:
                     file_path = os.altsep.join((disk_letter, file_path))
-                files.append((idx, os.path.join(file_path, file_name), u_dat))
+                files.append((idx, os.path.join(file_path, file_name), u_dat, file_name))
         return files
 
     def _copy_to(self, dir_id, place_id, to_path, file):
@@ -103,12 +103,14 @@ class MyController():
         try:
             shutil.copy2(file[1], to_path)
             new_file_id = self._dbu.insert_other2('COPY_FILE',
-                                                  ((dir_id, place_id, file[2][0])))
-            self._dbu.insert_other2('COPY_TAGS', (new_file_id, file[2][0]))
-            self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file[2][0]))
+                                                  ((dir_id, place_id, file[2][0],
+                                                    dir_id, place_id, file[3])))
+            if new_file_id > 0:
+                self._dbu.insert_other2('COPY_TAGS', (new_file_id, file[2][0]))
+                self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file[2][0]))
         except IOError:
             self._show_message("Can't copy file \"{}\" into folder \"{}\"".
-                               format(file[1], to_path), 5000)
+                               format(file[3], to_path), 5000)
 
     def _get_dir_id(self, to_path):
         place_name, state = self._cb_places.get_place_name(to_path)
