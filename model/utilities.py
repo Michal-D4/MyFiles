@@ -1,7 +1,7 @@
 # model/utilities.py
 import datetime
 
-PLUS_EXT_ID = 1000
+PLUS_EXT_ID = 100000
 
 Selects = {'TREE':
                ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
@@ -40,6 +40,7 @@ Selects = {'TREE':
                                   'Files A left join Comments B on B.CommentID = A.CommentID',
                                   'where A.ExtID in ({}) and NOT EXISTS (select * from FileTag',
                                   'where FileID = A.FileID and TagID = {});')),
+           'FILE_BY_NAME_n_DIR': 'select FileID from Files where DirID={} and FileName="{}";',
            'TAGS': 'select Tag, TagID from Tags order by Tag COLLATE NOCASE;',
            'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
                                   '(select TagID from FileTag where FileID = ?);')),
@@ -93,8 +94,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'IssueDate, Opened, Commented) SELECT {}, {},',
                                  'ExtID, FileName, CommentID, FileDate, Pages, Size,',
                                  'IssueDate, Opened, Commented FROM Files WHERE',
-                                 'FileID = {} and not exists (select * from Files',
-                                 'where DirID={} and PlaceId={} and FileName="{}");'))
+                                 'FileID = {};'))
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',

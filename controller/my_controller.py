@@ -102,12 +102,15 @@ class MyController():
         import shutil
         try:
             shutil.copy2(file[1], to_path)
-            new_file_id = self._dbu.insert_other2('COPY_FILE',
-                                                  ((dir_id, place_id, file[2][0],
-                                                    dir_id, place_id, file[3])))
-            if new_file_id > 0:
-                self._dbu.insert_other2('COPY_TAGS', (new_file_id, file[2][0]))
-                self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file[2][0]))
+            file_id = self._dbu.select_other2('FILE_BY_NAME_n_DIR', (dir_id, file[3])).fetchone()
+            if file_id:
+                new_file_id = file_id[0]
+            else:
+                new_file_id = self._dbu.insert_other2('COPY_FILE',
+                                                      (dir_id, place_id, file[2][0]))
+
+            self._dbu.insert_other2('COPY_TAGS', (new_file_id, file[2][0]))
+            self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file[2][0]))
         except IOError:
             self._show_message("Can't copy file \"{}\" into folder \"{}\"".
                                format(file[3], to_path), 5000)
