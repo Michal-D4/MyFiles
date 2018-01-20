@@ -105,6 +105,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'COMMENT': 'update Comments set Comment = ? where CommentID = ?;',
           'FILE_COMMENT': 'update Files set CommentID = ? where FileID = ?;',
           'FILE_NAME': 'update Files set FileName = ? where FileID = ?;',
+          'FILE_DIR_PLACE': 'update Files set DirID = ?, PlaceId = ? where FileID = ?;',
           'PAGES': 'update Files set Pages = ? where FileID = ?;',
           'OPEN_DATE': "update Files set Opened = ? where FileID = ?;",
           'COMMENT_DATE': "update Files set Commented = date('now') where FileID = ?;",

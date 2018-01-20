@@ -98,6 +98,16 @@ class MyController():
                 files.append((idx, os.path.join(file_path, file_name), u_dat, file_name))
         return files
 
+    def _move_to(self, dir_id, place_id, to_path, file):
+        import shutil
+        try:
+            shutil.move(file[1], to_path)
+            self._dbu.update_other('FILE_DIR_PLACE', (dir_id, place_id, file[2][0]))
+            self.ui.filesList.model().sourceModel().delete_row(file[0])
+        except IOError:
+            self._show_message("Can't move file \"{}\" into folder \"{}\"".
+                               format(file[3], to_path), 5000)
+
     def _copy_to(self, dir_id, place_id, to_path, file):
         import shutil
         try:
@@ -164,10 +174,17 @@ class MyController():
                 self._remove_file(file)
 
     def _move_files(self):
-        # todo  - os.move
-        #         in DB change dir_id
-        #         remove from model
-        pass
+        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
+            to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to move')
+            if to_path:
+                dir_id, place_id = self._get_dir_id(to_path)
+                if dir_id > 0:
+                    selected_files = self._selected_files()
+                    for file in selected_files:
+                        self._move_to(dir_id, place_id, to_path, file)
+
+                    if place_id == self._cb_places.get_curr_place().db_row[0]:
+                        self._populate_directory_tree()
 
     def _rename_file(self):
         path, file_name, status, file_id, idx = self._file_path()
