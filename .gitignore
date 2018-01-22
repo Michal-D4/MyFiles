@@ -1,12 +1,13 @@
 # Ignore all
 *
 
-# Unignore all with extensions
+# not ignore all with extensions
 !*.*
 
-# Unignore all dirs
+# not ignore all dirs
 !*/
 
+venv
 .idea
 *.sqlite
 ui_*.py
