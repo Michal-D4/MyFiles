@@ -92,9 +92,9 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'COPY_FILE': ' '.join(('insert into Files (DirID, PlaceId, ExtID,',
                                  'FileName, CommentID, FileDate, Pages, Size,',
                                  'IssueDate, Opened, Commented) SELECT {}, {},',
-                                 'ExtID, FileName, CommentID, FileDate, Pages, Size,',
-                                 'IssueDate, Opened, Commented FROM Files WHERE',
-                                 'FileID = {};'))
+                                 'ExtID, FileName, CommentID, FileDate, Pages,',
+                                 'Size, IssueDate, Opened, Commented FROM Files',
+                                 'where FileID = {};'))
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
