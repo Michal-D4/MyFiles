@@ -551,7 +551,6 @@ class MyController():
                     model = self.ui.filesList.model()
                     heads = model.get_headers()
                     if 'Opened' in heads:
-                        idx = model.mapToSource(idx)
                         idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
                         model.sourceModel().update(idx_s, cur_date)
                 except OSError:
