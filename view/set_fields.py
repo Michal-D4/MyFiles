@@ -1,11 +1,11 @@
 # view.set_fields.py
 
-from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import Qt, QModelIndex
+from PyQt5.QtWidgets import QDialog
 
 from controller.table_model import TableModel
-from view.ui_set_fields import Ui_SelectorFields
 from model.helpers import Fields
+from view.ui_set_fields import Ui_SelectorFields
 
 
 class SetFields(QDialog):

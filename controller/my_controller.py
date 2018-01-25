@@ -1,29 +1,28 @@
 # controller/my_controller.py
 
-import sqlite3
-import os
 import re
+import sqlite3
 import webbrowser
 
-from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
-                             QFontDialog, QApplication, QMessageBox)
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QDateTime, QVariant, QItemSelection, QThread,
                           QPersistentModelIndex)
+from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
+                             QFontDialog, QApplication, QMessageBox)
 
+from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
-from controller.places import Places
-from model.utilities import DBUtils, PLUS_EXT_ID
-from model.utils import create_db
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
+from model.helpers import Fields
+from model.utilities import DBUtils, PLUS_EXT_ID
+from model.utils import create_db
+from model.utils.load_db_data import LoadDBData
+from view.input_date import DateInputDialog
 from view.item_edit import ItemEdit
 from view.sel_opt import SelOpt
 from view.set_fields import SetFields
-from view.input_date import DateInputDialog
-from model.helpers import Fields
-from model.utils.load_db_data import LoadDBData
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 

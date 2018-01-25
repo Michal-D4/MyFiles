@@ -1,13 +1,13 @@
 # controller/places.py
 
-import socket
-import psutil
 import ctypes
 import os
+import socket
 from collections import namedtuple
 
-from PyQt5.QtWidgets import QMessageBox, QFileDialog
+import psutil
 from PyQt5.QtCore import QSettings, QVariant
+from PyQt5.QtWidgets import QMessageBox, QFileDialog
 
 
 class Places:

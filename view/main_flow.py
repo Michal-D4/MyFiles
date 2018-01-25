@@ -1,12 +1,11 @@
 # view/main_flow.py
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent
 from PyQt5.QtGui import QResizeEvent
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
-from view.set_fields import SetFields
 
 
 class MainFlow(QMainWindow):

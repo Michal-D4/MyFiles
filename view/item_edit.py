@@ -1,10 +1,12 @@
 # view/item_edit.py
 
 import re
-from PyQt5.QtWidgets import QDialog
+
 from PyQt5.QtCore import QItemSelectionModel
-from view.ui_items_edit import Ui_ItemChoice
+from PyQt5.QtWidgets import QDialog
+
 from controller.table_model import TableModel2
+from view.ui_items_edit import Ui_ItemChoice
 
 
 class ItemEdit(QDialog):

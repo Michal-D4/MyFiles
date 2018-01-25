@@ -1,10 +1,9 @@
 # view/my_db_choice.py
 
 import sys
-import pickle
 
-from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QCoreApplication
+from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 
 from view.ui_db_choice import Ui_ChoiceDB
 

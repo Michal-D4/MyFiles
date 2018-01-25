@@ -1,6 +1,7 @@
 # controller/table_model.py
 
 from collections import Iterable
+
 from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel, QSortFilterProxyModel
 
 

@@ -4,9 +4,9 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
+from controller.my_controller import MyController
 from view.main_flow import MainFlow
 from view.my_db_choice import MyDBChoice
-from controller.my_controller import MyController
 
 
 def main():

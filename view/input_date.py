@@ -1,7 +1,8 @@
 # view.input_date.py
 
-from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog
+
 from view.ui_input_date import Ui_DateInputDialog
 
 

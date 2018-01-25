@@ -2,10 +2,11 @@
 
 from collections import namedtuple
 
-from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import Qt, QSettings
-from view.ui_sel_opt import Ui_SelOpt
+from PyQt5.QtWidgets import QDialog
+
 from model.utilities import PLUS_EXT_ID
+from view.ui_sel_opt import Ui_SelOpt
 
 
 class SelOpt(QDialog):
