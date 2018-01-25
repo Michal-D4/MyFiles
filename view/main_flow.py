@@ -84,7 +84,7 @@ class MainFlow(QMainWindow):
         menu.addAction('Delete')
         menu.addSeparator()
         menu.addAction('Copy file name')
-        menu.addAction('Copy full path')
+        menu.addAction('Copy path')
         menu.addSeparator()
         menu.addAction('Rename file')
         menu.addAction('Copy file(s)')

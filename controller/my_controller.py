@@ -65,7 +65,7 @@ class MyController():
                 'File Add to favorites': self._add_file_to_favorites,
                 'File Copy file name': self._copy_file_name,
                 'File Copy file(s)': self._copy_files,
-                'File Copy full path': self._copy_full_path,
+                'File Copy path': self._copy_path,
                 'File Delete': self._delete_files,
                 'File Delete file(s)': self._remove_files,
                 'File Move file(s)': self._move_files,
@@ -232,7 +232,7 @@ class MyController():
             txt = self.ui.filesList.model().data(idx, role=Qt.DisplayRole)
             QApplication.clipboard().setText(txt)
 
-    def _copy_full_path(self):
+    def _copy_path(self):
         path, _, _, _, _ = self._file_path()
         QApplication.clipboard().setText(path)
 
