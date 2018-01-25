@@ -429,7 +429,7 @@ class MyController():
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
-        files = self._dbu.select_other('FAVORITES').fetchall()
+        files = self._dbu.select_other('FAVORITES', (1,)).fetchall()
         if files:
             self._show_files(files, model)
             self.status_label.setText('Favorite files')
@@ -465,7 +465,7 @@ class MyController():
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
         file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
-        self._dbu.insert_other('FAVORITES', (file_id,))
+        self._dbu.insert_other('FAVORITES', (1, file_id))
 
     def _delete_files(self):
         indexes = self._persistent_row_indexes(self.ui.filesList)
@@ -474,7 +474,7 @@ class MyController():
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
                 if self.file_list_source == MyController.FAVORITE:
-                    self._dbu.delete_other('FAVORITES', (u_data[0],))
+                    self._dbu.delete_other('FAVORITES', (1, u_data[0]))
                 else:
                     self._delete_from_db(u_data)
 
@@ -490,7 +490,7 @@ class MyController():
         return list_rows
 
     def _delete_from_db(self, file_ids):
-        self._dbu.delete_other('FAVORITES', (file_ids[0],))
+        self._dbu.delete_other('FAVOR_ALL', (file_ids[0],))
         self._dbu.delete_other('AUTHOR_FILE_BY_FILE', (file_ids[0],))
         self._dbu.delete_other('TAG_FILE_BY_FILE', (file_ids[0],))
         self._dbu.delete_other('FILE', (file_ids[0],))
