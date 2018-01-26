@@ -3,24 +3,26 @@ import datetime
 
 PLUS_EXT_ID = 100000
 
-Selects = {'TREE':
-               ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
+Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
+               ('WITH x(Path, DirID, ParentID, FavID, level) AS (SELECT Path, DirID, ParentID, FavID, 0 as level',
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
-                ' '.join(('UNION ALL SELECT t.DirID, t.Path, t.ParentID,',
+                ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.FavID,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
-                          'ON t.ParentID = x.DirID')),
+                          'ON t.ParentID = x.DirID and t.FavID = x.FavID')),
                 'and lvl <= {}) SELECT * FROM x order by ParentID desc, Path;',
                 ') SELECT * FROM x order by ParentID desc, Path;'),
+
            'DIR_IDS':
-               ('WITH x(DirID, Path, ParentID, level) AS (SELECT DirID, Path, ParentID, 0 as level',
+               ('WITH x(DirID, ParentID, FavID, level) AS (SELECT DirID, ParentID, FavID, 0 as level',
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
-                ' '.join(('UNION ALL SELECT t.DirID, t.Path, t.ParentID,',
+                ' '.join(('UNION ALL SELECT t.DirID, t.ParentID, t.FavID,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
-                          'ON t.ParentID = x.DirID')),
+                          'ON t.ParentID = x.DirID and t.FavID = x.FavID')),
                 'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
+
            'FILE_IDS_ALL_TAG': ' '.join(('select FileID from FileTag where TagID in ({})',
                                          'group by FileID having count(*) = {};')),
            'PLACES': 'select * from Places;',
@@ -134,7 +136,7 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'TAG_FILE': 'delete from FileTag where TagID=:tag_id and FileID=:file_id;',
           'TAG_FILE_BY_FILE': 'delete from FileTag where FileID = ?;',
           'TAG': 'delete from Tags where TagID=:tag_id;',
-          'DEL_EMPTY_DIRS': ' '.join(('delete from Dirs where Fake = 0 and NOT EXISTS (select *',
+          'DEL_EMPTY_DIRS': ' '.join(('delete from Dirs where FavID = 0 and NOT EXISTS (select *',
                                       'from Files where DirID = Dirs.DirID);'))
           }
 
