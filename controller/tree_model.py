@@ -115,11 +115,11 @@ class TreeModel(QAbstractItemModel):
             value = value.split(' ')
         self.rootItem.set_data(value)
 
-    def append_model_data(self, rows):
+    def set_model_data(self, rows):
         """
         Fill tree structure
-        :param rows: iterable, each item contains 3 elements
-             item[0]  - data to be shown == Qt.DisplayRole,
+        :param rows: iterable, each item contains at least 3 elements
+             item[0]  - string/"tuple of strings" to be shown == Qt.DisplayRole,
              item[1:] - user_data:
                   item[1]  - Id of item, unique,
                   item[2]  - Id of parent item, 0 for root,
@@ -128,13 +128,13 @@ class TreeModel(QAbstractItemModel):
         :return: None
         """
         id_list = []
-        items_list = {0: self.rootItem}
+        items_dict = {0: self.rootItem}
         for row in rows:
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
-            items_list[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
+            items_dict[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
             id_list.append((row[1:3]))
 
         for id_ in id_list:
-            if id_[1] in items_list:
-                items_list[id_[1]].appendChild(items_list[id_[0]])
+            if id_[1] in items_dict:
+                items_dict[id_[1]].appendChild(items_dict[id_[0]])

@@ -57,7 +57,7 @@ class TreeModelChainUp(TreeModel):
         for chain in sorted(chains, key=lambda x: ''.join(x)):
             print(chain)
 
-    def append_model_data(self, rows):
+    def set_model_data(self, rows):
         """
         it is called from __init__ of base class
         :param rows:
@@ -310,7 +310,7 @@ class MethodsTree():
                 grp3 = ''.join((met[1], '('))
             else:
                 pat1 = ''.join((rb, met[1], '.', met[0], rb))  # <class>.<method>
-                pat2 = ''.join((rb, 'self.', met[0], rb))  # self.<method>
+                pat2 = ''.join((rb, '.', met[0], rb))  # .<method>
                 pat3 = ''.join((rb, met[0], rs))  # <method>(
                 pat = '|'.join((pat1, pat2, pat3))
         else:  # method is outside of any class
@@ -333,7 +333,7 @@ class MethodsTree():
 
         data = sorted(dat_, key=lambda x: x[2], reverse=True)
 
-        self.view.model().append_model_data(data)
+        self.view.model().set_model_data(data)
 
 
 if __name__ == "__main__":
