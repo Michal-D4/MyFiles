@@ -145,8 +145,13 @@ class FileInfo(QObject):
     def _pdf_creation_date(fi):
         ww = fi.getText('/CreationDate')
         if ww:
-            return '-'.join((ww[2:6], ww[6:8], ww[8:10]))
-        return ''
+            tt = '-'.join((ww[2:6], ww[6:8], ww[8:10]))
+            try:
+                datetime.datetime.strptime(tt, '%Y-%m-%d')
+            except ValueError:
+                tt = '0001-01-01'
+            return tt
+        return '0001-01-01'
 
     def _update_file(self, file_):
         """
@@ -160,7 +165,6 @@ class FileInfo(QObject):
         else:
             comm_id = file_.comment_id
             pages = file_.pages
-            # todo check here if issue_date is correct date
             issue_date = file_.issue_date if file_.issue_date else '0001-01-01'
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
