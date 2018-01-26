@@ -974,6 +974,7 @@ class MyController():
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
 
         if self._cb_places.get_disk_state() == Places.MOUNTED:
+            # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
                 dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
