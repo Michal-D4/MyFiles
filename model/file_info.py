@@ -160,6 +160,7 @@ class FileInfo(QObject):
         else:
             comm_id = file_.comment_id
             pages = file_.pages
+            # todo check here if issue_date is correct date
             issue_date = file_.issue_date if file_.issue_date else '0001-01-01'
 
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,

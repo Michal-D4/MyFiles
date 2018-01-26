@@ -853,9 +853,10 @@ class MyController():
 
     def _show_files(self, files, model):
         idx = getattr(self.fields, 'indexes')
+        s_model = model.sourceModel()
         for ff in files:
             ff1 = [ff[i] for i in idx]
-            model.append_row(tuple(ff1), ff[-5:])
+            s_model.append_row(tuple(ff1), ff[-5:])
 
         self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
