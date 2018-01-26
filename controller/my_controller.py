@@ -838,7 +838,7 @@ class MyController():
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
 
-            self.status_label.setText('{} ({})'.format(dir_idx[2],
+            self.status_label.setText('{} ({})'.format(dir_idx[-1],
                                                        model.rowCount(QModelIndex())))
         else:
             self.status_label.setText('No data')
@@ -968,7 +968,7 @@ class MyController():
         """
         Returns directory tree for current place
         :param place_id:
-        :return: list of tuples (Dir name, DirID, ParentID, Full path of dir)
+        :return: list of tuples (Dir name, DirID, ParentID, FavID, Full path of dir)
         """
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
@@ -977,10 +977,10 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], os.altsep.join((root, rr[1]))))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:], os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[1])[1], rr[0], rr[2], rr[1]))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:], rr[0]))
         return dirs
 
     def _cur_dir_changed(self, curr_idx):
@@ -1040,7 +1040,7 @@ class MyController():
                                                     'Input extensions (* - all)',
                                                     QLineEdit.Normal, ext_)
         if ok_pressed:
-            files = MyController._yield_files(dir_[2], ext_item.strip())
+            files = MyController._yield_files(dir_[-1], ext_item.strip())
             if files:
                 self._load_files(files)
 

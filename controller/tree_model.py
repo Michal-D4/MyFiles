@@ -133,7 +133,7 @@ class TreeModel(QAbstractItemModel):
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
             items_dict[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
-            id_list.append((row[1:3]))
+            id_list.append((row[1:]))
 
         for id_ in id_list:
             if id_[1] in items_dict:

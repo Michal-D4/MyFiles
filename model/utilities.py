@@ -10,8 +10,8 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.FavID,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID and t.FavID = x.FavID')),
-                'and lvl <= {}) SELECT * FROM x order by ParentID desc, Path;',
-                ') SELECT * FROM x order by ParentID desc, Path;'),
+                'and lvl <= {}) SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;',
+                ') SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;'),
 
            'DIR_IDS':
                ('WITH x(DirID, ParentID, FavID, level) AS (SELECT DirID, ParentID, FavID, 0 as level',
