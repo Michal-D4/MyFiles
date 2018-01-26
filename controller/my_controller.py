@@ -946,6 +946,7 @@ class MyController():
                 self.ui.extList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_directory_tree(self):
+        # todo - do not correctly restore when reopen from toolbar button
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
         model = TreeModel()
