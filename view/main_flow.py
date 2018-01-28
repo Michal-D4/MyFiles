@@ -122,6 +122,13 @@ class MainFlow(QMainWindow):
         menu = QMenu(self)
         menu.addAction('Rescan dir')
         menu.addAction('Remove empty')
+        menu.addSeparator()
+        # todo - implement the following:
+        menu.addAction('Rename folder')
+        menu.addAction('Delete folder')
+        menu.addSeparator()
+        menu.addAction('Create virtual folder')
+        menu.addAction('Create virtual folder as child')
         action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit('Dirs {}'.format(action.text()))
