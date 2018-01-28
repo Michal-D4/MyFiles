@@ -83,7 +83,7 @@ class SelOpt(QDialog):
             self.ui.eExt.setText('')
 
     def tag_toggle(self):
-        print('--> tag_toggle')
+        # print('--> tag_toggle')
         state = self.ui.chTags.isChecked()
         if state:
             self.ui.eTags.setText(self.ctrl.get_selected_items(self.ctrl.ui.tagsList))
