@@ -137,8 +137,10 @@ class Places:
 
     def _update_place_name(self, root):
         """
-        Update only if 1) info is missing (NOT_DEFINED)
-        and if 2) the place is not registered yet in data base
+        Update only if
+          1) info is missing (NOT_DEFINED)
+        and
+          2) the place is not registered yet in data base
         :param root: any path, used only "volume letter"/"mount point"
         :return: True - if updated / False - if not updated
         """
@@ -153,6 +155,9 @@ class Places:
                                                                      self._curr_place.db_row[2]),
                                                              disk_state=state)
                 self._places[self._curr_place.view_idx] = self._curr_place.db_row
+                self._dbu.insert_other('DIR', ('Favorites',                 # Folder name
+                                               self._curr_place.db_row[0],  # placeID
+                                               0, 1))                       # parentID, favID
                 return True
 
         return False
