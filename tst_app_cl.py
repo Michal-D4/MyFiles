@@ -45,7 +45,7 @@ class TreeModelChainUp(TreeModel):
         return chain, len(chain)
 
     def print_all_chains(self):
-        print('|--> print_all_chains', len(self.leaves))
+        print('All chains, leaves first', len(self.leaves))
         max_len = 0
         chains = []
         for leaf in self.leaves:
@@ -54,7 +54,25 @@ class TreeModelChainUp(TreeModel):
             chains.append(chain)
 
         print('    max length of chain:', max_len)
+
+        chains2 = []
         for chain in sorted(chains, key=lambda x: ''.join(x)):
+            print(chain)
+            chain.reverse()
+            chains2.append(chain)
+
+        aux = set()
+        this_max = []
+        max_chains = []
+
+        for chain in sorted(chains2, key=lambda x: ''.join(x)):
+            if not aux.issubset(set(chain)):
+                max_chains.append(this_max)
+            this_max = chain
+            aux = set(chain)
+
+        print('All chains, heads first', len(max_chains))
+        for chain in sorted(max_chains, key=lambda x: ''.join(x)):
             print(chain)
 
     def set_model_data(self, rows):
