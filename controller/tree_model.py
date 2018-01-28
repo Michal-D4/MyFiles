@@ -1,5 +1,7 @@
 # controller/tree_model.py
 
+import copy
+
 from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 
 
@@ -137,4 +139,5 @@ class TreeModel(QAbstractItemModel):
 
         for id_ in id_list:
             if id_[1] in items_dict:
-                items_dict[id_[1]].appendChild(items_dict[id_[0]])
+                # use copy because the same item may used in different branches
+                items_dict[id_[1]].appendChild(copy.deepcopy(items_dict[id_[0]]))
