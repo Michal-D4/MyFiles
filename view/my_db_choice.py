@@ -77,8 +77,6 @@ class MyDBChoice(QDialog):
             if not (file_name in self.init_data[2]):
                 self.create_db(file_name)
                 self.open_DB_signal.emit(file_name, True, False)
-                # self.init_data[0] = 0
-                # self._save_settings()
                 super(MyDBChoice, self).accept()
             else:
                 self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
