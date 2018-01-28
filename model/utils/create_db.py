@@ -88,7 +88,8 @@ ActCode INTEGER
 
     '''CREATE TABLE IF NOT EXISTS Favorites (
 FavID INTEGER NOT NULL,
-FileID INTEGER NOT NULL
+FileID INTEGER NOT NULL,
+isDir INTEGER not null default 0
 );''',
     'CREATE UNIQUE INDEX IF NOT EXISTS FavorIdx ON Favorites(FavID, FileID);',
 
@@ -112,14 +113,14 @@ def create_all_objects(connection):
             print("An error occurred:", err.args[0])
             print(obj)
 
-    initiate(connection)
+    initiate_db(connection)
 
 
-def initiate(connection):
+def initiate_db(connection):
     cursor = connection.cursor()
     loc = socket.gethostname()
     cursor.execute('insert into Places (Place, Title) values (:place, :title);', (loc, loc))
-    # cursor.execute('insert into Favorites ')
+    cursor.execute('insert into Dirs (Path, PlaceId, ParentID, FavID) values ("Favorites", 1, 0, 1);')
     connection.commit()
 
 

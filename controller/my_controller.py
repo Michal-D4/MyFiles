@@ -353,6 +353,7 @@ class MyController():
         self.ui.tagsList.setFont(font)
         self.ui.authorsList.setFont(font)
         self.ui.commentField.setFont(font)
+        self.ui.cb_places.setFont(font)
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -425,11 +426,14 @@ class MyController():
         self._show_message('Updating of files is finished')  #
 
     def _favorite_file_list(self):
+        self._populate_favorites(1)
+
+    def _populate_favorites(self, fav_id):
         self.file_list_source = MyController.FAVORITE
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
-        files = self._dbu.select_other('FAVORITES', (1,)).fetchall()
+        files = self._dbu.select_other('FAVORITES', (fav_id,)).fetchall()
         if files:
             self._show_files(files, model)
             self.status_label.setText('Favorite files')
@@ -697,7 +701,7 @@ class MyController():
             row = 0
 
         if self.file_list_source == MyController.FAVORITE:
-            self._favorite_file_list()
+            self._populate_favorites(1)
         elif self.file_list_source == MyController.FOLDER:
             dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
@@ -830,6 +834,15 @@ class MyController():
         :param dir_idx:
         :return:
         """
+        if dir_idx[-2] > 0:
+            self._form_virtual_folder(dir_idx)
+        else:
+            self._from_real_folder(dir_idx)
+
+    def _form_virtual_folder(self, dir_idx):
+        self._populate_favorites(dir_idx[-2])
+
+    def _from_real_folder(self, dir_idx):
         self.file_list_source = MyController.FOLDER
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
@@ -907,9 +920,9 @@ class MyController():
                 self.status_label.setText(path[0])
 
             if edit:
-                self._update_commented_date(file_id)
+                self._update_comment_date(file_id)
 
-    def _update_commented_date(self, file_id):
+    def _update_comment_date(self, file_id):
         self._dbu.update_other('COMMENT_DATE', (file_id,))
         model = self.ui.filesList.model()
         heads = model.get_headers()
@@ -979,10 +992,10 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:], os.altsep.join((root, rr[0]))))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:], rr[0]))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
         return dirs
 
     def _cur_dir_changed(self, curr_idx):

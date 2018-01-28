@@ -9,9 +9,13 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
                 ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.FavID,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
-                          'ON t.ParentID = x.DirID and t.FavID = x.FavID')),
+                          'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;',
-                ') SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;'),
+                # ') SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;'),
+                ' '.join((') SELECT * FROM x union',
+                          'Select d.Path, d.DirID, f.isDir, d.FavID, 1 from Dirs as d',
+                          'inner join favorites as f on f.fileid = d.dirid and f.isDir > 0',
+                          'inner join x as z on z.dirId = f.isDir order by level desc, Path;'))),
 
            'DIR_IDS':
                ('WITH x(DirID, ParentID, FavID, level) AS (SELECT DirID, ParentID, FavID, 0 as level',
@@ -19,7 +23,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
                 ' '.join(('UNION ALL SELECT t.DirID, t.ParentID, t.FavID,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
-                          'ON t.ParentID = x.DirID and t.FavID = x.FavID')),
+                          'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
 
@@ -72,14 +76,14 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
                                        'Opened, Commented, FileID, DirID, CommentID, ExtID,',
                                        'PlaceId from Files where DirId = ?;')),
-           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
-                                  'Commented, FileID, DirID, CommentID, ExtID, PlaceId from',
-                                  'Files where FileID in (select FileID from Favorites where FavID = ?);')),
+           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened, Commented,',
+                                  'FileID, DirID, CommentID, ExtID, PlaceId from Files where FileID',
+                                  'in (select FileID from Favorites where FavID = ? and isDir = 0);')),
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
-          'FAVORITES': 'insert into Favorites (FavID, FileID) values (?, ?);',
+          'FAVORITES': 'insert into Favorites (FavID, FileID, isDir) values (?, ?, 0);',
           'COMMENT': 'insert into Comments (Comment, BookTitle) values (?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',
@@ -96,7 +100,8 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'IssueDate, Opened, Commented) SELECT {}, {},',
                                  'ExtID, FileName, CommentID, FileDate, Pages,',
                                  'Size, IssueDate, Opened, Commented FROM Files',
-                                 'where FileID = {};'))
+                                 'where FileID = {};')),
+          'DIR': 'insert into Dirs (Path, PlaceId, ParentID, FavID) values (?, ?, ?, ?);'
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
