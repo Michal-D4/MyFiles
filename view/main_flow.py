@@ -12,7 +12,7 @@ class MainFlow(QMainWindow):
     change_data_signal = pyqtSignal(str)   # str - name of action
     scan_files_signal = pyqtSignal()
 
-    def __init__(self, parent=None, open_dialog=MyDBChoice):
+    def __init__(self, open_dialog: MyDBChoice, parent=None):
         QWidget.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -131,12 +131,22 @@ class MainFlow(QMainWindow):
         self.change_data_signal.emit(href.toString())
 
     def resizeEvent(self, event):
+        """
+        resizeEvent - when changed main window. To save size for next run
+        :param event:
+        :return:
+        """
         super().resizeEvent(event)
         self.old_size = event.oldSize()
         settings = QSettings()
         settings.setValue("MainFlow/Size", QVariant(self.size()))
 
     def resize_event(self, event: QResizeEvent):
+        """
+        resizeEvent of filesList, to change width of columns
+        :param event:
+        :return:
+        """
         old_w = event.oldSize().width()
         w = event.size().width()
         if not old_w == w:
