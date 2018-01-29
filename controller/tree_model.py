@@ -13,7 +13,7 @@ class TreeItem(object):
         self.childItems = []
 
     def appendChild(self, item):
-        item.parentItem = self
+        item.parentItem = self          # does not run if parent is not set ???
         self.childItems.append(item)
 
     def child(self, row):
@@ -66,6 +66,7 @@ class TreeModel(QAbstractItemModel):
             item = index.internalPointer()
             if item:
                 return item.data(index.column(), role)
+        return None
 
     def flags(self, index):
         if not index.isValid():
@@ -76,6 +77,7 @@ class TreeModel(QAbstractItemModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data(section, role)
+        return None
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -105,6 +107,9 @@ class TreeModel(QAbstractItemModel):
         return self.createIndex(parent_item.row(), 0, parent_item)
 
     def rowCount(self, parent=QModelIndex()):
+        if parent.column() > 0:
+            return 0
+
         if not parent.isValid():
             parentItem = self.rootItem
         else:
