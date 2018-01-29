@@ -61,6 +61,7 @@ class TreeModelChainUp(TreeModel):
             chain.reverse()
             chains2.append(chain)
 
+        print(' <-------------->')
         aux = set()
         this_max = []
         max_chains = []
@@ -70,6 +71,7 @@ class TreeModelChainUp(TreeModel):
                 max_chains.append(this_max)
             this_max = chain
             aux = set(chain)
+        max_chains.append(this_max)
 
         print('All chains, heads first', len(max_chains))
         for chain in sorted(max_chains, key=lambda x: ''.join(x)):
@@ -122,6 +124,7 @@ class MethodsTree():
 
         self.view.setContentsMargins(5, 5, 5, 5)
 
+        print(file_name)
         model.print_all_chains()
 
         self.view.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -361,7 +364,7 @@ if __name__ == "__main__":
     dir_w = r'D:\Users\PycharmProjects\MyFiles'         # Work
 
     # todo if there are methods with the same name in different class
-    file_ = 'controller/my_controller.py'
+    # file_ = 'controller/my_controller.py'
     # file_ = 'controller/places.py'
     # file_ = 'controller/table_model.py'
     # file_ = 'controller/tree_model.py'
@@ -376,6 +379,10 @@ if __name__ == "__main__":
     # file_ = 'view/sel_opt.py'
     # file_ = 'view/set_fields.py'
     # file_ = 'tst_app_cl.py'
+    # file_ = 'TreeModel.ed.py'
+    # file_ = 'TreeItem.ed.py'
+    file_ = 'TreeModel.py'
+    # file_ = 'TreeItem.py'
 
     dir_ = dir_h if socket.gethostname() == 'thenote' else dir_w
     full_file_name = os.path.join(dir_, file_)
