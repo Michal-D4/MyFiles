@@ -13,9 +13,9 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 'and lvl <= {}) SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;',
                 # ') SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;'),
                 ' '.join((') SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.isDir, d.FavID, 1 from Dirs as d',
-                          'inner join favorites as f on f.fileid = d.dirid and f.isDir > 0',
-                          'inner join x as z on z.dirId = f.isDir order by level desc, Path;'))),
+                          'Select d.Path, d.DirID, f.DirID, d.FavID, 1 from Dirs as d',
+                          'inner join favorites as f on f.fileid = d.dirid and f.DirID > 0',
+                          'inner join x as z on z.dirId = f.DirID order by level desc, Path;'))),
 
            'DIR_IDS':
                ('WITH x(DirID, ParentID, FavID, level) AS (SELECT DirID, ParentID, FavID, 0 as level',
@@ -78,12 +78,12 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                                        'PlaceId from Files where DirId = ?;')),
            'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened, Commented,',
                                   'FileID, DirID, CommentID, ExtID, PlaceId from Files where FileID',
-                                  'in (select FileID from Favorites where FavID = ? and isDir = 0);')),
+                                  'in (select FileID from Favorites where FavID = ? and DirID = 0);')),
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
-          'FAVORITES': 'insert into Favorites (FavID, FileID, isDir) values (?, ?, 0);',
+          'FAVORITES': 'insert into Favorites (FavID, FileID, DirID) values (?, ?, 0);',
           'COMMENT': 'insert into Comments (Comment, BookTitle) values (?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',

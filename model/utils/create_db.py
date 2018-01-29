@@ -88,10 +88,9 @@ ActCode INTEGER
 
     '''CREATE TABLE IF NOT EXISTS Favorites (
 FavID INTEGER NOT NULL,
-FileID INTEGER NOT NULL,
-isDir INTEGER not null default 0
+FileID INTEGER NOT NULL default 0,
+DirID INTEGER not null default 0
 );''',
-    'CREATE UNIQUE INDEX IF NOT EXISTS FavorIdx ON Favorites(FavID, FileID);',
 
     'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
