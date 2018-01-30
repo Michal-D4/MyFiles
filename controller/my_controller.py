@@ -286,6 +286,7 @@ class MyController():
 
         self._win.setWindowTitle('File organizer - ' + file_name)
         self._dbu.set_connection(self._connection)
+        print('--> on_open_db')
         self._populate_all_widgets()
 
     def on_change_data(self, action):
@@ -692,6 +693,7 @@ class MyController():
         return res
 
     def _restore_file_list(self, curr_dir_idx):
+        print('--> _restore_file_list', curr_dir_idx.row())
         if self.same_db:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
@@ -699,23 +701,32 @@ class MyController():
         else:
             self.file_list_source = MyController.FOLDER
             row = 0
+        print('  1:', self.file_list_source, MyController.FAVORITE, MyController.FOLDER, MyController.ADVANCE)
 
         if self.file_list_source == MyController.FAVORITE:
             self._populate_favorites(1)
+            print('  2')
         elif self.file_list_source == MyController.FOLDER:
+            if not curr_dir_idx.isValid():
+                curr_dir_idx = self.ui.dirTree.model().index(0, 0, QModelIndex())
             dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
+            print('  3', dir_idx)
             self._populate_file_list(dir_idx)
+            print('  3')
         else:                       # MyController.ADVANCE
             self._list_of_selected_files()
+            print('  4')
 
         if self.ui.filesList.model().rowCount() == 0:
             idx = QModelIndex()
         else:
             idx = self.ui.filesList.model().index(row, 0)
 
+        print('  5')
         if idx.isValid():
             self.ui.filesList.setCurrentIndex(idx)
             self.ui.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
+        print('  6')
 
     def _edit_title(self):
         checked = self._check_existence()
@@ -834,27 +845,33 @@ class MyController():
         :param dir_idx:
         :return:
         """
+        print('--> _populate_file_list', dir_idx)
         if dir_idx[-2] > 0:
             self._form_virtual_folder(dir_idx)
         else:
             self._from_real_folder(dir_idx)
 
     def _form_virtual_folder(self, dir_idx):
+        print('--> _form_virtual_folder')
         self._populate_favorites(dir_idx[-2])
 
     def _from_real_folder(self, dir_idx):
+        print('--> _from_real_folder')
         self.file_list_source = MyController.FOLDER
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
+        print('   1')
         if dir_idx:
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model)
+            print('   2')
 
             self.status_label.setText('{} ({})'.format(dir_idx[-1],
                                                        model.rowCount(QModelIndex())))
         else:
             self.status_label.setText('No data')
+        print('   3')
 
     def _set_file_model(self):
         model = TableModel(parent=self.ui.filesList)
@@ -933,6 +950,7 @@ class MyController():
             model.update(idx, cur_date)
 
     def _populate_all_widgets(self):
+        print('--> _populate_all_widgets')
         self._cb_places.populate_cb_places()
         self._populate_ext_list()
         self._restore_ext_selection()
@@ -941,6 +959,7 @@ class MyController():
         self._populate_author_list()
         self._restore_author_selection()
         self._populate_directory_tree()
+        print('   8')
 
     def _restore_ext_selection(self):
         if self.same_db:
@@ -959,6 +978,7 @@ class MyController():
                 self.ui.extList.selectionModel().select(idx, QItemSelectionModel.Select)
 
     def _populate_directory_tree(self):
+        print('--> _populate_directory_tree')
         # todo - do not correctly restore when reopen from toolbar button
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
@@ -971,13 +991,16 @@ class MyController():
         cur_dir_idx = self._restore_path()
 
         self._restore_file_list(cur_dir_idx)
+        print('  4')
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 self._show_message('Files are in an inaccessible place')
 
+        print('  5')
         self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
         self._resize_columns()
+        print('  6')
 
     def _get_dirs(self, place_id):
         """
@@ -1026,10 +1049,12 @@ class MyController():
         restore expand state and current index of dirTree
         :return: current index
         """
+        print('--> _restore_path')
         model = self.ui.dirTree.model()
         if self.same_db:
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
+            print('  1:', aux)
             parent = QModelIndex()
             for id in aux:
                 if parent.isValid():
@@ -1038,10 +1063,12 @@ class MyController():
                 idx = model.index(int(id), 0, parent)
                 self.ui.dirTree.setCurrentIndex(idx)
                 parent = idx
+            print('  2:', parent.row())
             return parent
 
         idx = model.index(0, 0, QModelIndex())
         self.ui.dirTree.setCurrentIndex(idx)
+        print('  3:', idx.row())
         return idx
 
     def _del_empty_dirs(self):
