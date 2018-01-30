@@ -852,7 +852,6 @@ class MyController():
             self._from_real_folder(dir_idx)
 
     def _form_virtual_folder(self, dir_idx):
-        print('--> _form_virtual_folder')
         self._populate_favorites(dir_idx[-2])
 
     def _from_real_folder(self, dir_idx):
@@ -871,7 +870,6 @@ class MyController():
                                                        model.rowCount(QModelIndex())))
         else:
             self.status_label.setText('No data')
-        print('   3')
 
     def _set_file_model(self):
         model = TableModel(parent=self.ui.filesList)
@@ -959,7 +957,6 @@ class MyController():
         self._populate_author_list()
         self._restore_author_selection()
         self._populate_directory_tree()
-        print('   8')
 
     def _restore_ext_selection(self):
         if self.same_db:
