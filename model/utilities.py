@@ -4,18 +4,23 @@ import datetime
 PLUS_EXT_ID = 100000
 
 Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
-               ('WITH x(Path, DirID, ParentID, FavID, level) AS (SELECT Path, DirID, ParentID, FavID, 0 as level',
+               (' '.join(('WITH x(Path, DirID, ParentID, FavID, level, virtual) AS',
+                          '(SELECT Path, DirID, ParentID, FavID, 0 as level, (FavID > 0) as virtual',)),
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
                 ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.FavID,',
-                          'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
+                          'x.level + 1 as lvl, (t.FavID > 0) as virtual FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID')),
-                'and lvl <= {}) SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;',
-                # ') SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;'),
+                ' '.join(('and lvl <= {}) SELECT * FROM x union',
+                          'Select d.Path, d.DirID, f.FavID, d.FavID, z.level+1, 1 as virtual',
+                          'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
+                          'inner join x as z on z.dirId = d.DirID order by virtual, level desc, Path;'
+                          )),
                 ' '.join((') SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.DirID, d.FavID, z.level+1 from Dirs as d',
-                          'inner join favorites as f on f.fileid = d.dirid and f.DirID > 0',
-                          'inner join x as z on z.dirId = f.DirID order by level desc, Path;'))),
+                          'Select d.Path, d.DirID, f.FavID, d.FavID, z.level+1, 1 as virtual',
+                          'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
+                          'inner join x as z on z.dirId = d.DirID order by virtual, level desc, Path;'
+                          ))),
 
            'DIR_IDS':
                ('WITH x(DirID, ParentID, FavID, level) AS (SELECT DirID, ParentID, FavID, 0 as level',
@@ -222,7 +227,7 @@ class DBUtils:
         :return: cursor of directories
         """
         sql = DBUtils.generate_sql(dir_id, level, place_id)
-        print(sql)
+        # print(sql)
 
         self.curs.execute(sql)
 
