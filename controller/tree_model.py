@@ -137,7 +137,6 @@ class TreeModel(QAbstractItemModel):
         id_list = []
         items_dict = {0: self.rootItem}
         for row in rows:
-            print(row)
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
             items_dict[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
