@@ -13,7 +13,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 'and lvl <= {}) SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;',
                 # ') SELECT Path, DirID, ParentID, FavID FROM x order by ParentID desc, Path;'),
                 ' '.join((') SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.DirID, d.FavID, 1 from Dirs as d',
+                          'Select d.Path, d.DirID, f.DirID, d.FavID, z.level+1 from Dirs as d',
                           'inner join favorites as f on f.fileid = d.dirid and f.DirID > 0',
                           'inner join x as z on z.dirId = f.DirID order by level desc, Path;'))),
 
@@ -222,6 +222,7 @@ class DBUtils:
         :return: cursor of directories
         """
         sql = DBUtils.generate_sql(dir_id, level, place_id)
+        print(sql)
 
         self.curs.execute(sql)
 

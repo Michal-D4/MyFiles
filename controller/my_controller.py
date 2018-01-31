@@ -693,7 +693,7 @@ class MyController():
         return res
 
     def _restore_file_list(self, curr_dir_idx):
-        print('--> _restore_file_list', curr_dir_idx.row())
+        print('--> _restore_file_list', curr_dir_idx)
         if self.same_db:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
@@ -708,11 +708,12 @@ class MyController():
             print('  2')
         elif self.file_list_source == MyController.FOLDER:
             if not curr_dir_idx.isValid():
-                curr_dir_idx = self.ui.dirTree.model().index(0, 0, QModelIndex())
+                curr_dir_idx = self.ui.dirTree.model().index(0, 0)
             dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
-            print('  3', dir_idx)
-            self._populate_file_list(dir_idx)
-            print('  3')
+            print('  3:', dir_idx)
+            if dir_idx:
+                self._populate_file_list(dir_idx)
+                print('  3')
         else:                       # MyController.ADVANCE
             self._list_of_selected_files()
             print('  4')
@@ -993,10 +994,10 @@ class MyController():
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 self._show_message('Files are in an inaccessible place')
+            self._resize_columns()
 
         print('  5')
         self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
-        self._resize_columns()
         print('  6')
 
     def _get_dirs(self, place_id):
@@ -1005,6 +1006,7 @@ class MyController():
         :param place_id:
         :return: list of tuples (Dir name, DirID, ParentID, FavID, Full path of dir)
         """
+        print('--> _get_dirs', place_id)
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
 
@@ -1012,9 +1014,11 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
+                print(rr)
                 dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
+                print(rr)
                 dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
         return dirs
 
@@ -1063,7 +1067,7 @@ class MyController():
             print('  2:', parent.row())
             return parent
 
-        idx = model.index(0, 0, QModelIndex())
+        idx = model.index(0, 0)
         self.ui.dirTree.setCurrentIndex(idx)
         print('  3:', idx.row())
         return idx
