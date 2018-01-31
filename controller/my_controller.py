@@ -157,6 +157,10 @@ class MyController():
 
                     if place_id == self._cb_places.get_curr_place().db_row[0]:
                         self._populate_directory_tree()
+        else:
+            self._show_message(
+                'File(s) inaccessible on "{}"'.format(
+                    self._cb_places.get_curr_place().db_row[2]))
 
     def _remove_file(self, file):
         try:
@@ -171,6 +175,10 @@ class MyController():
             selected_files = self._selected_files()
             for file in selected_files:
                 self._remove_file(file)
+        else:
+            self._show_message(
+                'File(s) inaccessible on "{}"'.format(
+                    self._cb_places.get_curr_place().db_row[2]))
 
     def _move_files(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
@@ -184,6 +192,10 @@ class MyController():
 
                     if place_id == self._cb_places.get_curr_place().db_row[0]:
                         self._populate_directory_tree()
+        else:
+            self._show_message(
+                'File(s) inaccessible on "{}"'.format(
+                    self._cb_places.get_curr_place().db_row[2]))
 
     def _rename_file(self):
         path, file_name, status, file_id, idx = self._file_path()
@@ -195,6 +207,10 @@ class MyController():
                 self.ui.filesList.model().sourceModel().update(idx, new_name)
                 os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
                 self._dbu.update_other('FILE_NAME', (new_name, file_id))
+        else:
+            self._show_message(
+                'File(s) inaccessible on "{}"'.format(
+                    self._cb_places.get_curr_place().db_row[2]))
 
     def _restore_fields(self):
         settings = QSettings()
@@ -310,9 +326,9 @@ class MyController():
 
         sel_tag = self.get_selected_tags()
         for tag in sel_tag:
-            files = self._dbu.select_other2('FILE_INFO',
-                                            (','.join([str(i) for i in all_id]),
-                                             tag[1])).fetchall()
+            files = self._dbu.select_other2(
+                'FILE_INFO', (','.join([str(i) for i in all_id]),
+                              tag[1])).fetchall()
             for file in files:
                 if re.search(tag[0], file[0], re.IGNORECASE):
                     try:
@@ -505,6 +521,10 @@ class MyController():
         path, _, state, _, _ = self._file_path()
         if state & (Places.MOUNTED | Places.NOT_REMOVAL):
             webbrowser.open(''.join(('file://', path)))
+        else:
+            self._show_message(
+                'Path "{}" is not available on "{}"'.format(
+                    path, self._cb_places.get_curr_place().db_row[2]))
 
     def _double_click_file(self):
         f_idx = self.ui.filesList.currentIndex()
@@ -543,8 +563,8 @@ class MyController():
 
     def _open_file(self):
         path, file_name, status, file_id, idx = self._file_path()
+        full_file_name = os.altsep.join((path, file_name))
         if status & (Places.MOUNTED | Places.NOT_REMOVAL):
-            full_file_name = os.altsep.join((path, file_name))
             if os.path.isfile(full_file_name):
                 try:
                     os.startfile(full_file_name)
@@ -559,9 +579,9 @@ class MyController():
                 except OSError:
                     self._show_message('Can\'t open file "{}"'.format(full_file_name))
             else:
-                self._show_message("Can't find file {}".format(full_file_name))
+                self._show_message("Can't find file \"{}\"".format(full_file_name))
         else:
-            self._show_message('File/disk is inaccessible')
+            self._show_message('File "{}" is inaccessible'.format(full_file_name))
 
     def _file_path(self):
         # todo   is it exist currentRow() method ?
