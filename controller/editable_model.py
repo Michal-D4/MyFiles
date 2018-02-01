@@ -26,8 +26,12 @@ class TreeItem(object):
     def columnCount(self):
         return len(self.itemData)
 
-    def data(self, column):
-        return self.itemData[column]
+    def data(self, column, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return self.itemData[column]
+        if role == Qt.UserRole:
+            return self.userData
+        return None
 
     def appendChild(self, item):
         item.parentItem = self          # does not run if parent is not set ???
@@ -80,13 +84,18 @@ class TreeItem(object):
 
         return True
 
-    def setData(self, column, value):
-        if column < 0 or column >= len(self.itemData):
+    def setData(self, column, value, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            if column < 0 or column >= len(self.itemData):
+                return False
+
+            self.itemData[column] = value
+
+            return True
+
+        if role == Qt.UserRole:
+            self.userData = value
             return False
-
-        self.itemData[column] = value
-
-        return True
 
     def set_data(self, data_):
         self.itemData = data_
@@ -102,6 +111,7 @@ class EditableTreeModel(QAbstractItemModel):
         return self.rootItem.columnCount()
 
     def data(self, index, role):
+        # todo role refactor
         if not index.isValid():
             return None
 
