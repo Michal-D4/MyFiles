@@ -34,7 +34,7 @@ class TreeItem(object):
         return None
 
     def appendChild(self, item):
-        item.parentItem = self          # does not run if parent is not set ???
+        item.parentItem = self
         self.childItems.append(item)
 
     def insertChildren(self, position, count, columns):
@@ -48,17 +48,17 @@ class TreeItem(object):
 
         return True
 
-    def insertColumns(self, position, columns):
-        if position < 0 or position > len(self.itemData):
-            return False
-
-        for column in range(columns):
-            self.itemData.insert(position, None)
-
-        for child in self.childItems:
-            child.insertColumns(position, columns)
-
-        return True
+    # def insertColumns(self, position, columns):
+    #     if position < 0 or position > len(self.itemData):
+    #         return False
+    #
+    #     for column in range(columns):
+    #         self.itemData.insert(position, None)
+    #
+    #     for child in self.childItems:
+    #         child.insertColumns(position, columns)
+    #
+    #     return True
 
     def parent(self):
         return self.parentItem
@@ -72,17 +72,17 @@ class TreeItem(object):
 
         return True
 
-    def removeColumns(self, position, columns):
-        if position < 0 or position + columns > len(self.itemData):
-            return False
-
-        for column in range(columns):
-            self.itemData.pop(position)
-
-        for child in self.childItems:
-            child.removeColumns(position, columns)
-
-        return True
+    # def removeColumns(self, position, columns):
+    #     if position < 0 or position + columns > len(self.itemData):
+    #         return False
+    #
+    #     for column in range(columns):
+    #         self.itemData.pop(position)
+    #
+    #     for child in self.childItems:
+    #         child.removeColumns(position, columns)
+    #
+    #     return True
 
     def setData(self, column, value, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
@@ -111,15 +111,13 @@ class EditableTreeModel(QAbstractItemModel):
         return self.rootItem.columnCount()
 
     def data(self, index, role):
-        # todo role refactor
         if not index.isValid():
             return None
 
-        if role != Qt.DisplayRole and role != Qt.EditRole:
-            return None
-
-        item = self.getItem(index)
-        return item.data(index.column())
+        if role in (Qt.DisplayRole, Qt.UserRole, Qt.EditRole):
+            item = self.getItem(index)
+            return item.data(index.column(), role)
+        return None
 
     def flags(self, index):
         if not index.isValid():
@@ -152,12 +150,12 @@ class EditableTreeModel(QAbstractItemModel):
         else:
             return QModelIndex()
 
-    def insertColumns(self, position, columns, parent=QModelIndex()):
-        self.beginInsertColumns(parent, position, position + columns - 1)
-        success = self.rootItem.insertColumns(position, columns)
-        self.endInsertColumns()
-
-        return success
+    # def insertColumns(self, position, columns, parent=QModelIndex()):
+    #     self.beginInsertColumns(parent, position, position + columns - 1)
+    #     success = self.rootItem.insertColumns(position, columns)
+    #     self.endInsertColumns()
+    #
+    #     return success
 
     def insertRows(self, position, rows, parent=QModelIndex()):
         parentItem = self.getItem(parent)
@@ -180,15 +178,15 @@ class EditableTreeModel(QAbstractItemModel):
 
         return self.createIndex(parentItem.childNumber(), 0, parentItem)
 
-    def removeColumns(self, position, columns, parent=QModelIndex()):
-        self.beginRemoveColumns(parent, position, position + columns - 1)
-        success = self.rootItem.removeColumns(position, columns)
-        self.endRemoveColumns()
-
-        if self.rootItem.columnCount() == 0:
-            self.removeRows(0, self.rowCount())
-
-        return success
+    # def removeColumns(self, position, columns, parent=QModelIndex()):
+    #     self.beginRemoveColumns(parent, position, position + columns - 1)
+    #     success = self.rootItem.removeColumns(position, columns)
+    #     self.endRemoveColumns()
+    #
+    #     if self.rootItem.columnCount() == 0:
+    #         self.removeRows(0, self.rowCount())
+    #
+    #     return success
 
     def removeRows(self, position, rows, parent=QModelIndex()):
         parentItem = self.getItem(parent)
@@ -243,13 +241,11 @@ class EditableTreeModel(QAbstractItemModel):
              and sorted by item(2) - parent ID - in descendant order
         :return: None
         """
-        print('--> set_model_data')
         id_list = []
         items_dict = {0: self.rootItem}
         for row in rows:
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
-            print(row)
             items_dict[row[1]] = TreeItem(data=row[0], user_data=(row[1:]))
             id_list.append((row[1:]))
 
@@ -257,4 +253,3 @@ class EditableTreeModel(QAbstractItemModel):
             if id_[1] in items_dict:
                 # use copy because the same item may used in different branches
                 items_dict[id_[1]].appendChild(copy.deepcopy(items_dict[id_[0]]))
-        print('<<------------------->>')
