@@ -367,7 +367,7 @@ if __name__ == "__main__":
     # file_ = 'controller/my_controller.py'
     # file_ = 'controller/places.py'
     # file_ = 'controller/table_model.py'
-    # file_ = 'controller/tree_model.py'
+    file_ = 'controller/tree_model.py'
     # file_ = 'model/file_info.py'
     # file_ = 'model/utilities.py'
     # file_ = 'model/utils/create_db.py'
@@ -381,11 +381,14 @@ if __name__ == "__main__":
     # file_ = 'tst_app_cl.py'
     # file_ = 'TreeModel.ed.py'
     # file_ = 'TreeItem.ed.py'
-    file_ = 'TreeModel.py'
+    # file_ = 'TreeModel.py'
     # file_ = 'TreeItem.py'
 
     dir_ = dir_h if socket.gethostname() == 'thenote' else dir_w
     full_file_name = os.path.join(dir_, file_)
+
+    # infinite loop
+    # full_file_name = r'd:\Users\mihal\PycharmProjects\Examples\AbsrtactModel\editable\editabletreemodel.py'
 
     mt = MethodsTree(full_file_name)
 
