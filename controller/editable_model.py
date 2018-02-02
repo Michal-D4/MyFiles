@@ -135,6 +135,9 @@ class EditableTreeModel(QAbstractItemModel):
 
         return success
 
+    def append_child(self, parent, item):
+        parent.appendChild(item)
+
     def parent(self, index):
         if not index.isValid():
             return QModelIndex()
