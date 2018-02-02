@@ -48,18 +48,6 @@ class TreeItem(object):
 
         return True
 
-    # def insertColumns(self, position, columns):
-    #     if position < 0 or position > len(self.itemData):
-    #         return False
-    #
-    #     for column in range(columns):
-    #         self.itemData.insert(position, None)
-    #
-    #     for child in self.childItems:
-    #         child.insertColumns(position, columns)
-    #
-    #     return True
-
     def parent(self):
         return self.parentItem
 
@@ -72,20 +60,8 @@ class TreeItem(object):
 
         return True
 
-    # def removeColumns(self, position, columns):
-    #     if position < 0 or position + columns > len(self.itemData):
-    #         return False
-    #
-    #     for column in range(columns):
-    #         self.itemData.pop(position)
-    #
-    #     for child in self.childItems:
-    #         child.removeColumns(position, columns)
-    #
-    #     return True
-
-    def setData(self, column, value, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
+    def setData(self, column, value, role=Qt.EditRole):
+        if role == Qt.EditRole:
             if column < 0 or column >= len(self.itemData):
                 return False
 
@@ -150,18 +126,11 @@ class EditableTreeModel(QAbstractItemModel):
         else:
             return QModelIndex()
 
-    # def insertColumns(self, position, columns, parent=QModelIndex()):
-    #     self.beginInsertColumns(parent, position, position + columns - 1)
-    #     success = self.rootItem.insertColumns(position, columns)
-    #     self.endInsertColumns()
-    #
-    #     return success
-
-    def insertRows(self, position, rows, parent=QModelIndex()):
+    def insertRows(self, position, count, parent=QModelIndex()):
         parentItem = self.getItem(parent)
-        self.beginInsertRows(parent, position, position + rows - 1)
-        success = parentItem.insertChildren(position, rows,
-                self.rootItem.columnCount())
+        self.beginInsertRows(parent, position, position + count - 1)
+        success = parentItem.insertChildren(position, count,
+                                            self.rootItem.columnCount())
         self.endInsertRows()
 
         return success
@@ -178,21 +147,18 @@ class EditableTreeModel(QAbstractItemModel):
 
         return self.createIndex(parentItem.childNumber(), 0, parentItem)
 
-    # def removeColumns(self, position, columns, parent=QModelIndex()):
-    #     self.beginRemoveColumns(parent, position, position + columns - 1)
-    #     success = self.rootItem.removeColumns(position, columns)
-    #     self.endRemoveColumns()
-    #
-    #     if self.rootItem.columnCount() == 0:
-    #         self.removeRows(0, self.rowCount())
-    #
-    #     return success
-
-    def removeRows(self, position, rows, parent=QModelIndex()):
+    def removeRows(self, row, count, parent=QModelIndex()):
+        """
+         removes count rows starting with the given row under parent parent
+        :param row:
+        :param count:
+        :param parent:
+        :return:
+        """
         parentItem = self.getItem(parent)
 
-        self.beginRemoveRows(parent, position, position + rows - 1)
-        success = parentItem.removeChildren(position, rows)
+        self.beginRemoveRows(parent, row, row + count - 1)
+        success = parentItem.removeChildren(row, count)
         self.endRemoveRows()
 
         return success
@@ -203,26 +169,16 @@ class EditableTreeModel(QAbstractItemModel):
         return parentItem.childCount()
 
     def setData(self, index, value, role=Qt.EditRole):
-        if role != Qt.EditRole:
+        if not role in (Qt.EditRole, Qt.UserRole):
             return False
 
         item = self.getItem(index)
-        result = item.setData(index.column(), value)
+        result = item.setData(index.column(), value, role)
 
         if result:
             self.dataChanged.emit(index, index)
 
         return result
-
-    # def setHeaderData(self, section, orientation, value, role=Qt.EditRole):
-    #     if role != Qt.EditRole or orientation != Qt.Horizontal:
-    #         return False
-    #
-    #     result = self.rootItem.setData(section, value)
-    #     if result:
-    #         self.headerDataChanged.emit(orientation, section, section)
-    #
-    #     return result
 
     def setHeaderData(self, p_int, orientation, value, role=None):
         if isinstance(value, str):
