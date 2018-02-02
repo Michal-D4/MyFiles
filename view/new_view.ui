@@ -42,7 +42,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <activeon>:/image/fileopen22.png</activeon>
+          <activeon>:/image/Database.png</activeon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -66,7 +66,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/star.png</normalon>
+          <normalon>:/image/Favourites.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -90,7 +90,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/loaddata22.png</normalon>
+          <normalon>:/image/Refresh2.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -114,7 +114,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/ic_action_play22.png</normalon>
+          <normalon>:/image/Go.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -314,7 +314,7 @@
   <action name="actionOpenDB">
    <property name="icon">
     <iconset>
-     <normalon>:/image/fileopen22.png</normalon>
+     <normalon>:/image/Database.png</normalon>
     </iconset>
    </property>
    <property name="text">
@@ -331,7 +331,7 @@
    <property name="icon">
     <iconset>
      <normaloff>:/image/edit.png</normaloff>
-     <normalon>:/image/loaddata22.png</normalon>
+     <normalon>:/image/Refresh2.png</normalon>
      <activeon>:/image/loaddata.png</activeon>:/image/edit.png</iconset>
    </property>
    <property name="text">
@@ -344,7 +344,7 @@
   <action name="actionGetFiles">
    <property name="icon">
     <iconset>
-     <normalon>:/image/ic_action_play22.png</normalon>
+     <normalon>:/image/Go.png</normalon>
     </iconset>
    </property>
    <property name="text">
@@ -357,7 +357,7 @@
   <action name="actionFavorites">
    <property name="icon">
     <iconset>
-     <normalon>:/image/star.png</normalon>
+     <normalon>:/image/Favourites.png</normalon>
     </iconset>
    </property>
    <property name="text">
