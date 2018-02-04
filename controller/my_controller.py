@@ -14,6 +14,7 @@ from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.editable_model import EditableTreeModel
+from controller.edit_tree_model import EditTreeModel
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
 from model.helpers import Fields
@@ -986,7 +987,10 @@ class MyController():
         # todo - do not correctly restore when reopen from toolbar button
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
-        model = EditableTreeModel()
+        # model = EditableTreeModel()
+        model = EditTreeModel()
+        # model = TreeModel()
+
         model.set_model_data(dirs)
 
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
