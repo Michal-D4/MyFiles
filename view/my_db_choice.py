@@ -1,7 +1,5 @@
 # view/my_db_choice.py
 
-import sys
-
 from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QCoreApplication
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 
@@ -148,6 +146,8 @@ class MyDBChoice(QDialog):
 
 
 if __name__ == "__main__":
+    import sys
+
     from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)

@@ -59,6 +59,9 @@
      <height>192</height>
     </rect>
    </property>
+   <property name="indentation">
+    <number>2</number>
+   </property>
   </widget>
   <widget class="QTreeView" name="fieldsUsed">
    <property name="geometry">
@@ -68,6 +71,9 @@
      <width>121</width>
      <height>192</height>
     </rect>
+   </property>
+   <property name="indentation">
+    <number>2</number>
    </property>
   </widget>
   <widget class="QToolButton" name="btn_add">
@@ -87,7 +93,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normalon>:/image/ic_action_forward.png</normalon>
+     <normalon>:/image/right.png</normalon>
     </iconset>
    </property>
    <property name="iconSize">
@@ -114,7 +120,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normalon>:/image/ic_action_back.png</normalon>
+     <normalon>:/image/left.png</normalon>
     </iconset>
    </property>
    <property name="iconSize">

@@ -1,4 +1,4 @@
-# controller/editable_model.py
+# controller/edit_tree_model.py
 
 import copy
 
@@ -6,10 +6,10 @@ from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 
 
 class TreeItem(object):
-    def __init__(self, data, user_data=None, parent=None):
+    def __init__(self, data_, user_data=None, parent=None):
         self.parentItem = parent
-        self.itemData = data
         self.userData = user_data
+        self.itemData = data_
         self.childItems = []
 
     def child(self, row):
@@ -18,20 +18,13 @@ class TreeItem(object):
     def childCount(self):
         return len(self.childItems)
 
-    def childNumber(self):
-        """
-        :return: current row number, 0 for rootItem
-        """
-        if self.parentItem != None:
-            return self.parentItem.childItems.index(self)
-        return 0
-
     def columnCount(self):
         return len(self.itemData)
 
-    def data(self, column, role=Qt.DisplayRole):
+    def data(self, column, role):
         if role == Qt.DisplayRole:
             return self.itemData[column]
+
         if role == Qt.UserRole:
             return self.userData
         return None
@@ -40,69 +33,40 @@ class TreeItem(object):
         item.parentItem = self
         self.childItems.append(item)
 
-    def insertChildren(self, position, count, columns):
-        if position < 0 or position > len(self.childItems):
-            return False
-
-        for row in range(count):
-            data = [None for v in range(columns)]
-            item = TreeItem(data, self)
-            self.childItems.insert(position, item)
-
-        return True
-
     def parent(self):
         return self.parentItem
 
-    def removeChildren(self, position, count):
-        if position < 0 or position + count > len(self.childItems):
-            return False
+    def row(self):
+        if self.parentItem:
+            return self.parentItem.childItems.index(self)
 
-        for row in range(count):
-            self.childItems.pop(position)
-
-        return True
-
-    def setData(self, column, value, role=Qt.EditRole):
-        if role == Qt.EditRole:
-            if column < 0 or column >= len(self.itemData):
-                return False
-
-            self.itemData[column] = value
-
-            return True
-
-        if role == Qt.UserRole:
-            self.userData = value
-            return False
+        return 0
 
     def set_data(self, data_):
         self.itemData = data_
 
 
-class EditableTreeModel(QAbstractItemModel):
+class EditTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
-        super(EditableTreeModel, self).__init__(parent)
+        super(EditTreeModel, self).__init__(parent)
 
-        self.rootItem = TreeItem(())
+        self.rootItem = TreeItem(data_=("",))
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent):
         return self.rootItem.columnCount()
 
     def data(self, index, role):
-        if not index.isValid():
-            return None
-
-        if role in (Qt.DisplayRole, Qt.UserRole, Qt.EditRole):
-            item = self.getItem(index)
-            return item.data(index.column(), role)
+        if index.isValid() & role in (Qt.DisplayRole, Qt.UserRole):
+            item = index.internalPointer()
+            if item:
+                return item.data(index.column(), role)
         return None
 
     def flags(self, index):
         if not index.isValid():
-            return 0
+            return Qt.NoItemFlags
 
-        return Qt.ItemIsEditable | super(EditableTreeModel, self).flags(index)
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def getItem(self, index):
         if index.isValid():
@@ -114,44 +78,35 @@ class EditableTreeModel(QAbstractItemModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.rootItem.data(section)
-
+            return self.rootItem.data(section, role)
         return None
 
     def index(self, row, column, parent=QModelIndex()):
-        if parent.isValid() and parent.column() != 0:
+        if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
-        parentItem = self.getItem(parent)
+        if not parent.isValid():
+            parentItem = self.rootItem
+        else:
+            parentItem = parent.internalPointer()
+
         childItem = parentItem.child(row)
         if childItem:
             return self.createIndex(row, column, childItem)
-        else:
-            return QModelIndex()
 
-    def insertRows(self, position, count, parent=QModelIndex()):
-        parentItem = self.getItem(parent)
-        self.beginInsertRows(parent, position, position + count - 1)
-        success = parentItem.insertChildren(position, count,
-                                            self.rootItem.columnCount())
-        self.endInsertRows()
-
-        return success
-
-    def append_child(self, parent, item):
-        parent.appendChild(item)
+        return QModelIndex()
 
     def parent(self, index):
         if not index.isValid():
             return QModelIndex()
 
-        childItem = self.getItem(index)
-        parentItem = childItem.parent()
+        child_item = index.internalPointer()
+        parent_item = child_item.parent()
 
-        if parentItem == self.rootItem:
+        if parent_item == self.rootItem:
             return QModelIndex()
 
-        return self.createIndex(parentItem.childNumber(), 0, parentItem)
+        return self.createIndex(parent_item.row(), 0, parent_item)
 
     def removeRows(self, row, count, parent=QModelIndex()):
         """
@@ -173,18 +128,6 @@ class EditableTreeModel(QAbstractItemModel):
         parentItem = self.getItem(parent)
 
         return parentItem.childCount()
-
-    def setData(self, index, value, role=Qt.EditRole):
-        if not role in (Qt.EditRole, Qt.UserRole):
-            return False
-
-        item = self.getItem(index)
-        result = item.setData(index.column(), value, role)
-
-        if result:
-            self.dataChanged.emit(index, index)
-
-        return result
 
     def setHeaderData(self, p_int, orientation, value, role=None):
         if isinstance(value, str):
@@ -208,7 +151,7 @@ class EditableTreeModel(QAbstractItemModel):
         for row in rows:
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
-            items_dict[row[1]] = TreeItem(data=row[0], user_data=(row[1:]))
+            items_dict[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
             id_list.append((row[1:]))
 
         for id_ in id_list:

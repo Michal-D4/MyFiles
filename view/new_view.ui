@@ -90,7 +90,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/Refresh2.png</normalon>
+          <normalon>:/image/Go.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -114,7 +114,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/Go.png</normalon>
+          <normalon>:/image/Refresh2.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -219,11 +219,26 @@
        <property name="editTriggers">
         <set>QAbstractItemView::NoEditTriggers</set>
        </property>
+       <property name="dragEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="dragDropMode">
+        <enum>QAbstractItemView::DragDrop</enum>
+       </property>
+       <property name="defaultDropAction">
+        <enum>Qt::CopyAction</enum>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::ExtendedSelection</enum>
        </property>
        <property name="textElideMode">
         <enum>Qt::ElideLeft</enum>
+       </property>
+       <property name="indentation">
+        <number>16</number>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
        </property>
       </widget>
       <widget class="QSplitter" name="splitter_files">
@@ -234,15 +249,30 @@
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
+        <property name="dragEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="dragDropMode">
+         <enum>QAbstractItemView::DragOnly</enum>
+        </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
         </property>
         <property name="indentation">
-         <number>5</number>
+         <number>3</number>
+        </property>
+        <property name="uniformRowHeights">
+         <bool>true</bool>
         </property>
         <property name="sortingEnabled">
          <bool>true</bool>
         </property>
+        <property name="expandsOnDoubleClick">
+         <bool>false</bool>
+        </property>
+        <attribute name="headerStretchLastSection">
+         <bool>false</bool>
+        </attribute>
        </widget>
        <widget class="QTextBrowser" name="commentField">
         <property name="focusPolicy">
@@ -282,6 +312,9 @@
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
         </property>
+        <property name="indentation">
+         <number>10</number>
+        </property>
        </widget>
        <widget class="QTreeView" name="tagsList">
         <property name="focusPolicy">
@@ -293,6 +326,9 @@
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
         </property>
+        <property name="indentation">
+         <number>0</number>
+        </property>
        </widget>
        <widget class="QTreeView" name="authorsList">
         <property name="focusPolicy">
@@ -303,6 +339,12 @@
         </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+        <property name="indentation">
+         <number>0</number>
+        </property>
+        <property name="expandsOnDoubleClick">
+         <bool>false</bool>
         </property>
        </widget>
       </widget>
@@ -331,7 +373,7 @@
    <property name="icon">
     <iconset>
      <normaloff>:/image/edit.png</normaloff>
-     <normalon>:/image/Refresh2.png</normalon>
+     <normalon>:/image/Go.png</normalon>
      <activeon>:/image/loaddata.png</activeon>:/image/edit.png</iconset>
    </property>
    <property name="text">
@@ -344,7 +386,7 @@
   <action name="actionGetFiles">
    <property name="icon">
     <iconset>
-     <normalon>:/image/Go.png</normalon>
+     <normalon>:/image/Refresh2.png</normalon>
     </iconset>
    </property>
    <property name="text">

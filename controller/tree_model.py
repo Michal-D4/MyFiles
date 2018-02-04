@@ -56,10 +56,7 @@ class TreeModel(QAbstractItemModel):
         self.rootItem = TreeItem(data_=("",))
 
     def columnCount(self, parent):
-        if parent.isValid():
-            return parent.internalPointer().columnCount()
-        else:
-            return self.rootItem.columnCount()
+        return self.rootItem.columnCount()
 
     def data(self, index, role):
         if index.isValid() & role in (Qt.DisplayRole, Qt.UserRole):
