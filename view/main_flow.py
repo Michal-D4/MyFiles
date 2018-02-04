@@ -1,7 +1,8 @@
 # view/main_flow.py
 
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent
-from PyQt5.QtGui import QResizeEvent
+from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent,
+                          QByteArray, QDataStream, QIODevice, QMimeData)
+from PyQt5.QtGui import QResizeEvent, QDrag
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.my_db_choice import MyDBChoice
@@ -30,24 +31,62 @@ class MainFlow(QMainWindow):
         self.open_dialog = open_dialog
 
     def set_actions(self):
-        self.ui.actionOpenDB.triggered.connect(
-            lambda: self.open_dialog.exec_())
-        self.ui.actionScanFiles.triggered.connect(
-            lambda: self.scan_files_signal.emit())
-        self.ui.actionGetFiles.triggered.connect(
-            lambda: self.change_data_signal.emit('Select files'))
-        self.ui.actionFavorites.triggered.connect(
-            lambda: self.change_data_signal.emit('Favorites'))
+        """
+        Connect handlers to tool bar actions and widgets' events
+        :return:
+        """
+        self.ui.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
+        self.ui.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
+        self.ui.actionGetFiles.triggered.connect(lambda: self.change_data_signal.emit('Select files'))
+        self.ui.actionFavorites.triggered.connect(lambda: self.change_data_signal.emit('Favorites'))
 
-        self.ui.cb_places.currentIndexChanged.connect(
-            lambda: self.change_data_signal.emit('Change place'))
+        self.ui.cb_places.currentIndexChanged.connect(lambda: self.change_data_signal.emit('Change place'))
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
-        self.ui.filesList.doubleClicked.connect(
-            lambda: self.change_data_signal.emit('File_doubleClicked'))
+        self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
+
+        # self.ui.dirTree.mousePressEvent = self.dir_press_event
+        # self.ui.filesList.mousePressEvent = self.file_press_event
 
         self.ui.filesList.resizeEvent = self.resize_event
 
+    def dir_press_event(self, event):
+        print('--> dir_press_event')
+        index = self.ui.dirTree.indexAt(event.pos())
+        if index.isValid():
+            print('--> dir_press_event -- index.isValid')
+            sel_idx = self.ui.dirTree.selectionModel().selectedRows()
+            byte_array = QByteArray()
+            data_stream = QDataStream(byte_array, QIODevice.WriteOnly)
+            print('   1')
+            data_stream << sel_idx
+            print('   2')
+
+            mime_data = QMimeData()
+            mime_data.setData('dir/indexes', byte_array)
+
+            drag = QDrag(self)
+            drag.setMimeData(mime_data)
+            print('   3')
+
+            # if drag.exec_(Qt.CopyAction | Qt.MoveAction, Qt.CopyAction) == Qt.CopyAction:
+            if drag.exec_(Qt.CopyAction) == Qt.CopyAction:
+                print('  after drag.exec_  == CopyAction')
+                pass
+                return
+        super().mousePressEvent(event)
+
+    def file_press_event(self, event):
+        print('--> file_press_event')
+        index = self.ui.filesList.indexAt(event.pos())
+        if index.isValid():
+            print('--> dir_press_event -- index.isValid')
+        super().mousePressEvent(event)
+
     def set_menus(self):
+        """
+        Set actions of main menu
+        :return:
+        """
         menu = QMenu(self)
         change_font = menu.addAction('Change Font')
         set_fields = menu.addAction('Set fields')
@@ -61,6 +100,10 @@ class MainFlow(QMainWindow):
         sel_opt.triggered.connect(lambda: self.change_data_signal.emit('Selection options'))
 
     def setup_context_menu(self):
+        """
+        Set context menus for each widget
+        :return:
+        """
         self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.filesList.customContextMenuRequested.connect(self._file_menu)
 
@@ -134,6 +177,11 @@ class MainFlow(QMainWindow):
             self.change_data_signal.emit('Dirs {}'.format(action.text()))
 
     def ref_clicked(self, href):
+        """
+        Invoke methods to change file information: tags, authors, comment
+        :param href:
+        :return:
+        """
         self.ui.commentField.setSource(QUrl())
         self.change_data_signal.emit(href.toString())
 
@@ -160,6 +208,11 @@ class MainFlow(QMainWindow):
             self.change_data_signal.emit('Resize columns')
 
     def changeEvent(self, event):
+        """
+        Save size and position of window before it maximized
+        :param event:
+        :return:
+        """
         if event.type() == QEvent.WindowStateChange:
             settings = QSettings()
             if event.oldState() == Qt.WindowMaximized:
@@ -175,6 +228,11 @@ class MainFlow(QMainWindow):
             super().changeEvent(event)
 
     def moveEvent(self, event):
+        """
+        Save new position of window
+        :param event:
+        :return:
+        """
         self.old_pos = event.oldPos()
         settings = QSettings()
         settings.setValue("MainFlow/Position", QVariant(self.pos()))
