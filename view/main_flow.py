@@ -45,35 +45,48 @@ class MainFlow(QMainWindow):
         self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
 
         # self.ui.dirTree.mousePressEvent = self.dir_press_event
+        # self.ui.dirTree.mouseMoveEvent = self.mouse_move_event
+        # self.ui.dirTree.mouseReleaseEvent = self.mouse_release_event
         # self.ui.filesList.mousePressEvent = self.file_press_event
 
         self.ui.filesList.resizeEvent = self.resize_event
 
-    def dir_press_event(self, event):
-        print('--> dir_press_event')
-        index = self.ui.dirTree.indexAt(event.pos())
-        if index.isValid():
-            print('--> dir_press_event -- index.isValid')
-            sel_idx = self.ui.dirTree.selectionModel().selectedRows()
-            byte_array = QByteArray()
-            data_stream = QDataStream(byte_array, QIODevice.WriteOnly)
-            print('   1')
-            data_stream << sel_idx
-            print('   2')
+    # def mouseReleaseEvent(self, event):
+    #     print('--> mouseReleaseEvent', self.ui.dirTree.underMouse())
+    #     event.ignore()
+    #     return super().mouseReleaseEvent(event)
 
-            mime_data = QMimeData()
-            mime_data.setData('dir/indexes', byte_array)
+    # def mouseMoveEvent(self, event):
+    #     print('--> mouseMoveEvent', self.ui.dirTree.underMouse())
+    #     event.ignore()
+    #     return super().mouseMoveEvent(event)
 
-            drag = QDrag(self)
-            drag.setMimeData(mime_data)
-            print('   3')
-
-            # if drag.exec_(Qt.CopyAction | Qt.MoveAction, Qt.CopyAction) == Qt.CopyAction:
-            if drag.exec_(Qt.CopyAction) == Qt.CopyAction:
-                print('  after drag.exec_  == CopyAction')
-                pass
-                return
-        super().mousePressEvent(event)
+    # def mousePressEvent(self, event):
+    #     print('--> mousePressEvent', self.ui.dirTree.underMouse())
+    #     index = self.ui.dirTree.indexAt(event.pos())
+    #     if index.isValid():
+    #         print('--> dir_press_event -- index.isValid')
+            # sel_idx = self.ui.dirTree.selectionModel().selectedRows()
+            # byte_array = QByteArray()
+            # data_stream = QDataStream(byte_array, QIODevice.WriteOnly)
+            # print('   1')
+            # data_stream << sel_idx
+            # print('   2')
+            #
+            # mime_data = QMimeData()
+            # mime_data.setData('dir/indexes', byte_array)
+            #
+            # drag = QDrag(self)
+            # drag.setMimeData(mime_data)
+            # print('   3')
+            #
+            # # if drag.exec_(Qt.CopyAction | Qt.MoveAction, Qt.CopyAction) == Qt.CopyAction:
+            # if drag.exec_(Qt.CopyAction) == Qt.CopyAction:
+            #     print('  after drag.exec_  == CopyAction')
+            #     pass
+            #     return
+        # event.ignore()
+        # return super().mousePressEvent(event)
 
     def file_press_event(self, event):
         print('--> file_press_event')
