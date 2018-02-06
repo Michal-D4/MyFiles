@@ -1032,6 +1032,7 @@ class MyController():
         :param curr_idx:
         :return: None
         """
+        print('--> _cur_dir_changed')
         if curr_idx:
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
