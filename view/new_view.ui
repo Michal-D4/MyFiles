@@ -90,7 +90,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/Go.png</normalon>
+          <normalon>:/image/Update.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -114,7 +114,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/Refresh2.png</normalon>
+          <normalon>:/image/Refresh.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -373,7 +373,7 @@
    <property name="icon">
     <iconset>
      <normaloff>:/image/edit.png</normaloff>
-     <normalon>:/image/Go.png</normalon>
+     <normalon>:/image/Update.png</normalon>
      <activeon>:/image/loaddata.png</activeon>:/image/edit.png</iconset>
    </property>
    <property name="text">
@@ -386,7 +386,7 @@
   <action name="actionGetFiles">
    <property name="icon">
     <iconset>
-     <normalon>:/image/Refresh2.png</normalon>
+     <normalon>:/image/Refresh.png</normalon>
     </iconset>
    </property>
    <property name="text">

@@ -3,9 +3,9 @@
     <file>Database.png</file>
     <file>right.png</file>
     <file>left.png</file>
-    <file>Go.png</file>
+    <file>Update.png</file>
     <file>Favourites.png</file>
-    <file>Refresh2.png</file>
+    <file>Refresh.png</file>
     <file>menu.png</file>
   </qresource>
 </RCC>
