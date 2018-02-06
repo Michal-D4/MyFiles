@@ -134,6 +134,18 @@ class EditTreeModel(QAbstractItemModel):
             value = value.split(' ')
         self.rootItem.set_data(value)
 
+    def append_child(self, item, parent):
+        if parent.isValid():
+            parentItem = self.getItem(parent)
+            position = parentItem.childCount()
+            self.beginInsertRows(parent, position, position)
+            parentItem.appendChild(position, item)
+
+            # self.dataChanged.emit(index, index)   # Is it necessary? then calculate also index for appended row
+            self.endInsertRows()
+            return True
+        return False
+
     def set_model_data(self, rows):
         """
         Fill tree structure
