@@ -2,7 +2,10 @@
 
 import copy
 
-from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
+# from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
+from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteArray,
+                          QDataStream, QIODevice)
+
 
 
 class TreeItem(object):
@@ -66,7 +69,9 @@ class EditTreeModel(QAbstractItemModel):
         if not index.isValid():
             return Qt.NoItemFlags
 
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        # return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | \
+               Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
 
     def getItem(self, index):
         if index.isValid():
@@ -170,3 +175,25 @@ class EditTreeModel(QAbstractItemModel):
             if id_[1] in items_dict:
                 # use copy because the same item may used in different branches
                 items_dict[id_[1]].appendChild(copy.deepcopy(items_dict[id_[0]]))
+
+    def supportedDropActions(self):
+        return Qt.CopyAction | Qt.MoveAction
+
+    def mimeTypes(self):
+        return ['text/xml']
+
+    def mimeData(self, indexes):
+        print('--> mimeData', len(indexes))
+        itemData = QByteArray()
+        dataStream = QDataStream(itemData, QIODevice.WriteOnly)
+
+        dataStream.writeQString('mimeData')
+        mimedata = QMimeData()
+
+        mimedata.setData('text/xml', itemData)
+        return mimedata
+
+    def dropMimeData(self, data, action, row, column, parent):
+        print('--> dropMimeData')
+        return True
+

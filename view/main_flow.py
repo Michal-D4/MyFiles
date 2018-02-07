@@ -44,65 +44,18 @@ class MainFlow(QMainWindow):
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
         self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
 
-        self.ui.dirTree.mousePressEvent = self.mouse_press_event
-        # self.ui.dirTree.mouseMoveEvent = self.mouse_move_event
-        # self.ui.dirTree.mouseReleaseEvent = self.mouse_release_event
-        self.ui.dirTree.expanded.connect(self._expanded)
-        self.ui.dirTree.collapsed.connect(self._collapsed)
+        self.ui.dirTree.dragEnterEvent = self._drag_enter_event
 
         # self.ui.filesList.mousePressEvent = self.file_press_event
 
         self.ui.filesList.resizeEvent = self.resize_event
 
-    def _expanded(self, index):
-        print('--> _expanded')
-
-    def _collapsed(self, index):
-        print('--> _collapsed')
-
-    def mouse_release_event(self, event):
-        print('--> mouse_release_event', self.ui.dirTree.underMouse())
-        event.ignore()
-        return super(QTreeView, self.ui.dirTree).mouseReleaseEvent(event)
-
-    def mouse_move_event(self, event):
-        print('--> mouse_move_event', self.ui.dirTree.underMouse())
-        event.ignore()
-        return super(QTreeView, self.ui.dirTree).mouseMoveEvent(event)
-
-    def mouse_press_event(self, event):
-        print('--> mouse_press_event', self.ui.dirTree.underMouse())
-        index = self.ui.dirTree.indexAt(event.pos())
-        if index.isValid():
-            print('--> mouse_press_event -- index.isValid')
-            # sel_idx = self.ui.dirTree.selectionModel().selectedRows()
-            # byte_array = QByteArray()
-            # data_stream = QDataStream(byte_array, QIODevice.WriteOnly)
-            # print('   1')
-            # data_stream << sel_idx
-            # print('   2')
-            #
-            # mime_data = QMimeData()
-            # mime_data.setData('dir/indexes', byte_array)
-            #
-            # drag = QDrag(self)
-            # drag.setMimeData(mime_data)
-            # print('   3')
-            #
-            # # if drag.exec_(Qt.CopyAction | Qt.MoveAction, Qt.CopyAction) == Qt.CopyAction:
-            # if drag.exec_(Qt.CopyAction) == Qt.CopyAction:
-            #     print('  after drag.exec_  == CopyAction')
-            #     pass
-            #     return
-        event.ignore()
-        return super(QTreeView, self.ui.dirTree).mousePressEvent(event)
-
-    def file_press_event(self, event):
-        print('--> file_press_event')
-        index = self.ui.filesList.indexAt(event.pos())
-        if index.isValid():
-            print('--> dir_press_event -- index.isValid')
-        super().mousePressEvent(event)
+    def _drag_enter_event(self, e):
+        print('--> dragEnterEvent', e.mimeData().formats())
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore()
 
     def set_menus(self):
         """
