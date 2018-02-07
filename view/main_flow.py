@@ -3,7 +3,7 @@
 from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent,
                           QByteArray, QDataStream, QIODevice, QMimeData)
 from PyQt5.QtGui import QResizeEvent, QDrag
-from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu, QTreeView
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
@@ -44,28 +44,37 @@ class MainFlow(QMainWindow):
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
         self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
 
-        # self.ui.dirTree.mousePressEvent = self.dir_press_event
+        self.ui.dirTree.mousePressEvent = self.mouse_press_event
         # self.ui.dirTree.mouseMoveEvent = self.mouse_move_event
         # self.ui.dirTree.mouseReleaseEvent = self.mouse_release_event
+        self.ui.dirTree.expanded.connect(self._expanded)
+        self.ui.dirTree.collapsed.connect(self._collapsed)
+
         # self.ui.filesList.mousePressEvent = self.file_press_event
 
         self.ui.filesList.resizeEvent = self.resize_event
 
-    # def mouseReleaseEvent(self, event):
-    #     print('--> mouseReleaseEvent', self.ui.dirTree.underMouse())
-    #     event.ignore()
-    #     return super().mouseReleaseEvent(event)
+    def _expanded(self, index):
+        print('--> _expanded')
 
-    # def mouseMoveEvent(self, event):
-    #     print('--> mouseMoveEvent', self.ui.dirTree.underMouse())
-    #     event.ignore()
-    #     return super().mouseMoveEvent(event)
+    def _collapsed(self, index):
+        print('--> _collapsed')
 
-    # def mousePressEvent(self, event):
-    #     print('--> mousePressEvent', self.ui.dirTree.underMouse())
-    #     index = self.ui.dirTree.indexAt(event.pos())
-    #     if index.isValid():
-    #         print('--> dir_press_event -- index.isValid')
+    def mouse_release_event(self, event):
+        print('--> mouse_release_event', self.ui.dirTree.underMouse())
+        event.ignore()
+        return super(QTreeView, self.ui.dirTree).mouseReleaseEvent(event)
+
+    def mouse_move_event(self, event):
+        print('--> mouse_move_event', self.ui.dirTree.underMouse())
+        event.ignore()
+        return super(QTreeView, self.ui.dirTree).mouseMoveEvent(event)
+
+    def mouse_press_event(self, event):
+        print('--> mouse_press_event', self.ui.dirTree.underMouse())
+        index = self.ui.dirTree.indexAt(event.pos())
+        if index.isValid():
+            print('--> mouse_press_event -- index.isValid')
             # sel_idx = self.ui.dirTree.selectionModel().selectedRows()
             # byte_array = QByteArray()
             # data_stream = QDataStream(byte_array, QIODevice.WriteOnly)
@@ -85,8 +94,8 @@ class MainFlow(QMainWindow):
             #     print('  after drag.exec_  == CopyAction')
             #     pass
             #     return
-        # event.ignore()
-        # return super().mousePressEvent(event)
+        event.ignore()
+        return super(QTreeView, self.ui.dirTree).mousePressEvent(event)
 
     def file_press_event(self, event):
         print('--> file_press_event')
