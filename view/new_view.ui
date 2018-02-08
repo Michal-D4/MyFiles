@@ -28,14 +28,14 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <layout class="QHBoxLayout" name="toolBar">
-      <property name="spacing">
-       <number>1</number>
-      </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QToolButton" name="btnOpenDB">
         <property name="focusPolicy">
          <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Open DB</string>
         </property>
         <property name="text">
          <string>...</string>
@@ -61,6 +61,9 @@
         <property name="focusPolicy">
          <enum>Qt::ClickFocus</enum>
         </property>
+        <property name="toolTip">
+         <string>Favorites</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
@@ -84,6 +87,9 @@
        <widget class="QToolButton" name="btnScanFiles">
         <property name="focusPolicy">
          <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Scan disk for files</string>
         </property>
         <property name="text">
          <string>...</string>
@@ -109,12 +115,15 @@
         <property name="focusPolicy">
          <enum>Qt::ClickFocus</enum>
         </property>
+        <property name="toolTip">
+         <string>Search files for tags, authors etc.</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
         <property name="icon">
          <iconset>
-          <normalon>:/image/Refresh.png</normalon>
+          <normalon>:/image/Wizard.png</normalon>
          </iconset>
         </property>
         <property name="iconSize">
@@ -129,7 +138,7 @@
        </widget>
       </item>
       <item>
-       <widget class="Line" name="line">
+       <widget class="Line" name="line_2">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
         </property>
@@ -143,8 +152,17 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="minimumSize">
+         <size>
+          <width>109</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="focusPolicy">
          <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Choose place where files resides</string>
         </property>
         <property name="editable">
          <bool>true</bool>
@@ -154,6 +172,13 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -174,6 +199,9 @@
        <widget class="QToolButton" name="btnOption">
         <property name="focusPolicy">
          <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Settings</string>
         </property>
         <property name="text">
          <string>...</string>
@@ -214,7 +242,7 @@
         <enum>Qt::CustomContextMenu</enum>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory tree&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string/>
        </property>
        <property name="editTriggers">
         <set>QAbstractItemView::NoEditTriggers</set>
@@ -247,7 +275,7 @@
        </property>
        <widget class="QTreeView" name="filesList">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of files&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string/>
         </property>
         <property name="dragEnabled">
          <bool>true</bool>
@@ -279,7 +307,7 @@
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Active file info&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string/>
         </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
@@ -307,7 +335,7 @@
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;File extensions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string/>
         </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
@@ -321,7 +349,7 @@
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tags&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string/>
         </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
@@ -335,7 +363,7 @@
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Authors&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string/>
         </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::ExtendedSelection</enum>
@@ -362,9 +390,6 @@
    <property name="text">
     <string>OpenDB</string>
    </property>
-   <property name="toolTip">
-    <string>Open DB Dialog</string>
-   </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
@@ -372,28 +397,21 @@
   <action name="actionScanFiles">
    <property name="icon">
     <iconset>
-     <normaloff>:/image/edit.png</normaloff>
      <normalon>:/image/Update.png</normalon>
-     <activeon>:/image/loaddata.png</activeon>:/image/edit.png</iconset>
+    </iconset>
    </property>
    <property name="text">
     <string>ScanFiles</string>
-   </property>
-   <property name="toolTip">
-    <string>Scan for Files</string>
    </property>
   </action>
   <action name="actionGetFiles">
    <property name="icon">
     <iconset>
-     <normalon>:/image/Refresh.png</normalon>
+     <normalon>:/image/Wizard.png</normalon>
     </iconset>
    </property>
    <property name="text">
     <string>GetFiles</string>
-   </property>
-   <property name="toolTip">
-    <string>Get list of files</string>
    </property>
   </action>
   <action name="actionFavorites">

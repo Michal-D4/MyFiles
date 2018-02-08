@@ -46,8 +46,6 @@ class MainFlow(QMainWindow):
 
         self.ui.dirTree.dragEnterEvent = self._drag_enter_event
 
-        # self.ui.filesList.mousePressEvent = self.file_press_event
-
         self.ui.filesList.resizeEvent = self.resize_event
 
     def _drag_enter_event(self, e):
