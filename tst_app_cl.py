@@ -9,17 +9,17 @@ from PyQt5.QtCore import Qt, QModelIndex, QItemSelectionRange, QAbstractItemMode
 from controller.table_model import TableModel
 from controller.tree_model import TreeItem, TreeModel
 
-# sys._excepthook = sys.excepthook
-#
-#
-# def my_exception_hook(exctype, value, traceback):
-#     # Print the error and traceback
-#     print(exctype, value, traceback)
-#     # Call the normal Exception hook after
-#     sys._excepthook(exctype, value, traceback)
-#     sys.exit(1)
-#
-# sys.excepthook = my_exception_hook
+sys._excepthook = sys.excepthook
+
+
+def my_exception_hook(exctype, value, traceback):
+    # Print the error and traceback
+    print(exctype, value, traceback)
+    # Call the normal Exception hook after
+    sys._excepthook(exctype, value, traceback)
+    sys.exit(1)
+
+sys.excepthook = my_exception_hook
 
 
 class TreeModelChainUp(TreeModel):
@@ -109,6 +109,11 @@ class MethodsTree():
         self.view = QTreeView()
         self.file_name = file_name
         self.view.setWindowTitle(file_name.rpartition(os.sep)[2])
+
+        self.view.mousePressEvent = self.mouse_press_event
+        self.view.expanded.connect(self._expanded)
+        self.view.collapsed.connect(self._collapsed)
+
         self.row_id = 0
         self.called_by = None
         self.methods = None
@@ -137,6 +142,17 @@ class MethodsTree():
         self.view.show()
 
         self.view.selectionModel().selectionChanged.connect(self.sel_changed)
+
+    def _expanded(self, index):
+        print('--> _expanded')
+
+    def _collapsed(self, index):
+        print('--> _collapsed')
+
+    def mouse_press_event(self, event):
+        print('--> mouse_press_event', self.view.underMouse())
+        event.ignore()
+        return super(QTreeView, self.view).mouseMoveEvent(event)
 
     def sel_changed(self, sel1: QItemSelectionRange):   # , sel2: QItemSelectionRange): -2d parameter, not used
         if sel1.indexes():
@@ -339,6 +355,9 @@ class MethodsTree():
 
         return grp3, pat
 
+    def _cur_row_changed(self, curr_idx):
+        print('--> _cur_row_changed', curr_idx.row())
+
     def update_model(self, data):
         self.methods = [x[0] for x in data]
         self.called_by = [x[2] for x in data]
@@ -355,6 +374,7 @@ class MethodsTree():
         data = sorted(dat_, key=lambda x: x[2], reverse=True)
 
         self.view.model().set_model_data(data)
+        self.view.selectionModel().currentRowChanged.connect(self._cur_row_changed)
 
 
 if __name__ == "__main__":
@@ -367,12 +387,12 @@ if __name__ == "__main__":
     # file_ = 'controller/my_controller.py'
     # file_ = 'controller/places.py'
     # file_ = 'controller/table_model.py'
-    file_ = 'controller/tree_model.py'
+    # file_ = 'controller/tree_model.py'
     # file_ = 'model/file_info.py'
     # file_ = 'model/utilities.py'
     # file_ = 'model/utils/create_db.py'
     # file_ = 'model/utils/load_db_data.py'
-    # file_ = 'view/input_date.py'
+    file_ = 'view/input_date.py'
     # file_ = 'view/item_edit.py'
     # file_ = 'view/main_flow.py'
     # file_ = 'view/my_db_choice.py'

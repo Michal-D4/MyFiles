@@ -5,7 +5,7 @@ import copy
 # from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteArray,
                           QDataStream, QIODevice)
-
+from model.helpers import MimeTypes
 
 
 class TreeItem(object):
@@ -50,6 +50,7 @@ class TreeItem(object):
 
 
 class EditTreeModel(QAbstractItemModel):
+
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
@@ -180,20 +181,20 @@ class EditTreeModel(QAbstractItemModel):
         return Qt.CopyAction | Qt.MoveAction
 
     def mimeTypes(self):
-        return ['text/xml']
+        return MimeTypes
 
     def mimeData(self, indexes):
-        print('--> mimeData', len(indexes))
+        print('--> EditTreeModel.mimeData', len(indexes))
         itemData = QByteArray()
         dataStream = QDataStream(itemData, QIODevice.WriteOnly)
 
         dataStream.writeQString('mimeData')
         mimedata = QMimeData()
 
-        mimedata.setData('text/xml', itemData)
+        mimedata.setData(MimeTypes[0], itemData)
         return mimedata
 
     def dropMimeData(self, data, action, row, column, parent):
-        print('--> dropMimeData')
+        print('--> dropMimeData', data, action)
         return True
 

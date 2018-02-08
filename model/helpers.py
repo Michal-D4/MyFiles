@@ -3,6 +3,7 @@ import os
 from collections import namedtuple
 
 Fields = namedtuple('Fields', 'fields headers indexes')
+MimeTypes = ["application/x-folder-list", "application/x-file-list"]
 
 
 def get_file_extension(file_name):

@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu, QTreeView
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
-
+from model.helpers import MimeTypes
 
 class MainFlow(QMainWindow):
     change_data_signal = pyqtSignal(str)   # str - name of action
@@ -50,9 +50,11 @@ class MainFlow(QMainWindow):
 
     def _drag_enter_event(self, e):
         print('--> dragEnterEvent', e.mimeData().formats())
-        if e.mimeData().hasFormat('text/plain'):
+        if e.mimeData().hasFormat(MimeTypes[0]) | e.mimeData().hasFormat(MimeTypes[1]):
+            print('   accept')
             e.accept()
         else:
+            print('   ignore')
             e.ignore()
 
     def set_menus(self):

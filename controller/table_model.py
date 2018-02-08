@@ -2,8 +2,10 @@
 
 from collections import Iterable
 
-from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel, QSortFilterProxyModel
-
+# from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel, QSortFilterProxyModel
+from PyQt5.QtCore import (QAbstractTableModel, QModelIndex, Qt, QMimeData, QByteArray,
+                          QDataStream, QIODevice, QSortFilterProxyModel)
+from model.helpers import MimeTypes
 
 class ProxyModel(QSortFilterProxyModel):
 
@@ -47,6 +49,29 @@ class ProxyModel2(ProxyModel):
             right_data = int(right_data) or 0
 
         return left_data < right_data
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.NoItemFlags
+
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
+
+    def supportedDropActions(self):
+        return Qt.CopyAction
+
+    def mimeTypes(self):
+        return [MimeTypes[1]]
+
+    def mimeData(self, indexes):
+        print('--> ProxyModel2.mimeData', len(indexes))
+        itemData = QByteArray()
+        dataStream = QDataStream(itemData, QIODevice.WriteOnly)
+
+        dataStream.writeQString('mimeData')
+        mimedata = QMimeData()
+
+        mimedata.setData(MimeTypes[1], itemData)
+        return mimedata
 
 
 class TableModel(QAbstractTableModel):

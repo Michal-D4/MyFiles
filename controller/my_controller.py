@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
 from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
-from controller.editable_model import EditableTreeModel
 from controller.edit_tree_model import EditTreeModel
 from model.file_info import FileInfo, LoadFiles
 from model.helpers import *
