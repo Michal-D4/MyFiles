@@ -5,6 +5,7 @@ import copy
 # from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteArray,
                           QDataStream, QIODevice)
+from PyQt5.QtWidgets import QApplication
 from model.helpers import MimeTypes
 
 
@@ -30,6 +31,11 @@ class TreeItem(object):
 
         if role == Qt.UserRole:
             return self.userData
+
+        if role == Qt.BackgroundRole:
+            if self.userData[-2] > 0:
+                return QApplication.palette().alternateBase()
+            return QApplication.palette().base()
         return None
 
     def appendChild(self, item):
@@ -195,6 +201,18 @@ class EditTreeModel(QAbstractItemModel):
         return mimedata
 
     def dropMimeData(self, data, action, row, column, parent):
-        print('--> dropMimeData', data, action)
-        return True
+        print('--> dropMimeData', row, column)
+
+        if action == Qt.IgnoreAction:
+            return True
+
+        if data.hasFormat(MimeTypes[0]):
+            print('  Folder(s) dragged')
+            return True
+
+        if data.hasFormat(MimeTypes[1]):
+            print('  File(s) dragged')
+            return True
+
+        return False
 
