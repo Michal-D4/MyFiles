@@ -116,7 +116,7 @@
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Search files for tags, authors etc.</string>
+         <string>Conditional list of files</string>
         </property>
         <property name="text">
          <string>...</string>
