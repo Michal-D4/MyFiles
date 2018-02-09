@@ -201,7 +201,9 @@ class EditTreeModel(QAbstractItemModel):
         return mimedata
 
     def dropMimeData(self, data, action, row, column, parent):
-        print('--> dropMimeData', row, column)
+        print('--> dropMimeData', row, column, parent.isValid())
+        if parent.isValid():
+            print(parent.internalPointer().data(0, Qt.DisplayRole))
 
         if action == Qt.IgnoreAction:
             return True
@@ -212,6 +214,7 @@ class EditTreeModel(QAbstractItemModel):
 
         if data.hasFormat(MimeTypes[1]):
             print('  File(s) dragged')
+            # need fileIDs only in data ???
             return True
 
         return False
