@@ -84,7 +84,8 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened, Commented,',
                                   'FileID, DirID, CommentID, ExtID, PlaceId from Files where FileID',
                                   'in (select FileID from Favorites where FavID = ? and DirID = 0);')),
-           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
+           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;',
+           'LAST_FAV_ID': 'select max(FavID) from Dirs;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
@@ -106,7 +107,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'ExtID, FileName, CommentID, FileDate, Pages,',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
-          'DIR': 'insert into Dirs (Path, PlaceId, ParentID, FavID) values (?, ?, ?, ?);'
+          'DIR': 'insert into Dirs (Path, ParentID, PlaceId, FavID) values (?, ?, ?, ?);'
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',

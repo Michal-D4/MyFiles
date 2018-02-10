@@ -156,8 +156,9 @@ class Places:
                                                              disk_state=state)
                 self._places[self._curr_place.view_idx] = self._curr_place.db_row
                 self._dbu.insert_other('DIR', ('Favorites',                 # Folder name
+                                               0,                           # parentID
                                                self._curr_place.db_row[0],  # placeID
-                                               0, 1))                       # parentID, favID
+                                               1))                          # favID
                 return True
 
         return False

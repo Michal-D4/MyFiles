@@ -1,5 +1,6 @@
 # controller/my_controller.py
 
+import os
 import re
 import sqlite3
 import webbrowser
@@ -13,9 +14,9 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
 from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
-from controller.edit_tree_model import EditTreeModel
+from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
-from model.helpers import *
+from model import helpers
 from model.helpers import Fields
 from model.utilities import DBUtils, PLUS_EXT_ID
 from model.utils import create_db
@@ -53,7 +54,11 @@ class MyController():
         return {'Author Remove unused': self._author_remove_unused,
                 'Change place': self._cb_places.about_change_place,
                 'change_font': self._ask_for_change_font,
+                'Dirs Create virtual folder as child': self._create_virtual_child,
+                'Dirs Create virtual folder': self._create_virtual,
+                'Dirs Delete folder': self._delete_virtual,
                 'Dirs Remove empty': self._del_empty_dirs,
+                'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
@@ -82,6 +87,44 @@ class MyController():
                 'Tag Rename': self._tag_rename,
                 'Tag Scan in names': self._scan_for_tags
                 }
+
+    def _create_virtual_child(self):
+        folder_name = 'New folder'
+        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+                                             'Input folder name', '',
+                                             QLineEdit.Normal, folder_name)
+        if ok_:
+            cur_idx = self.ui.dirTree.currentIndex()
+            self._create_virtual_folder(new_name, cur_idx)
+
+    def _create_virtual(self):
+        folder_name = 'New folder'
+        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+                                             'Input folder name', '',
+                                             QLineEdit.Normal, folder_name)
+        if ok_:
+            cur_idx = self.ui.dirTree.currentIndex()
+            parent = self.ui.dirTree.model().parent(cur_idx)
+            self._create_virtual_folder(new_name, parent)
+
+    def _create_virtual_folder(self, folder_name, parent):
+        if parent.isValid():
+            parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole)[0]
+        else:
+            parent_id = 0
+        place_id = self._cb_places.get_curr_place().db_row[0]
+        fav_id = self._dbu.select_other('LAST_FAV_ID').fetchone()[0] + 1
+        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, fav_id))
+
+        item = TreeItem((folder_name, ), (dir_id, parent_id, fav_id, folder_name))
+
+        self.ui.dirTree.model().append_child(item, parent)
+
+    def _delete_virtual(self):
+        print('--> _delete_virtual')
+
+    def _rename_folder(self):
+        print('--> _rename_folder')
 
     def _selected_files(self):
         files = []
@@ -351,26 +394,28 @@ class MyController():
         return []
 
     def _ask_for_change_font(self):
-        font, ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
+        helpers.AppFont[0], ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
         if ok_:
-            self._change_font(font)
+            self._change_font()
             settings = QSettings()
-            settings.setValue('FONT', font)
+            settings.setValue('FONT', helpers.AppFont[0])
 
     def _restore_font(self):
         settings = QSettings()
-        font = settings.value('FONT', None)
-        if font:
-            self._change_font(font)
+        helpers.AppFont[0] = settings.value('FONT', None)
+        if helpers.AppFont[0]:
+            print(helpers.AppFont[0].toString())
+            self._change_font()
 
-    def _change_font(self, font):
-        self.ui.dirTree.setFont(font)
-        self.ui.extList.setFont(font)
-        self.ui.filesList.setFont(font)
-        self.ui.tagsList.setFont(font)
-        self.ui.authorsList.setFont(font)
-        self.ui.commentField.setFont(font)
-        self.ui.cb_places.setFont(font)
+    def _change_font(self):
+        print('--> _change_font:', helpers.AppFont[0].toString())
+        self.ui.dirTree.setFont(helpers.AppFont[0])
+        self.ui.extList.setFont(helpers.AppFont[0])
+        self.ui.filesList.setFont(helpers.AppFont[0])
+        self.ui.tagsList.setFont(helpers.AppFont[0])
+        self.ui.authorsList.setFont(helpers.AppFont[0])
+        self.ui.commentField.setFont(helpers.AppFont[0])
+        self.ui.cb_places.setFont(helpers.AppFont[0])
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -986,9 +1031,8 @@ class MyController():
         # todo - do not correctly restore when reopen from toolbar button
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
-        # model = EditableTreeModel()
         model = EditTreeModel()
-        # model = TreeModel()
+        model.set_alt_font(helpers.AppFont[0])
 
         model.set_model_data(dirs)
 
