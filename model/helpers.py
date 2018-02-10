@@ -1,9 +1,11 @@
 # model/helpers.py
 import os
 from collections import namedtuple
+from PyQt5.QtGui import QFontDatabase
 
 Fields = namedtuple('Fields', 'fields headers indexes')
 MimeTypes = ["application/x-folder-list", "application/x-file-list"]
+AppFont = [QFontDatabase.systemFont(QFontDatabase.GeneralFont)]
 
 
 def get_file_extension(file_name):

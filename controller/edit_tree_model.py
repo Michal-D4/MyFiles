@@ -6,7 +6,8 @@ import copy
 from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteArray,
                           QDataStream, QIODevice)
 from PyQt5.QtWidgets import QApplication
-from model.helpers import MimeTypes
+from PyQt5.QtGui import QFont
+from model.helpers import MimeTypes, AppFont
 
 
 class TreeItem(object):
@@ -36,6 +37,11 @@ class TreeItem(object):
             if self.userData[-2] > 0:
                 return QApplication.palette().alternateBase()
             return QApplication.palette().base()
+
+        if role == Qt.FontRole:
+            if self.userData[-2] > 0:
+                print('--> TreeItem.data AppFont', EditTreeModel.alt_font.italic())
+                return EditTreeModel.alt_font
         return None
 
     def appendChild(self, item):
@@ -57,6 +63,13 @@ class TreeItem(object):
 
 class EditTreeModel(QAbstractItemModel):
 
+    alt_font = QFont("Times", 10)
+
+    @staticmethod
+    def set_alt_font(font: QFont):
+        EditTreeModel.alt_font = QFont(font)
+        EditTreeModel.alt_font.setItalic(True)
+
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
@@ -66,7 +79,7 @@ class EditTreeModel(QAbstractItemModel):
         return self.rootItem.columnCount()
 
     def data(self, index, role):
-        if index.isValid() & role in (Qt.DisplayRole, Qt.UserRole):
+        if index.isValid():
             item = index.internalPointer()
             if item:
                 return item.data(index.column(), role)
@@ -147,16 +160,14 @@ class EditTreeModel(QAbstractItemModel):
         self.rootItem.set_data(value)
 
     def append_child(self, item, parent):
-        if parent.isValid():
-            parentItem = self.getItem(parent)
-            position = parentItem.childCount()
-            self.beginInsertRows(parent, position, position)
-            parentItem.appendChild(position, item)
+        parentItem = self.getItem(parent)
+        position = parentItem.childCount()
+        self.beginInsertRows(parent, position, position)
+        parentItem.appendChild(item)
 
-            # self.dataChanged.emit(index, index)   # Is it necessary? then calculate also index for appended row
-            self.endInsertRows()
-            return True
-        return False
+        # self.dataChanged.emit(index, index)   # Is it necessary? then calculate also index for appended row
+        self.endInsertRows()
+        return True
 
     def set_model_data(self, rows):
         """
