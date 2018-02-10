@@ -50,7 +50,8 @@ class MainFlow(QMainWindow):
 
     def _drag_enter_event(self, e):
         print('--> dragEnterEvent', e.mimeData().formats())
-        if e.mimeData().hasFormat(MimeTypes[0]) | e.mimeData().hasFormat(MimeTypes[1]):
+        if (e.mimeData().hasFormat(MimeTypes[0])
+                | e.mimeData().hasFormat(MimeTypes[1])):
             print('   accept')
             e.accept()
         else:
@@ -95,22 +96,24 @@ class MainFlow(QMainWindow):
         self.ui.dirTree.customContextMenuRequested.connect(self._dir_menu)
 
     def _file_menu(self, pos):
-        menu = QMenu(self)
-        menu.addAction('Open')
-        menu.addAction('Open folder')
-        menu.addAction('Add to favorites')
-        menu.addAction('Delete')
-        menu.addSeparator()
-        menu.addAction('Copy file name')
-        menu.addAction('Copy path')
-        menu.addSeparator()
-        menu.addAction('Rename file')
-        menu.addAction('Copy file(s)')
-        menu.addAction('Move file(s)')
-        menu.addAction('Delete file(s)')
-        action = menu.exec_(self.ui.filesList.mapToGlobal(pos))
-        if action:
-            self.change_data_signal.emit('File {}'.format(action.text()))
+        idx = self.ui.filesList.indexAt()
+        if idx.isValid():
+            menu = QMenu(self)
+            menu.addAction('Open')
+            menu.addAction('Open folder')
+            menu.addAction('Add to favorites')
+            menu.addAction('Delete')
+            menu.addSeparator()
+            menu.addAction('Copy file name')
+            menu.addAction('Copy path')
+            menu.addSeparator()
+            menu.addAction('Rename file')
+            menu.addAction('Copy file(s)')
+            menu.addAction('Move file(s)')
+            menu.addAction('Delete file(s)')
+            action = menu.exec_(self.ui.filesList.mapToGlobal(pos))
+            if action:
+                self.change_data_signal.emit('File {}'.format(action.text()))
 
     def _ext_menu(self, pos):
         menu = QMenu(self)
@@ -121,13 +124,15 @@ class MainFlow(QMainWindow):
             self.change_data_signal.emit('Ext {}'.format(action.text()))
 
     def _tag_menu(self, pos):
-        menu = QMenu(self)
-        menu.addAction('Remove unused')
-        menu.addAction('Scan in names')
-        menu.addAction('Rename')
-        action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
-        if action:
-            self.change_data_signal.emit('Tag {}'.format(action.text()))
+        idx = self.ui.tagsList.indexAt()
+        if idx.isValid():
+            menu = QMenu(self)
+            menu.addAction('Remove unused')
+            menu.addAction('Scan in names')
+            menu.addAction('Rename')
+            action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
+            if action:
+                self.change_data_signal.emit('Tag {}'.format(action.text()))
 
     def _author_menu(self, pos):
         menu = QMenu(self)
@@ -137,19 +142,21 @@ class MainFlow(QMainWindow):
             self.change_data_signal.emit('Author {}'.format(action.text()))
 
     def _dir_menu(self, pos):
-        menu = QMenu(self)
-        menu.addAction('Rescan dir')
-        menu.addAction('Remove empty')
-        menu.addSeparator()
-        # todo - implement the following:
-        menu.addAction('Rename folder')
-        menu.addAction('Delete folder')
-        menu.addSeparator()
-        menu.addAction('Create virtual folder')
-        menu.addAction('Create virtual folder as child')
-        action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
-        if action:
-            self.change_data_signal.emit('Dirs {}'.format(action.text()))
+        idx = self.ui.dirTree.indexAt(pos)
+        if idx.isValid():
+            menu = QMenu(self)
+            menu.addAction('Rescan dir')
+            menu.addAction('Remove empty')
+            menu.addSeparator()
+            # todo - implement the following:
+            menu.addAction('Rename folder')
+            menu.addAction('Delete folder')
+            menu.addSeparator()
+            menu.addAction('Create virtual folder')
+            menu.addAction('Create virtual folder as child')
+            action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
+            if action:
+                self.change_data_signal.emit('Dirs {}'.format(action.text()))
 
     def ref_clicked(self, href):
         """
