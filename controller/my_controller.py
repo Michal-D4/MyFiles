@@ -4,6 +4,7 @@ import os
 import re
 import sqlite3
 import webbrowser
+from collections import namedtuple
 
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QDateTime, QVariant, QItemSelection, QThread,
@@ -113,15 +114,21 @@ class MyController():
         else:
             parent_id = 0
         place_id = self._cb_places.get_curr_place().db_row[0]
-        fav_id = self._dbu.select_other('LAST_FAV_ID').fetchone()[0] + 1
-        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, fav_id))
+        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 1))
 
-        item = TreeItem((folder_name, ), (dir_id, parent_id, fav_id, folder_name))
+        item = TreeItem((folder_name, ), (dir_id, parent_id, 1, folder_name))
 
         self.ui.dirTree.model().append_child(item, parent)
 
     def _delete_virtual(self):
         print('--> _delete_virtual')
+        cur_idx = self.ui.dirTree.currentIndex()
+        if self.ui.dirTree.model().is_virtual(cur_idx):
+            u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
+            print('  ', self.ui.dirTree.model().data(cur_idx, role=Qt.DisplayRole), u_data)
+            self._dbu.delete_other('VIRTUALS', (u_data[-2],))
+            self._dbu.delete_other('VIRTUAL_DIR', (u_data[0],))
+            self.ui.dirTree.model().remove_row(cur_idx)
 
     def _rename_folder(self):
         print('--> _rename_folder')
@@ -320,7 +327,7 @@ class MyController():
                     yield os.path.join(dir_name, filename)
             else:
                 for filename in file_names:
-                    if get_file_extension(filename) in ext_:
+                    if helpers.get_file_extension(filename) in ext_:
                         yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create, the_same):
@@ -346,6 +353,7 @@ class MyController():
 
         self._win.setWindowTitle('File organizer - ' + file_name)
         self._dbu.set_connection(self._connection)
+        self._dbu.select_other('PRAGMA', ())
         self._populate_all_widgets()
 
     def on_change_data(self, action):
@@ -903,6 +911,7 @@ class MyController():
         :param dir_idx:
         :return:
         """
+        print('--> _populate_file_list', dir_idx)
         if dir_idx[-2] > 0:
             self._form_virtual_folder(dir_idx)
         else:
@@ -1054,7 +1063,7 @@ class MyController():
         """
         Returns directory tree for current place
         :param place_id:
-        :return: list of tuples (Dir name, DirID, ParentID, FavID, Full path of dir)
+        :return: list of tuples (Dir name, DirID, ParentID, isVirtual, Full path of dir)
         """
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
@@ -1075,23 +1084,28 @@ class MyController():
         :param curr_idx:
         :return: None
         """
-        print('--> _cur_dir_changed')
-        if curr_idx:
+        print('--> _cur_dir_changed', curr_idx.isValid())
+        if curr_idx.isValid():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
             self._populate_file_list(dir_idx)
 
     @staticmethod
-    def _save_path(idx):
-        id = idx
-        aux = []
-        while id.isValid():
-            aux.append(id.row())
-            id = id.parent()
-        aux.reverse()
+    def _save_path(index):
+        path = MyController.full_tree_path(index)
 
         settings = QSettings()
-        settings.setValue('TREE_SEL_IDX', QVariant(aux))
+        settings.setValue('TREE_SEL_IDX', QVariant(path))
+
+    @staticmethod
+    def full_tree_path(index):
+        idx = index
+        path = []
+        while idx.isValid():
+            path.append(idx.row())
+            idx = idx.parent()
+        path.reverse()
+        return path
 
     def _restore_path(self):
         """
@@ -1117,7 +1131,7 @@ class MyController():
         return idx
 
     def _del_empty_dirs(self):
-        self._dbu.delete_other('DEL_EMPTY_DIRS', ())
+        self._dbu.delete_other('EMPTY_DIRS', ())
 
     def _rescan_dir(self):
         idx = self.ui.dirTree.currentIndex()

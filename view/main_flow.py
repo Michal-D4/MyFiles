@@ -9,6 +9,7 @@ from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
 from model.helpers import MimeTypes
 
+
 class MainFlow(QMainWindow):
     change_data_signal = pyqtSignal(str)   # str - name of action
     scan_files_signal = pyqtSignal()
@@ -145,12 +146,14 @@ class MainFlow(QMainWindow):
         idx = self.ui.dirTree.indexAt(pos)
         if idx.isValid():
             menu = QMenu(self)
-            menu.addAction('Rescan dir')
-            menu.addAction('Remove empty')
-            menu.addSeparator()
-            # todo - implement the following:
-            menu.addAction('Rename folder')
-            menu.addAction('Delete folder')
+            menu.addAction('Remove empty folders')
+            if self.ui.dirTree.model().is_virtual(idx):
+                if not self.ui.dirTree.model().is_favorites(idx):
+                    menu.addSeparator()
+                    menu.addAction('Rename folder')
+                    menu.addAction('Delete folder')
+            else:
+                menu.addAction('Rescan dir')
             menu.addSeparator()
             menu.addAction('Create virtual folder')
             menu.addAction('Create virtual folder as child')

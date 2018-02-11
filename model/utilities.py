@@ -4,33 +4,35 @@ import datetime
 PLUS_EXT_ID = 100000
 
 Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
-               (' '.join(('WITH x(Path, DirID, ParentID, FavID, level, virtual) AS',
-                          '(SELECT Path, DirID, ParentID, FavID, 0 as level, (FavID > 0) as virtual',)),
+               (' '.join(('WITH x(Path, DirID, ParentID, isVirtual, level, virtual) AS',
+                          '(SELECT Path, DirID, ParentID, isVirtual, 0 as level, (isVirtual > 0) as virtual',)),
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
-                ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.FavID,',
-                          'x.level + 1 as lvl, (t.FavID > 0) as virtual FROM x INNER JOIN Dirs AS t',
+                ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.isVirtual,',
+                          'x.level + 1 as lvl, (t.isVirtual > 0) as virtual FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID')),
                 ' '.join(('and lvl <= {}) SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.FavID, d.FavID, z.level+1, 1 as virtual',
+                          'Select d.Path, d.DirID, f.isVirtual, d.isVirtual, z.level+1, 1 as virtual',
                           'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
-                          'inner join x as z on z.dirId = d.DirID order by virtual, level desc, Path;'
+                          'inner join x as z on z.dirId = d.DirID order by level desc, Path;'
                           )),
                 ' '.join((') SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.FavID, d.FavID, z.level+1, 1 as virtual',
+                          'Select d.Path, d.DirID, f.FavID, d.isVirtual, z.level+1, 1 as virtual',
                           'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
-                          'inner join x as z on z.dirId = d.DirID order by virtual, level desc, Path;'
+                          'inner join x as z on z.dirId = d.DirID order by level desc, Path;'
                           ))),
 
            'DIR_IDS':
-               ('WITH x(DirID, ParentID, FavID, level) AS (SELECT DirID, ParentID, FavID, 0 as level',
+               ('WITH x(DirID, ParentID, isVirtual, level) AS (SELECT DirID, ParentID, isVirtual, 0 as level',
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
-                ' '.join(('UNION ALL SELECT t.DirID, t.ParentID, t.FavID,',
+                ' '.join(('UNION ALL SELECT t.DirID, t.ParentID, t.isVirtual,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID')),
                 'and lvl <= {}) SELECT DirID FROM x order by DirID;',
                 ') SELECT DirID FROM x order by DirID;'),
+
+           'PRAGMA': 'PRAGMA foreign_keys = ON;',
 
            'FILE_IDS_ALL_TAG': ' '.join(('select FileID from FileTag where TagID in ({})',
                                          'group by FileID having count(*) = {};')),
@@ -84,8 +86,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened, Commented,',
                                   'FileID, DirID, CommentID, ExtID, PlaceId from Files where FileID',
                                   'in (select FileID from Favorites where FavID = ? and DirID = 0);')),
-           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;',
-           'LAST_FAV_ID': 'select max(FavID) from Dirs;'
+           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
@@ -107,7 +108,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'ExtID, FileName, CommentID, FileDate, Pages,',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
-          'DIR': 'insert into Dirs (Path, ParentID, PlaceId, FavID) values (?, ?, ?, ?);'
+          'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);'
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
@@ -147,8 +148,10 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'TAG_FILE': 'delete from FileTag where TagID=:tag_id and FileID=:file_id;',
           'TAG_FILE_BY_FILE': 'delete from FileTag where FileID = ?;',
           'TAG': 'delete from Tags where TagID=:tag_id;',
-          'DEL_EMPTY_DIRS': ' '.join(('delete from Dirs where FavID = 0 and NOT EXISTS (select *',
-                                      'from Files where DirID = Dirs.DirID);'))
+          'EMPTY_DIRS': ' '.join(('delete from Dirs where isVirtual = 0 and NOT EXISTS',
+                                  '(select * from Files where DirID = Dirs.DirID);')),
+          'VIRTUAL_DIR': 'delete from Dirs where DirID = ? and isVirtual > 0;',
+          'VIRTUALS': 'delete from Favorites where FavID = ?;'
           }
 
 
@@ -228,7 +231,7 @@ class DBUtils:
         :return: cursor of directories
         """
         sql = DBUtils.generate_sql(dir_id, level, place_id)
-        # print(sql)
+        print(sql)
 
         self.curs.execute(sql)
 

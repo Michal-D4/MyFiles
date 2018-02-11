@@ -158,7 +158,7 @@ class Places:
                 self._dbu.insert_other('DIR', ('Favorites',                 # Folder name
                                                0,                           # parentID
                                                self._curr_place.db_row[0],  # placeID
-                                               1))                          # favID
+                                               1))                          # isVirtual
                 return True
 
         return False

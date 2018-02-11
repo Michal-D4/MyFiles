@@ -58,8 +58,8 @@ DirID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 Path TEXT,
 PlaceId INTEGER,
 ParentID INTEGER,
-FavID INTEGER,
-FOREIGN KEY(ParentID) REFERENCES Dirs(DirID)
+isVirtual INTEGER,
+FOREIGN KEY(ParentID) REFERENCES Dirs(DirID) ON DELETE CASCADE
 );''',
 
     '''CREATE TABLE IF NOT EXISTS Extensions (
@@ -89,7 +89,8 @@ ActCode INTEGER
     '''CREATE TABLE IF NOT EXISTS Favorites (
 FavID INTEGER NOT NULL,
 FileID INTEGER NOT NULL default 0,
-DirID INTEGER not null default 0
+DirID INTEGER not null default 0,
+FOREIGN KEY(FavID) REFERENCES Dirs(DirID) ON DELETE CASCADE
 );''',
 
     'CREATE INDEX IF NOT EXISTS Dirs_PlaceId ON Dirs(PlaceId, DirID);',
@@ -119,7 +120,13 @@ def initiate_db(connection):
     cursor = connection.cursor()
     loc = socket.gethostname()
     cursor.execute('insert into Places (Place, Title) values (:place, :title);', (loc, loc))
-    cursor.execute('insert into Dirs (Path, PlaceId, ParentID, FavID) values ("Favorites", 1, 0, 1);')
+    try:
+        cursor.execute('insert into Dirs (DirID) values (0);')
+        cursor.execute(' '.join(('insert into Dirs (DirID, Path, PlaceId, ParentID, isVirtual)',
+                                 ' values (1, "Favorites", 1, 0, 1);')))
+    except sqlite3.Error as err:
+        print("An error occurred:", err.args[0])
+
     connection.commit()
 
 
