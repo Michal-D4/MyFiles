@@ -252,6 +252,9 @@ class EditTreeModel(QAbstractItemModel):
         if parent.isValid():
             print(parent.internalPointer().data(0, Qt.DisplayRole))
 
+        if not parent.internalPointer().is_virtual():
+            return False
+
         if action == Qt.IgnoreAction:
             return True
 
@@ -266,12 +269,27 @@ class EditTreeModel(QAbstractItemModel):
                 id_list = (int(i) for i in tmp_str.split(','))
                 index = self.restore_index(id_list)
                 item = index.internalPointer()
-                print(item.data(0, Qt.DisplayRole))
+                self.append_child(copy.deepcopy(item), parent)
             return True
 
         if data.hasFormat(MimeTypes[1]):
             print('  File(s) dragged')
-            # need fileIDs only in data ???
+            # menu = QMenu(self)
+            # menu.addAction('Copy files')
+            # menu.addAction('Move files')
+            # menu.addSeparator()
+            # menu.addAction('Cancel')
+            # action = menu.exec_()
+            # if action.text() == 'Cancel':
+            #     return False
+            drop_data = data.data(MimeTypes[1])
+            stream = QDataStream(drop_data, QIODevice.ReadOnly)
+            count = stream.readInt()
+            for i in range(count):
+                file_id = stream.readInt()
+
+                print('  == file_id', file_id)
+
             return True
 
         return False

@@ -50,13 +50,10 @@ class MainFlow(QMainWindow):
         self.ui.filesList.resizeEvent = self.resize_event
 
     def _drag_enter_event(self, e):
-        print('--> dragEnterEvent', e.mimeData().formats())
         if (e.mimeData().hasFormat(MimeTypes[0])
                 | e.mimeData().hasFormat(MimeTypes[1])):
-            print('   accept')
             e.accept()
         else:
-            print('   ignore')
             e.ignore()
 
     def set_menus(self):
@@ -97,7 +94,7 @@ class MainFlow(QMainWindow):
         self.ui.dirTree.customContextMenuRequested.connect(self._dir_menu)
 
     def _file_menu(self, pos):
-        idx = self.ui.filesList.indexAt()
+        idx = self.ui.filesList.indexAt(pos)
         if idx.isValid():
             menu = QMenu(self)
             menu.addAction('Open')
@@ -125,7 +122,7 @@ class MainFlow(QMainWindow):
             self.change_data_signal.emit('Ext {}'.format(action.text()))
 
     def _tag_menu(self, pos):
-        idx = self.ui.tagsList.indexAt()
+        idx = self.ui.tagsList.indexAt(pos)
         if idx.isValid():
             menu = QMenu(self)
             menu.addAction('Remove unused')

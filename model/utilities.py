@@ -231,7 +231,7 @@ class DBUtils:
         :return: cursor of directories
         """
         sql = DBUtils.generate_sql(dir_id, level, place_id)
-        print(sql)
+        # print(sql)
 
         self.curs.execute(sql)
 
