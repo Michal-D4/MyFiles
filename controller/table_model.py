@@ -57,21 +57,32 @@ class ProxyModel2(ProxyModel):
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
 
     def supportedDropActions(self):
-        return Qt.CopyAction
+        return Qt.IgnoreAction
 
     def mimeTypes(self):
         return [MimeTypes[1]]
 
     def mimeData(self, indexes):
         print('--> ProxyModel2.mimeData', len(indexes))
-        itemData = QByteArray()
-        dataStream = QDataStream(itemData, QIODevice.WriteOnly)
+        item_data = QByteArray()
+        data_stream = QDataStream(item_data, QIODevice.WriteOnly)
 
-        dataStream.writeQString('mimeData')
-        mimedata = QMimeData()
+        count = 0
+        file_ids = []
 
-        mimedata.setData(MimeTypes[1], itemData)
-        return mimedata
+        for idx in indexes:
+            if idx.column() == 0:
+                count += 1
+                tmp = self.sourceModel().data(self.mapToSource(idx), role=Qt.UserRole)
+                file_ids.append(tmp[0])
+
+        data_stream.writeInt(count)
+        for i in file_ids:
+            data_stream.writeInt(i)
+
+        mime_data = QMimeData()
+        mime_data.setData(MimeTypes[1], item_data)
+        return mime_data
 
 
 class TableModel(QAbstractTableModel):
