@@ -3,31 +3,22 @@
 from controller.places import Places
 from model.helpers import *
 
-FIND_PART_PATH = '''select ParentID
-    from Dirs where Path like :newPath and PlaceId = :place;'''
+FIND_PART_PATH = 'select ParentID from Dirs where Path like :newPath and PlaceId = :place;'
 
-FIND_EXACT_PATH = '''select DirID, Path
-    from Dirs where Path = :newPath and PlaceId = :place;'''
+FIND_EXACT_PATH = 'select DirID, Path from Dirs where Path = :newPath and PlaceId = :place;'
 
 CHANGE_PARENT_ID = '''update Dirs set ParentID = :newId
  where ParentID = :currId and Path like :newPath and DirID != :newId;'''
 
 FIND_FILE = 'select * from Files where DirID = :dir_id and FileName = :file;'
 
-INSERT_DIR = '''insert into Dirs
-    (Path, ParentID, PlaceId, isVirtual)
-    values (:path, :id, :placeId, 0);'''
+INSERT_DIR = 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (:path, :id, :placeId, 0);'
 
-INSERT_FILE = '''insert into Files
-    (DirID, FileName, ExtID, PlaceId, CommentID, Size, IssueDate, 
-    Opened, Commented) values (:dir_id, :file, :ext_id, :placeId, 0, 0, 
-    "0001-01-01", "0001-01-01", "0001-01-01");'''
+INSERT_FILE = 'insert into Files (DirID, FileName, ExtID, PlaceId) values (:dir_id, :file, :ext_id, :placeId);'
 
-FIND_EXT = '''select ExtID
-    from Extensions where Extension = ?;'''
+FIND_EXT = 'select ExtID from Extensions where Extension = ?;'
 
-INSERT_EXT = '''insert into Extensions
-    (Extension, GroupID) values (:ext, 0);'''
+INSERT_EXT = 'insert into Extensions (Extension, GroupID) values (:ext, 0);'
 
 
 class LoadDBData:
@@ -89,10 +80,12 @@ class LoadDBData:
         :return: None
         """
         file = os.path.split(full_file_name)[1]
+        print('--> insert_file', file)
 
         item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
         if not item:
             ext_id, ext = self.insert_extension(file)
+            print('  dir_id: {}, ext_id: {}, place_id: {}'.format(dir_id, ext_id, self.place_id))
 
             self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
                                               'file': file,
@@ -108,6 +101,7 @@ class LoadDBData:
             else:
                 self.cursor.execute(INSERT_EXT, {'ext': ext})
                 idx = self.cursor.lastrowid
+                self.conn.commit()
         else:
             idx = 0
         return idx, ext
