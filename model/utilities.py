@@ -86,6 +86,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened, Commented,',
                                   'FileID, DirID, CommentID, ExtID, PlaceId from Files where FileID',
                                   'in (select FileID from Favorites where FavID = ? and DirID = 0);')),
+           'FAV_ID': 'select DirID from Dirs where isVirtual = 1 and PlaceId = ?',
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
@@ -266,7 +267,8 @@ class DBUtils:
         return sql
 
     def select_other(self, sql, params=()):
-        # print('|---> select_other', sql, params)
+        print('|---> select_other', sql, params)
+        print(Selects[sql])
         self.curs.execute(Selects[sql], params)
         return self.curs
 

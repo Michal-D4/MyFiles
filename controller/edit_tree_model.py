@@ -30,7 +30,7 @@ class TreeItem(object):
         return self.userData[-2] > 0
 
     def is_favorites(self):
-        return (self.userData[-2] > 0) & (self.userData[-1] == 'Favorites')
+        return (self.userData[-2] == 1)
 
     def child(self, row):
         return self.childItems[row]

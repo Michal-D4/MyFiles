@@ -114,7 +114,7 @@ class MyController():
         else:
             parent_id = 0
         place_id = self._cb_places.get_curr_place().db_row[0]
-        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 1))
+        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 2))
 
         item = TreeItem((folder_name, ), (dir_id, parent_id, 1, folder_name))
 
@@ -496,14 +496,22 @@ class MyController():
         self._show_message('Updating of files is finished')  #
 
     def _favorite_file_list(self):
-        self._populate_favorites(1)
+        place_id = self._cb_places.get_curr_place().db_row[0]
+        fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
+        self._populate_favorites(fav_id[0])
 
-    def _populate_favorites(self, fav_id):
+    def _populate_favorites(self, dir_id):
+        """
+        List of files from virtual folder
+        :param dir_id:
+        :return: Show files on fileList widget with _show_files method
+        """
         self.file_list_source = MyController.FAVORITE
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
-        files = self._dbu.select_other('FAVORITES', (fav_id,)).fetchall()
+        print('--> _populate_favorites', dir_id)
+        files = self._dbu.select_other('FAVORITES', (dir_id,)).fetchall()
         if files:
             self._show_files(files, model)
             self.status_label.setText('Favorite files')
@@ -775,7 +783,7 @@ class MyController():
             row = 0
 
         if self.file_list_source == MyController.FAVORITE:
-            self._populate_favorites(1)
+            self._favorite_file_list()
         elif self.file_list_source == MyController.FOLDER:
             if not curr_dir_idx.isValid():
                 curr_dir_idx = self.ui.dirTree.model().index(0, 0)
@@ -918,7 +926,7 @@ class MyController():
             self._from_real_folder(dir_idx)
 
     def _form_virtual_folder(self, dir_idx):
-        self._populate_favorites(dir_idx[-2])
+        self._populate_favorites(dir_idx[0])
 
     def _from_real_folder(self, dir_idx):
         self.file_list_source = MyController.FOLDER
