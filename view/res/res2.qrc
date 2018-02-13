@@ -7,5 +7,7 @@
     <file>Favourites.png</file>
     <file>Filter.png</file>
     <file>menu.png</file>
+    <file>Folder.png</file>
+    <file>List.png</file>
   </qresource>
 </RCC>

@@ -1,8 +1,7 @@
 # view/main_flow.py
 
-from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent,
-                          QByteArray, QDataStream, QIODevice, QMimeData)
-from PyQt5.QtGui import QResizeEvent, QDrag
+from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent)
+from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu, QTreeView
 
 from view.my_db_choice import MyDBChoice
@@ -46,8 +45,18 @@ class MainFlow(QMainWindow):
         self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
 
         self.ui.dirTree.dragEnterEvent = self._drag_enter_event
+        self.ui.dirTree.startDrag = self._start_drag
 
         self.ui.filesList.resizeEvent = self.resize_event
+
+    def _start_drag(self, action):
+        print('--> _start_drag')
+        drag = QDrag(self)
+        drag.setPixmap(QPixmap(":/image/Folder.png"))
+        indexes = self.ui.dirTree.selectionModel().selectedRows()
+        mime_data = self.ui.dirTree.model().mimeData(indexes)
+        drag.setMimeData(mime_data)
+        drag.exec_(action)
 
     def _drag_enter_event(self, e):
         if (e.mimeData().hasFormat(MimeTypes[0])
