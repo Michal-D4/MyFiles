@@ -1,8 +1,8 @@
 # view/main_flow.py
 
-from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent)
-from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu, QTreeView
+from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent, QMimeData)
+from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
@@ -46,8 +46,63 @@ class MainFlow(QMainWindow):
 
         self.ui.dirTree.dragEnterEvent = self._drag_enter_event
         self.ui.dirTree.startDrag = self._start_drag
+        self.ui.dirTree.dropEvent = self._drop_event
+        self.ui.filesList.startDrag = self._start_drag_files
 
         self.ui.filesList.resizeEvent = self.resize_event
+
+    def _check_format(self, mime_data):
+        res = (mime_data.hasFormat(MimeTypes[0])
+               | mime_data.hasFormat(MimeTypes[1])
+               | mime_data.hasFormat(MimeTypes[2]))
+        return res
+
+    def _drop_event(self, event: QDropEvent):
+        print('--> _drop_event')
+        mime_data: QMimeData = event.mimeData()
+        print('  mimeData format', mime_data.formats())
+        action = event.dropAction()
+        print(' CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
+        if self._check_format(mime_data):
+            if not self._set_action(event):
+                return
+
+        index = self.ui.dirTree.indexAt(event.pos())
+        res = self.ui.dirTree.model().dropMimeData(mime_data, action, -1, -1, index)
+        if res & mime_data.hasFormat(MimeTypes[1]):
+            # copy/move files
+            path = self.ui.dirTree.model().data(index, role=Qt.UserRole)[-1]
+            if not self.ui.dirTree.model().is_virtual(index):
+                if action.text() == "Copy files":
+                    self.change_data_signal.emit('/'.join('Drag copy files', path))
+                elif action.text() == "Move files":
+                    self.change_data_signal.emit('/'.join('Drag move files', path))
+
+    def _set_action(self, event):
+        menu = QMenu(self)
+        menu.addAction('Copy files')
+        menu.addAction('Move files')
+        menu.addSeparator()
+        menu.addAction('Cancel')
+        action = menu.exec_(self.ui.dirTree.mapToGlobal(event.pos()))
+        if action:
+            if action.text() == 'Cancel':
+                event.ignore()
+                return None
+            if action.text() == 'Copy files':
+                event.setDropAction(Qt.CopyAction)
+            elif action.text() == 'Move files':
+                event.setDropAction(Qt.MoveAction)
+        return action
+
+    def _start_drag_files(self, action):
+        print('--> _start_drag')
+        drag = QDrag(self)
+        drag.setPixmap(QPixmap(":/image/List.png"))
+        indexes = self.ui.filesList.selectionModel().selectedRows()
+        mime_data = self.ui.filesList.model().mimeData(indexes)
+        drag.setMimeData(mime_data)
+        drag.exec_(action)
 
     def _start_drag(self, action):
         print('--> _start_drag')
@@ -59,8 +114,8 @@ class MainFlow(QMainWindow):
         drag.exec_(action)
 
     def _drag_enter_event(self, e):
-        if (e.mimeData().hasFormat(MimeTypes[0])
-                | e.mimeData().hasFormat(MimeTypes[1])):
+        print('--> _drag_enter_event', e.mimeData().formats())
+        if self._check_format(e.mimeData()):
             e.accept()
         else:
             e.ignore()
@@ -150,6 +205,7 @@ class MainFlow(QMainWindow):
 
     def _dir_menu(self, pos):
         idx = self.ui.dirTree.indexAt(pos)
+        print('--> _dir_menu', self.ui.dirTree.model().is_favorites(idx))
         if idx.isValid():
             menu = QMenu(self)
             menu.addAction('Remove empty folders')
