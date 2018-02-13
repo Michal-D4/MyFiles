@@ -62,6 +62,8 @@ class MyController():
                 'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
                 'dirTree': self._populate_directory_tree,  # emit from Places
+                'Drag copy files': self._copy_in_db,
+                'Drag move files': self._move_in_db,
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
                 'Edit key words': self._edit_key_words,
@@ -116,7 +118,7 @@ class MyController():
         place_id = self._cb_places.get_curr_place().db_row[0]
         dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 2))
 
-        item = TreeItem((folder_name, ), (dir_id, parent_id, 1, folder_name))
+        item = TreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
 
         self.ui.dirTree.model().append_child(item, parent)
 
@@ -134,6 +136,10 @@ class MyController():
         print('--> _rename_folder')
 
     def _selected_files(self):
+        """
+        :return:  list of (full path with file name, user data, file name)
+                  where user data = (FileID, DirID, CommentID, ExtID, PlaceId)
+        """
         files = []
         indexes = self._persistent_row_indexes(self.ui.filesList)
         model = self.ui.filesList.model().sourceModel()
@@ -141,6 +147,7 @@ class MyController():
         for idx in indexes:
             if idx.column() == 0:
                 file_name = model.data(idx)
+                print('--> _selected_files', file_name)
                 u_dat = model.data(idx, Qt.UserRole)
                 file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
                 if disk_letter:
@@ -148,7 +155,7 @@ class MyController():
                 files.append((idx, os.path.join(file_path, file_name), u_dat, file_name))
         return files
 
-    def _move_to(self, dir_id, place_id, to_path, file):
+    def _move_file_to(self, dir_id, place_id, to_path, file):
         import shutil
         try:
             shutil.move(file[1], to_path)
@@ -158,11 +165,11 @@ class MyController():
             self._show_message("Can't move file \"{}\" into folder \"{}\"".
                                format(file[3], to_path), 5000)
 
-    def _copy_to(self, dir_id, place_id, to_path, file):
+    def _copy_file_to(self, dir_id, place_id, to_path, file):
         import shutil
         try:
             shutil.copy2(file[1], to_path)
-            file_id = self._dbu.select_other2('FILE_BY_NAME_n_DIR', (dir_id, file[3])).fetchone()
+            file_id = self._dbu.select_other2('FILE_IN_DIR', (dir_id, file[3])).fetchone()
             if file_id:
                 new_file_id = file_id[0]
             else:
@@ -200,18 +207,22 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
-                dir_id, place_id = self._get_dir_id(to_path)
-                if dir_id > 0:
-                    selected_files = self._selected_files()
-                    for file in selected_files:
-                        self._copy_to(dir_id, place_id, to_path, file)
+                place_id = self._copy_in_db(to_path)
 
-                    if place_id == self._cb_places.get_curr_place().db_row[0]:
-                        self._populate_directory_tree()
+                if place_id == self._cb_places.get_curr_place().db_row[0]:
+                    self._populate_directory_tree()
         else:
             self._show_message(
                 'File(s) inaccessible on "{}"'.format(
                     self._cb_places.get_curr_place().db_row[2]))
+
+    def _copy_in_db(self, to_path):
+        dir_id, place_id = self._get_dir_id(to_path)
+        if dir_id > 0:
+            selected_files = self._selected_files()
+            for file in selected_files:
+                self._copy_file_to(dir_id, place_id, to_path, file)
+        return place_id
 
     def _remove_file(self, file):
         try:
@@ -222,9 +233,11 @@ class MyController():
             self._show_message('File "{}" not found'.format(file[1]))
 
     def _remove_files(self):
+        print('--> _remove_files')
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             selected_files = self._selected_files()
             for file in selected_files:
+                print(file)
                 self._remove_file(file)
         else:
             self._show_message(
@@ -235,18 +248,23 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to move')
             if to_path:
-                dir_id, place_id = self._get_dir_id(to_path)
-                if dir_id > 0:
-                    selected_files = self._selected_files()
-                    for file in selected_files:
-                        self._move_to(dir_id, place_id, to_path, file)
+                place_id = self._move_in_db(to_path)
 
-                    if place_id == self._cb_places.get_curr_place().db_row[0]:
-                        self._populate_directory_tree()
+                if place_id == self._cb_places.get_curr_place().db_row[0]:
+                    # todo - consider the use of append rows instead
+                    self._populate_directory_tree()
         else:
             self._show_message(
                 'File(s) inaccessible on "{}"'.format(
                     self._cb_places.get_curr_place().db_row[2]))
+
+    def _move_in_db(self, to_path):
+        dir_id, place_id = self._get_dir_id(to_path)
+        if dir_id > 0:
+            selected_files = self._selected_files()
+            for file in selected_files:
+                self._move_file_to(dir_id, place_id, to_path, file)
+        return place_id
 
     def _rename_file(self):
         path, file_name, status, file_id, idx = self._file_path()
@@ -363,7 +381,11 @@ class MyController():
         :return:
         '''
         try:
-            self._on_data_methods()[action]()
+            act = action.split('/')
+            if len(act) == 1:
+                self._on_data_methods()[action]()
+            else:
+                self._on_data_methods()[act[0]](act[1:])
         except KeyError:
             self._show_message('Action "{}" not implemented'.format(action), 5000)
 
@@ -555,6 +577,8 @@ class MyController():
         for f_idx in indexes:
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
+                # todo - for MyController.FAVORITE and virtual folders
+                print('--> _delete_files', u_data)
                 if self.file_list_source == MyController.FAVORITE:
                     self._dbu.delete_other('FAVORITES', (1, u_data[0]))
                 else:

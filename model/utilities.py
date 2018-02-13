@@ -53,7 +53,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                                   'Files A left join Comments B on B.CommentID = A.CommentID',
                                   'where A.ExtID in ({}) and NOT EXISTS (select * from FileTag',
                                   'where FileID = A.FileID and TagID = {});')),
-           'FILE_BY_NAME_n_DIR': 'select FileID from Files where DirID={} and FileName="{}";',
+           'FILE_IN_DIR': 'select FileID from Files where DirID={} and FileName="{}";',
            'TAGS': 'select Tag, TagID from Tags order by Tag COLLATE NOCASE;',
            'FILE_TAGS': ' '.join(('select Tag, TagID from Tags where TagID in',
                                   '(select TagID from FileTag where FileID = ?);')),
@@ -77,15 +77,16 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                    'and FileDate > {}',
                    'and IssueDate > {}',
                    ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
-                             'Opened, Commented, FileID, DirID, CommentID, ExtID,',
-                             'PlaceId from Files where PlaceId = {}'))
+                             'Opened, Commented, FileID, DirID, coalesce(CommentID, 0),',
+                             'ExtID, PlaceId from Files where PlaceId = {}'))
                ),
            'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
-                                       'Opened, Commented, FileID, DirID, CommentID, ExtID,',
-                                       'PlaceId from Files where DirId = ?;')),
-           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened, Commented,',
-                                  'FileID, DirID, CommentID, ExtID, PlaceId from Files where FileID',
-                                  'in (select FileID from Favorites where FavID = ? and DirID = 0);')),
+                                       'Opened, Commented, FileID, DirID, coalesce(CommentID, 0),',
+                                       'ExtID, PlaceId from Files where DirId = ?;')),
+           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
+                                  'Commented, FileID, DirID, coalesce(CommentID, 0), ExtID, PlaceId',
+                                  'from Files where FileID in (select FileID from Favorites where',
+                                  'FavID = ? and DirID = 0);')),
            'FAV_ID': 'select DirID from Dirs where isVirtual = 1 and PlaceId = ?',
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
@@ -267,8 +268,8 @@ class DBUtils:
         return sql
 
     def select_other(self, sql, params=()):
-        print('|---> select_other', sql, params)
-        print(Selects[sql])
+        # print('|---> select_other', sql, params)
+        # print(Selects[sql])
         self.curs.execute(Selects[sql], params)
         return self.curs
 
@@ -287,11 +288,11 @@ class DBUtils:
         return jj
 
     def insert_other2(self, sql, data):
-        print('|---> insert_other2', Insert[sql].format(*data))
+        # print('|---> insert_other2', Insert[sql].format(*data))
         self.curs.execute(Insert[sql].format(*data))
         jj = self.curs.lastrowid
         self.conn.commit()
-        print('  _id:', jj)
+        # print('  _id:', jj)
         return jj
 
     def update_other(self, sql, data):
@@ -305,6 +306,7 @@ class DBUtils:
         self.conn.commit()
 
     def delete_other2(self, sql, data):
-        # print('|---> delete_other:', sql, data)
+        print('|---> delete_other:', sql, data)
+        print(Delete[sql].format(*data))
         self.curs.execute(Delete[sql].format(*data))
         self.conn.commit()
