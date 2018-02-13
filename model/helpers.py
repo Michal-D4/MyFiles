@@ -4,7 +4,9 @@ from collections import namedtuple
 from PyQt5.QtGui import QFontDatabase
 
 Fields = namedtuple('Fields', 'fields headers indexes')
-MimeTypes = ["application/x-folder-list", "application/x-file-list"]
+MimeTypes = ["application/x-folder-list",
+             "application/x-file-list",
+             "application/x-folder-list/can-move"]
 AppFont = [QFontDatabase.systemFont(QFontDatabase.GeneralFont)]
 
 

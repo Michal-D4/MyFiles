@@ -236,14 +236,21 @@ class EditTreeModel(QAbstractItemModel):
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
         data_stream.writeInt(len(indexes))
+        all_virtual = True
 
         for idx in indexes:
+            it = idx.internalPointer()
+            all_virtual &= (it.is_virtual() & (not it.is_favorites))
             pack = EditTreeModel.save_index(idx)
             data_stream.writeQString(','.join((str(x) for x in pack)))
 
+        data_stream.writeBool(all_virtual)
         mime_data = QMimeData()
 
-        mime_data.setData(MimeTypes[0], item_data)
+        if all_virtual:
+            mime_data.setData(MimeTypes[2], item_data)
+        else:
+            mime_data.setData(MimeTypes[0], item_data)
 
         return mime_data
 
@@ -274,14 +281,6 @@ class EditTreeModel(QAbstractItemModel):
 
         if data.hasFormat(MimeTypes[1]):
             print('  File(s) dragged')
-            # menu = QMenu(self)
-            # menu.addAction('Copy files')
-            # menu.addAction('Move files')
-            # menu.addSeparator()
-            # menu.addAction('Cancel')
-            # action = menu.exec_()
-            # if action.text() == 'Cancel':
-            #     return False
             drop_data = data.data(MimeTypes[1])
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             count = stream.readInt()
