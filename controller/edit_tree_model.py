@@ -2,12 +2,11 @@
 
 import copy
 
-# from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
 from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteArray,
                           QDataStream, QIODevice)
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QFont, QPixmap
-from model.helpers import MimeTypes, AppFont
+from PyQt5.QtGui import QFont
+from model.helper import MimeTypes
 
 
 class TreeItem(object):

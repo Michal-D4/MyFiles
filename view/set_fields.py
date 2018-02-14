@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import QDialog
 
 from controller.table_model import TableModel
-from model.helpers import Fields
+from model.helper import Fields
 from view.ui_set_fields import Ui_SelectorFields
 
 

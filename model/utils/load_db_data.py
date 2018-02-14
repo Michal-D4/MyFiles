@@ -1,7 +1,7 @@
 # model/utils/load_db_data.py
 
 from controller.places import Places
-from model.helpers import *
+from model.helper import *
 
 FIND_PART_PATH = 'select ParentID from Dirs where Path like :newPath and PlaceId = :place;'
 

@@ -7,7 +7,7 @@ from PyPDF2 import PdfFileReader, utils
 from PyQt5.QtCore import pyqtSignal, QObject, pyqtSlot
 
 from controller.places import Places
-from model.helpers import *
+from model.helper import *
 from model.utils.load_db_data import LoadDBData
 
 AUTHOR_ID = 'select AuthorID from Authors where Author = ?;'

@@ -7,7 +7,8 @@ Fields = namedtuple('Fields', 'fields headers indexes')
 MimeTypes = ["application/x-folder-list",
              "application/x-file-list",
              "application/x-folder-list/can-move"]
-AppFont = [QFontDatabase.systemFont(QFontDatabase.GeneralFont)]
+opt = {'AppFont': QFontDatabase.systemFont(QFontDatabase.GeneralFont)}
+# AppFont = QFontDatabase.systemFont(QFontDatabase.GeneralFont)
 
 
 def get_file_extension(file_name):

@@ -17,8 +17,7 @@ from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
-from model import helpers
-from model.helpers import Fields
+from model.helper import *
 from model.utilities import DBUtils, PLUS_EXT_ID
 from model.utils import create_db
 from model.utils.load_db_data import LoadDBData
@@ -137,7 +136,7 @@ class MyController():
 
     def _selected_files(self):
         """
-        :return:  list of (full path with file name, user data, file name)
+        :return:  list of (model index, full path, user data, file name)
                   where user data = (FileID, DirID, CommentID, ExtID, PlaceId)
         """
         files = []
@@ -345,7 +344,7 @@ class MyController():
                     yield os.path.join(dir_name, filename)
             else:
                 for filename in file_names:
-                    if helpers.get_file_extension(filename) in ext_:
+                    if get_file_extension(filename) in ext_:
                         yield os.path.join(dir_name, filename)
 
     def on_open_db(self, file_name, create, the_same):
@@ -424,28 +423,28 @@ class MyController():
         return []
 
     def _ask_for_change_font(self):
-        helpers.AppFont[0], ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
+        opt['AppFont'], ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
         if ok_:
             self._change_font()
             settings = QSettings()
-            settings.setValue('FONT', helpers.AppFont[0])
+            settings.setValue('FONT', opt['AppFont'])
 
     def _restore_font(self):
         settings = QSettings()
-        helpers.AppFont[0] = settings.value('FONT', None)
-        if helpers.AppFont[0]:
-            print(helpers.AppFont[0].toString())
+        opt['AppFont'] = settings.value('FONT', None)
+        if opt['AppFont']:
+            print(opt['AppFont'].toString())
             self._change_font()
 
     def _change_font(self):
-        print('--> _change_font:', helpers.AppFont[0].toString())
-        self.ui.dirTree.setFont(helpers.AppFont[0])
-        self.ui.extList.setFont(helpers.AppFont[0])
-        self.ui.filesList.setFont(helpers.AppFont[0])
-        self.ui.tagsList.setFont(helpers.AppFont[0])
-        self.ui.authorsList.setFont(helpers.AppFont[0])
-        self.ui.commentField.setFont(helpers.AppFont[0])
-        self.ui.cb_places.setFont(helpers.AppFont[0])
+        print('--> _change_font:', opt['AppFont'].toString())
+        self.ui.dirTree.setFont(opt['AppFont'])
+        self.ui.extList.setFont(opt['AppFont'])
+        self.ui.filesList.setFont(opt['AppFont'])
+        self.ui.tagsList.setFont(opt['AppFont'])
+        self.ui.authorsList.setFont(opt['AppFont'])
+        self.ui.commentField.setFont(opt['AppFont'])
+        self.ui.cb_places.setFont(opt['AppFont'])
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -1073,7 +1072,7 @@ class MyController():
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
         model = EditTreeModel()
-        model.set_alt_font(helpers.AppFont[0])
+        model.set_alt_font(opt['AppFont'])
 
         model.set_model_data(dirs)
 

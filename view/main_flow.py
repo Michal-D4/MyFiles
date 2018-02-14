@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
-from model.helpers import MimeTypes
+from model.helper import MimeTypes
 
 
 class MainFlow(QMainWindow):
