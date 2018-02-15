@@ -231,15 +231,15 @@ class EditTreeModel(QAbstractItemModel):
         return MimeTypes
 
     def mimeData(self, indexes):
-        print('--> EditTreeModel.mimeData', len(indexes))
+        print('--> EditTreeModel.mimeData', self.data(indexes[0], role=Qt.DisplayRole))
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
         data_stream.writeInt(len(indexes))
         all_virtual = True
 
         for idx in indexes:
-            it = idx.internalPointer()
-            all_virtual &= (it.is_virtual() & (not it.is_favorites))
+            it: TreeItem = idx.internalPointer()
+            all_virtual &= (it.is_virtual() & (not it.is_favorites()))
             pack = EditTreeModel.save_index(idx)
             data_stream.writeQString(','.join((str(x) for x in pack)))
 
@@ -247,9 +247,9 @@ class EditTreeModel(QAbstractItemModel):
         mime_data = QMimeData()
 
         if all_virtual:
-            mime_data.setData(MimeTypes[2], item_data)
+            mime_data.setData(MimeTypes["virtual-folder"], item_data)
         else:
-            mime_data.setData(MimeTypes[0], item_data)
+            mime_data.setData(MimeTypes["real-folder"], item_data)
 
         return mime_data
 
@@ -264,9 +264,9 @@ class EditTreeModel(QAbstractItemModel):
         if action == Qt.IgnoreAction:
             return True
 
-        if data.hasFormat(MimeTypes[0]):
+        if data.hasFormat(MimeTypes["real-folder"]):
             print('  Folder(s) dragged')
-            drop_data = data.data(MimeTypes[0])
+            drop_data = data.data(MimeTypes["real-folder"])
             print('  type of data', type(drop_data))
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             idx_count = stream.readInt()
@@ -278,9 +278,9 @@ class EditTreeModel(QAbstractItemModel):
                 self.append_child(copy.deepcopy(item), parent)
             return True
 
-        if data.hasFormat(MimeTypes[1]):
+        if data.hasFormat(MimeTypes["file"]):
             print('  File(s) dragged')
-            drop_data = data.data(MimeTypes[1])
+            drop_data = data.data(MimeTypes["file"])
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             count = stream.readInt()
             for i in range(count):

@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.my_db_choice import MyDBChoice
 from view.ui_new_view import Ui_MainWindow
-from model.helper import MimeTypes
+from model.helper import *
 
 
 class MainFlow(QMainWindow):
@@ -52,9 +52,9 @@ class MainFlow(QMainWindow):
         self.ui.filesList.resizeEvent = self.resize_event
 
     def _check_format(self, mime_data):
-        res = (mime_data.hasFormat(MimeTypes[0])
-               | mime_data.hasFormat(MimeTypes[1])
-               | mime_data.hasFormat(MimeTypes[2]))
+        res = (mime_data.hasFormat(MimeTypes["real-folder"])
+               | mime_data.hasFormat(MimeTypes["virtual-folder"])
+               | mime_data.hasFormat(MimeTypes["file"]))
         return res
 
     def _drop_event(self, event: QDropEvent):
@@ -63,13 +63,11 @@ class MainFlow(QMainWindow):
         print('  mimeData format', mime_data.formats())
         action = event.dropAction()
         print(' CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
-        if self._check_format(mime_data):
-            if not self._set_action(event):
-                return
-
         index = self.ui.dirTree.indexAt(event.pos())
+        act = self._set_action(event, index)
+
         res = self.ui.dirTree.model().dropMimeData(mime_data, action, -1, -1, index)
-        if res & mime_data.hasFormat(MimeTypes[1]):
+        if res & mime_data.hasFormat(MimeTypes["file"]):
             # copy/move files
             path = self.ui.dirTree.model().data(index, role=Qt.UserRole)[-1]
             if not self.ui.dirTree.model().is_virtual(index):
@@ -78,7 +76,18 @@ class MainFlow(QMainWindow):
                 elif action.text() == "Move files":
                     self.change_data_signal.emit('/'.join('Drag move files', path))
 
-    def _set_action(self, event):
+    def _possible_action(self, index, mime_data):
+        if mime_data.hasFormat(MimeTypes["real-folder"]):
+            return DropCopyFolder
+        if mime_data.hasFormat(MimeTypes["file"]):
+            if self.ui.dirTree.model().is_virtual(index):
+                return DropMoveFile
+            return DropCopyFile
+        if mime_data.hasFormat(MimeTypes["virtual-folder"]):
+            return DropMoveFolder
+
+
+    def _set_action(self, event, index):
         menu = QMenu(self)
         menu.addAction('Copy files')
         menu.addAction('Move files')
@@ -96,28 +105,37 @@ class MainFlow(QMainWindow):
         return action
 
     def _start_drag_files(self, action):
-        print('--> _start_drag')
+        print('--> _start_drag_files')
+        print('    CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/List.png"))
         indexes = self.ui.filesList.selectionModel().selectedRows()
         mime_data = self.ui.filesList.model().mimeData(indexes)
         drag.setMimeData(mime_data)
-        drag.exec_(action)
+        print('   ', mime_data.formats(), mime_data.hasFormat(MimeTypes["file"]))
+        if mime_data.hasFormat(MimeTypes["file"]):
+            drag.exec_(Qt.CopyAction)
 
     def _start_drag(self, action):
         print('--> _start_drag')
+        print('    CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/Folder.png"))
         indexes = self.ui.dirTree.selectionModel().selectedRows()
         mime_data = self.ui.dirTree.model().mimeData(indexes)
         drag.setMimeData(mime_data)
-        drag.exec_(action)
+        if mime_data.hasFormat(MimeTypes["real-folder"]):
+            drag.exec_(Qt.CopyAction)
+        elif mime_data.hasFormat(MimeTypes["virtual-folder"]):
+            drag.exec_(Qt.MoveAction)
 
     def _drag_enter_event(self, e):
         print('--> _drag_enter_event', e.mimeData().formats())
         if self._check_format(e.mimeData()):
+            print('   accept')
             e.accept()
         else:
+            print('   ignore')
             e.ignore()
 
     def set_menus(self):

@@ -60,7 +60,7 @@ class ProxyModel2(ProxyModel):
         return Qt.IgnoreAction
 
     def mimeTypes(self):
-        return [MimeTypes[1]]
+        return [MimeTypes["file"]]
 
     def mimeData(self, indexes):
         print('--> ProxyModel2.mimeData', len(indexes))
@@ -81,7 +81,7 @@ class ProxyModel2(ProxyModel):
             data_stream.writeInt(i)
 
         mime_data = QMimeData()
-        mime_data.setData(MimeTypes[1], item_data)
+        mime_data.setData(MimeTypes["file"], item_data)
         return mime_data
 
 
