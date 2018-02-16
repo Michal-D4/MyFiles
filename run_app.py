@@ -5,8 +5,9 @@ import sys
 from PyQt5.QtWidgets import QApplication
 
 from controller.my_controller import MyController
-from view.main_flow import MainFlow
-from view.my_db_choice import MyDBChoice
+from view.main_window import AppWindow
+from view.db_choice import DBChoice
+from model.helper import Shared
 
 sys._excepthook = sys.excepthook
 
@@ -23,8 +24,8 @@ sys.excepthook = my_exception_hook
 
 def main():
     app = QApplication(sys.argv)
-    dlg = MyDBChoice()
-    main_window = MainFlow(open_dialog=dlg)
+    dlg = DBChoice()
+    main_window = AppWindow()
 
     _controller = MyController(main_window)
     main_window.scan_files_signal.connect(_controller.on_scan_files)

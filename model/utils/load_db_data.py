@@ -25,12 +25,12 @@ class LoadDBData:
     """
     class LoadDBData
     """
-    def __init__(self, connection, current_place: Places.CurrPlace):
+    def __init__(self, current_place: Places.CurrPlace):
         """
         class LoadDBData
         :param connection: - connection to database
         """
-        self.conn = connection
+        self.conn = Shared['DB connection']
         self.cursor = self.conn.cursor()
         self.place_id = current_place.view_idx
         self.place_status = current_place.disk_state

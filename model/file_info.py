@@ -38,16 +38,16 @@ UPDATE_FILE = ' '.join(('update Files set',
 class LoadFiles(QObject):
     finished = pyqtSignal()
 
-    def __init__(self, conn, cur_place, data_):
+    def __init__(self, cur_place, data_):
         super().__init__()
         self.cur_place = cur_place
-        self.conn = conn
+        self.conn = Shared['DB connection']
         self.data = data_
         self.updated_dirs = None
 
     @pyqtSlot()
     def run(self):
-        files = LoadDBData(self.conn, self.cur_place)
+        files = LoadDBData(self.cur_place)
         files.load_data(self.data)
         self.updated_dirs = files.get_updated_dirs()
         self.finished.emit()
@@ -65,12 +65,12 @@ class FileInfo(QObject):
         self.finished.emit()           # 'Updating of files is finished'
         # print('--> FileInfo.run finished')
 
-    def __init__(self, conn, place_inst, updated_dirs):
+    def __init__(self, place_inst, updated_dirs):
         super().__init__()
         self.upd_dirs = updated_dirs
         self.places = place_inst
-        self.conn = conn
-        self.cursor = conn.cursor()
+        self.conn = Shared['DB connection']
+        self.cursor = self.conn.cursor()
         self.file_info = []
 
     def _insert_author(self, file_id):

@@ -1,7 +1,7 @@
 # model/utilities.py
 import datetime
+from model.helper import *
 
-PLUS_EXT_ID = 100000
 
 Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                (' '.join(('WITH x(Path, DirID, ParentID, isVirtual, level, virtual) AS',
@@ -40,7 +40,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            'PLACE_IN_DIRS': 'select DirId from Dirs where PlaceId = ?;',
            'PATH': 'select Path, PlaceId from Dirs where DirID = ?;',
            'IS_EXIST': 'select * from Places where Place = ?;',
-           'EXT': ' '.join(('select Extension as title, ExtID+{}, GroupID'.format(PLUS_EXT_ID),
+           'EXT': ' '.join(('select Extension as title, ExtID+{}, GroupID'.format(EXT_ID_INCREMENT),
                             'as ID from Extensions UNION select GroupName as title,',
                             'GroupID, 0 as ID from ExtGroups',
                             'order by ID desc, title;')),
@@ -163,10 +163,12 @@ class DBUtils:
     def __init__(self):
         self.conn = None
         self.curs = None
+        Shared['DB utility'] = self
 
     def set_connection(self, connection):
         self.conn = connection
         self.curs = connection.cursor()
+        Shared['DB connection'] = connection
 
     def advanced_selection(self, param, cur_place_id):
         # print('|---> advanced_selection', param)

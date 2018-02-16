@@ -18,7 +18,7 @@ from controller.tree_model import TreeModel
 from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
 from model.helper import *
-from model.utilities import DBUtils, PLUS_EXT_ID
+from model.utilities import DBUtils
 from model.utils import create_db
 from model.utils.load_db_data import LoadDBData
 from view.input_date import DateInputDialog
@@ -32,10 +32,10 @@ DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 class MyController():
     FOLDER, FAVORITE, ADVANCE = (1, 2, 4)
 
-    def __init__(self, view):
-        self._connection = None
+    def __init__(self):
+        view = Shared['AppWindow']
         self.ui = view.ui
-        self._win = view
+        Shared['Controller'] = self
 
         self.status_label = QLabel(view)
         self.ui.statusbar.addPermanentWidget(self.status_label)
@@ -57,7 +57,7 @@ class MyController():
                 'Dirs Create virtual folder as child': self._create_virtual_child,
                 'Dirs Create virtual folder': self._create_virtual,
                 'Dirs Delete folder': self._delete_virtual,
-                'Dirs Remove empty': self._del_empty_dirs,
+                'Dirs Remove empty folders': self._del_empty_dirs,
                 'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
                 'dirTree': self._populate_directory_tree,  # emit from Places
@@ -199,7 +199,7 @@ class MyController():
         if tmp_place.disk_state == Places.MOUNTED:
             path = path.partition(os.altsep)[2]
 
-        ld = LoadDBData(self._connection, tmp_place)
+        ld = LoadDBData(tmp_place)
         return ld.insert_dir(path)
 
     def _copy_files(self):
@@ -357,19 +357,19 @@ class MyController():
         """
         self.same_db = the_same
         if create:
-            self._connection = sqlite3.connect(file_name, check_same_thread=False,
+            _connection = sqlite3.connect(file_name, check_same_thread=False,
                                                detect_types=DETECT_TYPES)
-            create_db.create_all_objects(self._connection)
+            create_db.create_all_objects(_connection)
         else:
             if os.path.isfile(file_name):
-                self._connection = sqlite3.connect(file_name, check_same_thread=False,
+                _connection = sqlite3.connect(file_name, check_same_thread=False,
                                                    detect_types=DETECT_TYPES)
             else:
                 self._show_message("Data base does not exist")
                 return
 
-        self._win.setWindowTitle('File organizer - ' + file_name)
-        self._dbu.set_connection(self._connection)
+        Shared['AppWindow'].setWindowTitle('File organizer - ' + file_name)
+        self._dbu.set_connection(_connection)
         self._dbu.select_other('PRAGMA', ())
         self._populate_all_widgets()
 
@@ -423,28 +423,28 @@ class MyController():
         return []
 
     def _ask_for_change_font(self):
-        opt['AppFont'], ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
+        Shared['AppFont'], ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
         if ok_:
             self._change_font()
             settings = QSettings()
-            settings.setValue('FONT', opt['AppFont'])
+            settings.setValue('FONT', Shared['AppFont'])
 
     def _restore_font(self):
         settings = QSettings()
-        opt['AppFont'] = settings.value('FONT', None)
-        if opt['AppFont']:
-            print(opt['AppFont'].toString())
+        Shared['AppFont'] = settings.value('FONT', None)
+        if Shared['AppFont']:
+            print(Shared['AppFont'].toString())
             self._change_font()
 
     def _change_font(self):
-        print('--> _change_font:', opt['AppFont'].toString())
-        self.ui.dirTree.setFont(opt['AppFont'])
-        self.ui.extList.setFont(opt['AppFont'])
-        self.ui.filesList.setFont(opt['AppFont'])
-        self.ui.tagsList.setFont(opt['AppFont'])
-        self.ui.authorsList.setFont(opt['AppFont'])
-        self.ui.commentField.setFont(opt['AppFont'])
-        self.ui.cb_places.setFont(opt['AppFont'])
+        print('--> _change_font:', Shared['AppFont'].toString())
+        self.ui.dirTree.setFont(Shared['AppFont'])
+        self.ui.extList.setFont(Shared['AppFont'])
+        self.ui.filesList.setFont(Shared['AppFont'])
+        self.ui.tagsList.setFont(Shared['AppFont'])
+        self.ui.authorsList.setFont(Shared['AppFont'])
+        self.ui.commentField.setFont(Shared['AppFont'])
+        self.ui.cb_places.setFont(Shared['AppFont'])
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -489,12 +489,12 @@ class MyController():
     def _collect_all_ext(self, ids):
         all_id = set()
         for id_ in ids:
-            if id_ < PLUS_EXT_ID:
+            if id_ < EXT_ID_INCREMENT:
                 curr = self._dbu.select_other('EXT_ID_IN_GROUP', (id_,))
                 for idd in curr:
                     all_id.add(idd[0])
             else:
-                all_id.add(id_ - PLUS_EXT_ID)
+                all_id.add(id_ - EXT_ID_INCREMENT)
         return all_id
 
     def _dir_update(self):
@@ -502,7 +502,7 @@ class MyController():
         self._populate_directory_tree()
         self._populate_ext_list()
 
-        self.obj_thread = FileInfo(self._connection, self._cb_places, updated_dirs)
+        self.obj_thread = FileInfo(self._cb_places, updated_dirs)
         self._run_in_qthread(self._finish_thread)
 
     def _run_in_qthread(self, finish):
@@ -1072,7 +1072,7 @@ class MyController():
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
 
         model = EditTreeModel()
-        model.set_alt_font(opt['AppFont'])
+        model.set_alt_font(Shared['AppFont'])
 
         model.set_model_data(dirs)
 
@@ -1192,7 +1192,7 @@ class MyController():
 
     def _load_files(self, files):
         curr_place = self._cb_places.get_curr_place()
-        self.obj_thread = LoadFiles(self._connection, curr_place, files)
+        self.obj_thread = LoadFiles(curr_place, files)
         self._run_in_qthread(self._dir_update)
 
     def _scan_file_system(self):
@@ -1231,7 +1231,7 @@ class MyController():
             model = self.ui.extList.model()
             for i in idxs:
                 tt = model.data(i, Qt.UserRole)
-                if tt[0] > PLUS_EXT_ID:
+                if tt[0] > EXT_ID_INCREMENT:
                     res.add(model.data(i, Qt.DisplayRole))
                 else:
                     ext_ = self._dbu.select_other('EXT_IN_GROUP', (tt[0],)).fetchall()

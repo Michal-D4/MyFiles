@@ -5,7 +5,7 @@ from collections import namedtuple
 from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtWidgets import QDialog
 
-from model.utilities import PLUS_EXT_ID
+from model.helper import *
 from view.ui_sel_opt import Ui_SelOpt
 
 
@@ -147,8 +147,8 @@ class SelOpt(QDialog):
 
             idx = []
             for id_ in aux:
-                if id_[0] > PLUS_EXT_ID:
-                    idx.append(id_[0]-PLUS_EXT_ID)
+                if id_[0] > EXT_ID_INCREMENT:
+                    idx.append(id_[0] - EXT_ID_INCREMENT)
                 else:
                     idx += self._ext_in_group(id_[0])
 
