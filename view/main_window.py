@@ -4,19 +4,20 @@ from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEve
 from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
-from view.my_db_choice import MyDBChoice
-from view.ui_new_view import Ui_MainWindow
+from view.db_choice import DBChoice
+from view.ui_main_window import Ui_MainWindow
 from model.helper import *
 
 
-class MainFlow(QMainWindow):
+class AppWindow(QMainWindow):
     change_data_signal = pyqtSignal(str)   # str - name of action
     scan_files_signal = pyqtSignal()
 
-    def __init__(self, open_dialog: MyDBChoice, parent=None):
+    def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        Shared['AppWindow'] = self
 
         self.old_size = None
         self.old_pos = None
@@ -28,7 +29,7 @@ class MainFlow(QMainWindow):
 
         self.setup_context_menu()
 
-        self.open_dialog = open_dialog
+        self.open_dialog = Shared['DB choice dialog']
 
     def set_actions(self):
         """
@@ -51,7 +52,8 @@ class MainFlow(QMainWindow):
 
         self.ui.filesList.resizeEvent = self.resize_event
 
-    def _check_format(self, mime_data):
+    @staticmethod
+    def _check_format(mime_data):
         res = (mime_data.hasFormat(MimeTypes["real-folder"])
                | mime_data.hasFormat(MimeTypes["virtual-folder"])
                | mime_data.hasFormat(MimeTypes["file"]))
@@ -160,20 +162,11 @@ class MainFlow(QMainWindow):
         Set context menus for each widget
         :return:
         """
-        self.ui.filesList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.filesList.customContextMenuRequested.connect(self._file_menu)
-
-        self.ui.extList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.extList.customContextMenuRequested.connect(self._ext_menu)
-
-        self.ui.tagsList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.tagsList.customContextMenuRequested.connect(self._tag_menu)
-
-        self.ui.authorsList.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.authorsList.customContextMenuRequested.connect(self._author_menu)
-
-        self.ui.dirTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.dirTree.customContextMenuRequested.connect(self._dir_menu)
+        self.ui.filesList.customContextMenuRequested.connect(self._file_menu)
+        self.ui.extList.customContextMenuRequested.connect(self._ext_menu)
+        self.ui.tagsList.customContextMenuRequested.connect(self._tag_menu)
+        self.ui.authorsList.customContextMenuRequested.connect(self._author_menu)
 
     def _file_menu(self, pos):
         idx = self.ui.filesList.indexAt(pos)
@@ -205,14 +198,15 @@ class MainFlow(QMainWindow):
 
     def _tag_menu(self, pos):
         idx = self.ui.tagsList.indexAt(pos)
+        menu = QMenu(self)
+        menu.addAction('Remove unused')
         if idx.isValid():
-            menu = QMenu(self)
-            menu.addAction('Remove unused')
             menu.addAction('Scan in names')
             menu.addAction('Rename')
-            action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
-            if action:
-                self.change_data_signal.emit('Tag {}'.format(action.text()))
+
+        action = menu.exec_(self.ui.tagsList.mapToGlobal(pos))
+        if action:
+            self.change_data_signal.emit('Tag {}'.format(action.text()))
 
     def _author_menu(self, pos):
         menu = QMenu(self)
@@ -224,9 +218,9 @@ class MainFlow(QMainWindow):
     def _dir_menu(self, pos):
         idx = self.ui.dirTree.indexAt(pos)
         print('--> _dir_menu', self.ui.dirTree.model().is_favorites(idx))
+        menu = QMenu(self)
+        menu.addAction('Remove empty folders')
         if idx.isValid():
-            menu = QMenu(self)
-            menu.addAction('Remove empty folders')
             if self.ui.dirTree.model().is_virtual(idx):
                 if not self.ui.dirTree.model().is_favorites(idx):
                     menu.addSeparator()
@@ -237,9 +231,12 @@ class MainFlow(QMainWindow):
             menu.addSeparator()
             menu.addAction('Create virtual folder')
             menu.addAction('Create virtual folder as child')
-            action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
-            if action:
-                self.change_data_signal.emit('Dirs {}'.format(action.text()))
+        else:
+            menu.addAction('Create virtual folder')
+
+        action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
+        if action:
+            self.change_data_signal.emit('Dirs {}'.format(action.text()))
 
     def ref_clicked(self, href):
         """
@@ -342,5 +339,5 @@ class MainFlow(QMainWindow):
         settings.setValue("FilesSplitter", QVariant(self.ui.splitter_files.saveState()))
         settings.setValue("OptSplitter", QVariant(self.ui.opt_splitter.saveState()))
         settings.setValue("MainSplitter", QVariant(self.ui.main_splitter.saveState()))
-        super(MainFlow, self).closeEvent(event)
+        super(AppWindow, self).closeEvent(event)
 

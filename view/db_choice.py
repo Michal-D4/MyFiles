@@ -4,6 +4,7 @@ from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QCoreApplication
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 
 from view.ui_db_choice import Ui_ChoiceDB
+from model.helper import Shared
 
 SKIP_OPEN_DIALOG = 2
 APP_NAME = 'File manager'
@@ -11,14 +12,15 @@ ORG_DOMAIN = 'fake_domain.org'
 ORG_NAME = 'Fake organization'
 
 
-class MyDBChoice(QDialog):
+class DBChoice(QDialog):
     open_DB_signal = pyqtSignal(str, bool, bool)
 
     def __init__(self, parent=None):
-        super(MyDBChoice, self).__init__(parent)
+        super(DBChoice, self).__init__(parent)
 
         self.ui_db_choice = Ui_ChoiceDB()
         self.ui_db_choice.setupUi(self)
+        Shared['DB choice dialog'] = self
 
         self.ui_db_choice.okButton.clicked.connect(self.accept)
         self.ui_db_choice.newButton.clicked.connect(self.new_db)
@@ -60,7 +62,7 @@ class MyDBChoice(QDialog):
 
     def accept(self):
         self.emit_open_dialog()
-        super(MyDBChoice, self).accept()
+        super(DBChoice, self).accept()
 
     def new_db(self):
         """
@@ -75,7 +77,7 @@ class MyDBChoice(QDialog):
             if not (file_name in self.init_data[2]):
                 self.create_db(file_name)
                 self.open_DB_signal.emit(file_name, True, False)
-                super(MyDBChoice, self).accept()
+                super(DBChoice, self).accept()
             else:
                 self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
 
@@ -151,7 +153,7 @@ if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
-    myapp = MyDBChoice()
+    myapp = DBChoice()
     if myapp.exec_() == QDialog.Accepted:
         print('name of DB file =', myapp.get_file_name())
     sys.exit(app.exec_())
