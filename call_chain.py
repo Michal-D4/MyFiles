@@ -110,10 +110,6 @@ class MethodsTree():
         self.file_name = file_name
         self.view.setWindowTitle(file_name.rpartition(os.sep)[2])
 
-        self.view.mousePressEvent = self.mouse_press_event
-        self.view.expanded.connect(self._expanded)
-        self.view.collapsed.connect(self._collapsed)
-
         self.row_id = 0
         self.called_by = None
         self.methods = None
@@ -392,17 +388,18 @@ if __name__ == "__main__":
     # file_ = 'model/utilities.py'
     # file_ = 'model/utils/create_db.py'
     # file_ = 'model/utils/load_db_data.py'
-    file_ = 'view/input_date.py'
+    # file_ = 'view/input_date.py'
     # file_ = 'view/item_edit.py'
-    # file_ = 'view/main_flow.py'
+    file_ = 'view/main_flow.py'
     # file_ = 'view/my_db_choice.py'
     # file_ = 'view/sel_opt.py'
     # file_ = 'view/set_fields.py'
-    # file_ = 'tst_app_cl.py'
+    # file_ = 'call_chain.py'
     # file_ = 'TreeModel.ed.py'
     # file_ = 'TreeItem.ed.py'
     # file_ = 'TreeModel.py'
     # file_ = 'TreeItem.py'
+    # file_ = 'tmp.py'
 
     dir_ = dir_h if socket.gethostname() == 'thenote' else dir_w
     full_file_name = os.path.join(dir_, file_)
