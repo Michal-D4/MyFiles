@@ -187,7 +187,7 @@ class MyController():
         if not registered_place:
             QMessageBox.critical(self.ui.filesList, 'Path problem',
                                  'Please create place before copy to {}'.format(to_path))
-            return 0
+            return 0, 0
 
         tmp_place = Places.CurrPlace(0, registered_place, state)
 

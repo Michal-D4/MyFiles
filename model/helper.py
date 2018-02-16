@@ -7,10 +7,11 @@ from PyQt5.QtGui import QFontDatabase
 # immutable
 EXT_ID_INCREMENT = 100000
 Fields = namedtuple('Fields', 'fields headers indexes')
-MimeTypes = {"real-folder": "application/x-folder-list",
-             "file": "application/x-file-list",
-             "virtual-folder": "application/x-folder-list/virtual"}
-DropCopyFolder, DropMoveFolder, DropCopyFile, DropMoveFile = range(4)
+MimeTypes = ["application/x-folder-list",
+             "application/x-file-list",
+             "application/x-folder-list/virtual"]
+DropNoAction, DropCopyFolder, DropMoveFolder, DropCopyFile, DropMoveFile = range(5)
+real_folder, file, virtual_folder = range(3)
 
 # mutable
 Shared = {'AppFont': QFontDatabase.systemFont(QFontDatabase.GeneralFont),

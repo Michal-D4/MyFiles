@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QApplication
 from controller.my_controller import MyController
 from view.main_window import AppWindow
 from view.db_choice import DBChoice
-from model.helper import Shared
 
 sys._excepthook = sys.excepthook
 
@@ -27,7 +26,7 @@ def main():
     dlg = DBChoice()
     main_window = AppWindow()
 
-    _controller = MyController(main_window)
+    _controller = MyController()
     main_window.scan_files_signal.connect(_controller.on_scan_files)
 
     # when data changed on any widget

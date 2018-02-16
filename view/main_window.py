@@ -4,7 +4,6 @@ from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEve
 from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
-from view.db_choice import DBChoice
 from view.ui_main_window import Ui_MainWindow
 from model.helper import *
 
@@ -54,9 +53,9 @@ class AppWindow(QMainWindow):
 
     @staticmethod
     def _check_format(mime_data):
-        res = (mime_data.hasFormat(MimeTypes["real-folder"])
-               | mime_data.hasFormat(MimeTypes["virtual-folder"])
-               | mime_data.hasFormat(MimeTypes["file"]))
+        res = (mime_data.hasFormat(MimeTypes[real_folder])
+               | mime_data.hasFormat(MimeTypes[virtual_folder])
+               | mime_data.hasFormat(MimeTypes[file]))
         return res
 
     def _drop_event(self, event: QDropEvent):
@@ -66,28 +65,37 @@ class AppWindow(QMainWindow):
         action = event.dropAction()
         print(' CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         index = self.ui.dirTree.indexAt(event.pos())
-        act = self._set_action(event, index)
+        is_virtual = self.ui.dirTree.model().is_virtual(index)
+        act = self._set_action(event, is_virtual)
+        if act == DropMoveFolder:
+            pass
+        elif act == DropCopyFile:
+            pass
+        elif act == DropMoveFile:
+            pass
+        elif act == DropCopyFolder:
+            pass
 
-        res = self.ui.dirTree.model().dropMimeData(mime_data, action, -1, -1, index)
-        if res & mime_data.hasFormat(MimeTypes["file"]):
-            # copy/move files
-            path = self.ui.dirTree.model().data(index, role=Qt.UserRole)[-1]
-            if not self.ui.dirTree.model().is_virtual(index):
-                if action.text() == "Copy files":
-                    self.change_data_signal.emit('/'.join('Drag copy files', path))
-                elif action.text() == "Move files":
-                    self.change_data_signal.emit('/'.join('Drag move files', path))
+        # res = self.ui.dirTree.model().dropMimeData(mime_data, action, -1, -1, index)
+        # if res & mime_data.hasFormat(MimeTypes["file"]):
+        #     # copy/move files
+        #     path = self.ui.dirTree.model().data(index, role=Qt.UserRole)[-1]
+        #     if not self.ui.dirTree.model().is_virtual(index):
+        #         if action.text() == "Copy files":
+        #             self.change_data_signal.emit('/'.join('Drag copy files', path))
+        #         elif action.text() == "Move files":
+        #             self.change_data_signal.emit('/'.join('Drag move files', path))
 
     def _possible_action(self, index, mime_data):
-        if mime_data.hasFormat(MimeTypes["real-folder"]):
+        if mime_data.hasFormat(MimeTypes[real_folder]):
             return DropCopyFolder
-        if mime_data.hasFormat(MimeTypes["file"]):
+        if mime_data.hasFormat(MimeTypes[file]):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropMoveFile
             return DropCopyFile
-        if mime_data.hasFormat(MimeTypes["virtual-folder"]):
+        if mime_data.hasFormat(MimeTypes[virtual_folder]):
             return DropMoveFolder
-
+        return DropNoAction
 
     def _set_action(self, event, index):
         menu = QMenu(self)
@@ -114,8 +122,8 @@ class AppWindow(QMainWindow):
         indexes = self.ui.filesList.selectionModel().selectedRows()
         mime_data = self.ui.filesList.model().mimeData(indexes)
         drag.setMimeData(mime_data)
-        print('   ', mime_data.formats(), mime_data.hasFormat(MimeTypes["file"]))
-        if mime_data.hasFormat(MimeTypes["file"]):
+        print('   ', mime_data.formats(), mime_data.hasFormat(MimeTypes[file]))
+        if mime_data.hasFormat(MimeTypes[file]):
             drag.exec_(Qt.CopyAction)
 
     def _start_drag(self, action):
@@ -126,9 +134,9 @@ class AppWindow(QMainWindow):
         indexes = self.ui.dirTree.selectionModel().selectedRows()
         mime_data = self.ui.dirTree.model().mimeData(indexes)
         drag.setMimeData(mime_data)
-        if mime_data.hasFormat(MimeTypes["real-folder"]):
+        if mime_data.hasFormat(MimeTypes[real_folder]):
             drag.exec_(Qt.CopyAction)
-        elif mime_data.hasFormat(MimeTypes["virtual-folder"]):
+        elif mime_data.hasFormat(MimeTypes[virtual_folder]):
             drag.exec_(Qt.MoveAction)
 
     def _drag_enter_event(self, e):

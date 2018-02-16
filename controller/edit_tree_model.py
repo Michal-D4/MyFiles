@@ -6,7 +6,7 @@ from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteA
                           QDataStream, QIODevice)
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QFont
-from model.helper import MimeTypes
+from model.helper import *
 
 
 class TreeItem(object):
@@ -247,9 +247,9 @@ class EditTreeModel(QAbstractItemModel):
         mime_data = QMimeData()
 
         if all_virtual:
-            mime_data.setData(MimeTypes["virtual-folder"], item_data)
+            mime_data.setData(MimeTypes[virtual_folder], item_data)
         else:
-            mime_data.setData(MimeTypes["real-folder"], item_data)
+            mime_data.setData(MimeTypes[real_folder], item_data)
 
         return mime_data
 
@@ -264,9 +264,9 @@ class EditTreeModel(QAbstractItemModel):
         if action == Qt.IgnoreAction:
             return True
 
-        if data.hasFormat(MimeTypes["real-folder"]):
+        if data.hasFormat(MimeTypes[real_folder]):
             print('  Folder(s) dragged')
-            drop_data = data.data(MimeTypes["real-folder"])
+            drop_data = data.data(MimeTypes[real_folder])
             print('  type of data', type(drop_data))
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             idx_count = stream.readInt()
@@ -278,9 +278,9 @@ class EditTreeModel(QAbstractItemModel):
                 self.append_child(copy.deepcopy(item), parent)
             return True
 
-        if data.hasFormat(MimeTypes["file"]):
+        if data.hasFormat(MimeTypes[file]):
             print('  File(s) dragged')
-            drop_data = data.data(MimeTypes["file"])
+            drop_data = data.data(MimeTypes[file])
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             count = stream.readInt()
             for i in range(count):
