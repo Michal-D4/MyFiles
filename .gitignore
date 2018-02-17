@@ -14,6 +14,7 @@ myFiles.egg-info
 .idea
 *.sqlite
 ui_*.py
+test*.py
 *_rc.py
 # setup.pcl used to pickle settings
 *.pcl
