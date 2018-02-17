@@ -1,10 +1,8 @@
 # controller/my_controller.py
 
-import os
 import re
 import sqlite3
 import webbrowser
-from collections import namedtuple
 
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QDateTime, QVariant, QItemSelection, QThread,
@@ -19,8 +17,8 @@ from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
 from model.helper import *
 from model.utilities import DBUtils
-from model.utils import create_db
-from model.utils.load_db_data import LoadDBData
+from model import create_db
+from model.load_db_data import LoadDBData
 from view.input_date import DateInputDialog
 from view.item_edit import ItemEdit
 from view.sel_opt import SelOpt
@@ -101,7 +99,7 @@ class MyController():
 
     def _create_virtual(self):
         folder_name = 'New folder'
-        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+        new_name, ok_ = QInputDialog.getText(self.ui.dirTree,
                                              'Input folder name', '',
                                              QLineEdit.Normal, folder_name)
         if ok_:
@@ -133,6 +131,17 @@ class MyController():
 
     def _rename_folder(self):
         print('--> _rename_folder')
+        cur_idx = self.ui.dirTree.currentIndex()
+        u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
+        folder_name = u_data[-1]
+        new_name, ok_ = QInputDialog.getText(self.ui.dirTree,
+                                             'Input new folder name', '',
+                                             QLineEdit.Normal, folder_name)
+        if ok_:
+            print(new_name)
+            self._dbu.update_other('DIR_NAME', (new_name, u_data[0]))
+            self.ui.dirTree.model().update_folder_name(cur_idx, new_name)
+
 
     def _selected_files(self):
         """
@@ -209,6 +218,7 @@ class MyController():
                 place_id = self._copy_in_db(to_path)
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
+                    print('--> _copy_files -- before _populate_directory_tree')
                     self._populate_directory_tree()
         else:
             self._show_message(
@@ -251,6 +261,7 @@ class MyController():
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
                     # todo - consider the use of append rows instead
+                    print('--> _move_files -- before _populate_directory_tree')
                     self._populate_directory_tree()
         else:
             self._show_message(
@@ -295,7 +306,9 @@ class MyController():
             self.fields = set_fields_dialog.get_result()
             settings = QSettings()
             settings.setValue('FIELDS', self.fields)
+            print('--> _set_fields')
             self._restore_file_list(self.ui.dirTree.currentIndex())
+            print('--> _set_fields -- after _restore_file_list')
             self._resize_columns()
 
     def _tag_rename(self):
@@ -499,7 +512,9 @@ class MyController():
 
     def _dir_update(self):
         updated_dirs = self.obj_thread.get_updated_dirs()
+        print('--> _dir_update')
         self._populate_directory_tree()
+        print('--> _dir_update  -- after _populate_directory_tree')
         self._populate_ext_list()
 
         self.obj_thread = FileInfo(self._cb_places, updated_dirs)
@@ -1049,7 +1064,9 @@ class MyController():
         self._restore_tag_selection()
         self._populate_author_list()
         self._restore_author_selection()
+        print('--> _populate_all_widgets')
         self._populate_directory_tree()
+        print('--> _populate_all_widgets  --  after _populate_directory_tree')
 
     def _restore_ext_selection(self):
         if self.same_db:
@@ -1081,7 +1098,9 @@ class MyController():
 
         cur_dir_idx = self._restore_path()
 
+        print('--> _populate_directory_tree')
         self._restore_file_list(cur_dir_idx)
+        print('--> _populate_directory_tree -- after _restore_file_list')
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):

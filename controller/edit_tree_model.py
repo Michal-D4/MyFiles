@@ -186,7 +186,7 @@ class EditTreeModel(QAbstractItemModel):
 
     def setHeaderData(self, p_int, orientation, value, role=None):
         if isinstance(value, str):
-            value = value.split(' ')
+            value = value.split(';')
         self.rootItem.set_data(value)
 
     def append_child(self, item, parent):
@@ -198,6 +198,12 @@ class EditTreeModel(QAbstractItemModel):
         # self.dataChanged.emit(index, index)   # Is it necessary? then calculate also index for appended row
         self.endInsertRows()
         return True
+
+    def update_folder_name(self, index, name):
+        item = self.getItem(index)
+        name=name.strip()
+        item.itemData = (name,)
+        item.userData = item.userData[:-1] + item.itemData
 
     def set_model_data(self, rows):
         """
