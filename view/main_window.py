@@ -66,53 +66,46 @@ class AppWindow(QMainWindow):
         print(' CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         index = self.ui.dirTree.indexAt(event.pos())
         is_virtual = self.ui.dirTree.model().is_virtual(index)
-        act = self._set_action(event, is_virtual)
-        if act == DropMoveFolder:
-            pass
-        elif act == DropCopyFile:
-            pass
-        elif act == DropMoveFile:
-            pass
-        elif act == DropCopyFolder:
-            pass
+        act = self._set_action(index, mime_data, event.pos())
+        if act & (DropMoveFolder | DropMoveFile):
+            event.setDropAction(Qt.MoveAction)
+        elif act & (DropCopyFolder | DropCopyFile):
+            event.setDropAction(Qt.CopyAction)
 
-        # res = self.ui.dirTree.model().dropMimeData(mime_data, action, -1, -1, index)
-        # if res & mime_data.hasFormat(MimeTypes["file"]):
-        #     # copy/move files
-        #     path = self.ui.dirTree.model().data(index, role=Qt.UserRole)[-1]
-        #     if not self.ui.dirTree.model().is_virtual(index):
-        #         if action.text() == "Copy files":
-        #             self.change_data_signal.emit('/'.join('Drag copy files', path))
-        #         elif action.text() == "Move files":
-        #             self.change_data_signal.emit('/'.join('Drag move files', path))
+        res = self.ui.dirTree.model().dropMimeData(mime_data, act, -1, -1, index)
+        if res:
+            event.accept()
+        else:
+            event.ignore()
 
-    def _possible_action(self, index, mime_data):
+    def _set_action(self, index, mime_data, pos):
         if mime_data.hasFormat(MimeTypes[real_folder]):
             return DropCopyFolder
         if mime_data.hasFormat(MimeTypes[file]):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropMoveFile
-            return DropCopyFile
+            return self._ask_action_file(pos)
         if mime_data.hasFormat(MimeTypes[virtual_folder]):
-            return DropMoveFolder
+            return self._ask_action_folder(pos)
         return DropNoAction
 
-    def _set_action(self, event, index):
+    def _ask_action_file(self, pos):
+        return self._ask_action_folder(pos) * 4
+
+    def _ask_action_folder(self, pos):
         menu = QMenu(self)
-        menu.addAction('Copy files')
-        menu.addAction('Move files')
+        menu.addAction('Copy')
+        menu.addAction('Move')
         menu.addSeparator()
         menu.addAction('Cancel')
-        action = menu.exec_(self.ui.dirTree.mapToGlobal(event.pos()))
+        action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
+        print(action)
         if action:
-            if action.text() == 'Cancel':
-                event.ignore()
-                return None
-            if action.text() == 'Copy files':
-                event.setDropAction(Qt.CopyAction)
-            elif action.text() == 'Move files':
-                event.setDropAction(Qt.MoveAction)
-        return action
+            if action.text() == 'Copy':
+                return DropCopyFolder
+            elif action.text() == 'Move':
+                return DropMoveFolder
+        return DropNoAction
 
     def _start_drag_files(self, action):
         print('--> _start_drag_files')

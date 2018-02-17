@@ -249,9 +249,7 @@ class EditTreeModel(QAbstractItemModel):
             pack = EditTreeModel.save_index(idx)
             data_stream.writeQString(','.join((str(x) for x in pack)))
 
-        data_stream.writeBool(all_virtual)
         mime_data = QMimeData()
-
         if all_virtual:
             mime_data.setData(MimeTypes[virtual_folder], item_data)
         else:
@@ -259,20 +257,25 @@ class EditTreeModel(QAbstractItemModel):
 
         return mime_data
 
-    def dropMimeData(self, data, action, row, column, parent):
-        print('--> dropMimeData', row, column, parent.isValid())
+    def dropMimeData(self, mime_data: QMimeData, action, row, column, parent):
+        """
+        :param mime_data:
+        :param action:  not Qt defined actions, instead Drop* from helper.py
+        :param row, column:  always -1, means that mime_data be append as child
+        :param parent: where mime_data is dragged
+        :return: True if dropped
+        """
+        print('--> dropMimeData', action, row, column, parent.isValid())
         if parent.isValid():
             print(parent.internalPointer().data(0, Qt.DisplayRole))
 
-        if not parent.internalPointer().is_virtual():
+        if action == DropNoAction:
             return False
 
-        if action == Qt.IgnoreAction:
-            return True
-
-        if data.hasFormat(MimeTypes[real_folder]):
-            print('  Folder(s) dragged')
-            drop_data = data.data(MimeTypes[real_folder])
+        if action & (DropMoveFolder | DropCopyFolder):
+            mime_format = mime_data.formats()[0]
+            print('  Folder(s) dragged:', mime_format)
+            drop_data = mime_data.data(mime_format)
             print('  type of data', type(drop_data))
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             idx_count = stream.readInt()
@@ -282,11 +285,15 @@ class EditTreeModel(QAbstractItemModel):
                 index = self.restore_index(id_list)
                 item = index.internalPointer()
                 self.append_child(copy.deepcopy(item), parent)
+                if action == DropMoveFolder:
+                    # todo remove old(moved) item
+                    pass
+                # todo the movement in DB
             return True
 
-        if data.hasFormat(MimeTypes[file]):
+        if action & (DropMoveFile | DropCopyFile):
             print('  File(s) dragged')
-            drop_data = data.data(MimeTypes[file])
+            drop_data = mime_data.data(MimeTypes[file])
             stream = QDataStream(drop_data, QIODevice.ReadOnly)
             count = stream.readInt()
             for i in range(count):
