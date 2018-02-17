@@ -1,4 +1,4 @@
-# model/utils/create_db.py
+# model/create_db.py
 
 import socket
 import sqlite3

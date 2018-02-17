@@ -1,4 +1,4 @@
-# model/utils/load_db_data.py
+# model/load_db_data.py
 
 from controller.places import Places
 from model.helper import *
