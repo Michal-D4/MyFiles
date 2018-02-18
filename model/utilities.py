@@ -92,7 +92,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
-          'FAVORITES': 'insert into Favorites (FavID, FileID, DirID) values (?, ?, 0);',
+          'IN_VIRTUAL_DIR': 'insert into Favorites (FavID, FileID) values (?, ?);',
           'COMMENT': 'insert into Comments (Comment, BookTitle) values (?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',
@@ -110,7 +110,8 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'ExtID, FileName, CommentID, FileDate, Pages,',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
-          'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);'
+          'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
+          'DIR->VIRTUAL': 'insert into Favorites (FavID, DirID) values (?, ?);'
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
@@ -126,7 +127,9 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'OPEN_DATE': "update Files set Opened = ? where FileID = ?;",
           'COMMENT_DATE': "update Files set Commented = date('now') where FileID = ?;",
           'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;',
-          'DIR_NAME': 'update Dirs set Path = ? where DirID = ?;'
+          'DIR_NAME': 'update Dirs set Path = ? where DirID = ?;',
+          'DIR_PARENT': 'update Dirs set ParentId = ? where DirID = ?;',
+          'VIRTUAL_DIR': 'update Favorites set FavID = ? where FavID = ? and FileID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
@@ -154,7 +157,8 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'EMPTY_DIRS': ' '.join(('delete from Dirs where isVirtual = 0 and NOT EXISTS',
                                   '(select * from Files where DirID = Dirs.DirID);')),
           'VIRTUAL_DIR': 'delete from Dirs where DirID = ? and isVirtual > 0;',
-          'VIRTUALS': 'delete from Favorites where FavID = ?;'
+          'VIRTUALS': 'delete from Favorites where FavID = ?;',
+          'FROM_VIRTUAL': 'delete from Favorites where FavID = ? and DirID = ?;'
           }
 
 

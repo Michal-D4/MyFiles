@@ -70,6 +70,13 @@ class TreeItem(object):
 
         return 0
 
+    def row_by_data(self, data):
+        for i in range(len(self.childItems)):
+            if self.childItems[i].itemData == data:
+                return i
+
+        return -1
+
     def set_data(self, data_):
         self.itemData = data_
 
@@ -99,6 +106,10 @@ class EditTreeModel(QAbstractItemModel):
         if index.isValid():
             return index.internalPointer().is_favorites()
         return False
+
+    def favorites_index(self):
+        row = self.rootItem.row_by_data(['Favorites'])
+        return self.index(row, 0)
 
     def columnCount(self, parent):
         return self.rootItem.columnCount()
@@ -192,10 +203,9 @@ class EditTreeModel(QAbstractItemModel):
     def append_child(self, item, parent):
         parentItem = self.getItem(parent)
         position = parentItem.childCount()
+
         self.beginInsertRows(parent, position, position)
         parentItem.appendChild(item)
-
-        # self.dataChanged.emit(index, index)   # Is it necessary? then calculate also index for appended row
         self.endInsertRows()
         return True
 
@@ -246,7 +256,7 @@ class EditTreeModel(QAbstractItemModel):
         for idx in indexes:
             it: TreeItem = idx.internalPointer()
             all_virtual &= (it.is_virtual() & (not it.is_favorites()))
-            pack = EditTreeModel.save_index(idx)
+            pack = EditTreeModel._save_index(idx)
             data_stream.writeQString(','.join((str(x) for x in pack)))
 
         mime_data = QMimeData()
@@ -265,47 +275,80 @@ class EditTreeModel(QAbstractItemModel):
         :param parent: where mime_data is dragged
         :return: True if dropped
         """
-        print('--> dropMimeData', action, row, column, parent.isValid())
-        if parent.isValid():
-            print(parent.internalPointer().data(0, Qt.DisplayRole))
-
-        if action == DropNoAction:
-            return False
-
+        print('--> dropMimeData', action, self.data(parent, role=Qt.DisplayRole))
         if action & (DropMoveFolder | DropCopyFolder):
-            mime_format = mime_data.formats()[0]
-            print('  Folder(s) dragged:', mime_format)
-            drop_data = mime_data.data(mime_format)
-            print('  type of data', type(drop_data))
-            stream = QDataStream(drop_data, QIODevice.ReadOnly)
-            idx_count = stream.readInt()
-            for i in range(idx_count):
-                tmp_str = stream.readQString()
-                id_list = (int(i) for i in tmp_str.split(','))
-                index = self.restore_index(id_list)
-                item = index.internalPointer()
-                self.append_child(copy.deepcopy(item), parent)
-                if action == DropMoveFolder:
-                    # todo remove old(moved) item
-                    pass
-                # todo the movement in DB
+            self._drop_folders(action, mime_data, parent)
             return True
 
         if action & (DropMoveFile | DropCopyFile):
-            print('  File(s) dragged')
-            drop_data = mime_data.data(MimeTypes[file])
-            stream = QDataStream(drop_data, QIODevice.ReadOnly)
-            count = stream.readInt()
-            for i in range(count):
-                file_id = stream.readInt()
-
-                print('  == file_id', file_id)
-
+            self._drop_files(action, mime_data, parent)
             return True
 
         return False
 
-    def restore_index(self, path):
+    def _drop_files(self, action, mime_data, parent):
+        print('    File(s) dragged')
+        if self.is_virtual(parent):
+            self._drop_files_to_virtual(action, mime_data, parent)
+        else:
+            path = self.data(parent, role=Qt.UserRole)[-1]
+            if action == DropCopyFile:
+                Shared['Controller'].copy_in_db(path)
+            else:
+                Shared['Controller'].move_in_db(path)
+
+    def _drop_files_to_virtual(self, action, mime_data, parent):
+        drop_data = mime_data.data(MimeTypes[file])
+        stream = QDataStream(drop_data, QIODevice.ReadOnly)
+        count = stream.readInt()
+        parent_dir_id = self.data(parent, role=Qt.UserRole)[0]
+        p_data = self.data(parent, role=Qt.UserRole)
+        print('  count {}, dir_id {}, {}'.format(count, p_data[0], p_data[-1]))
+        for i in range(count):
+            file_id = stream.readInt()
+            dir_id = stream.readInt()
+            print('  file_id {}, dir_id {}'.format(file_id, dir_id))
+            if action == DropCopyFile:
+                print('  insert', parent_dir_id, file_id)
+                Shared['DB utility'].insert_other('IN_VIRTUAL_DIR', (parent_dir_id, file_id))
+            else:
+                print('  update', parent_dir_id, dir_id, file_id)
+                Shared['DB utility'].update_other('VIRTUAL_DIR', (parent_dir_id, dir_id, file_id))
+
+    def _drop_folders(self, action, mime_data, parent):
+        mime_format = mime_data.formats()[0]
+        print('    Folder(s) dragged:', mime_format)
+        drop_data = mime_data.data(mime_format)
+        stream = QDataStream(drop_data, QIODevice.ReadOnly)
+        idx_count = stream.readInt()
+        for i in range(idx_count):
+            tmp_str = stream.readQString()
+            id_list = (int(i) for i in tmp_str.split(','))
+            index = self._restore_index(id_list)
+            if action == DropMoveFolder:
+                self._move_folder(index, parent)
+            else:
+                self._copy_folder(index, parent)
+
+    def _move_folder(self, index, parent):
+        item = index.internalPointer()
+        self.append_child(copy.deepcopy(item), parent)
+
+        p_data = self.data(parent, role=Qt.UserRole)
+        u_data = self.data(index, role=Qt.UserRole)
+        Shared['DB utility'].update_other('DIR_PARENT', (p_data[0], u_data[0]))
+
+        self.remove_row(index)
+
+    def _copy_folder(self, index, parent):
+        item = index.internalPointer()
+        self.append_child(copy.deepcopy(item), parent)
+
+        p_data = self.data(parent, role=Qt.UserRole)
+        u_data = self.data(index, role=Qt.UserRole)
+        Shared['DB utility'].insert_other('DIR->VIRTUAL', ( p_data[0], u_data[0]))
+
+    def _restore_index(self, path):
         parent = QModelIndex()
         for id_ in path:
             idx = self.index(int(id_), 0, parent)
@@ -313,7 +356,7 @@ class EditTreeModel(QAbstractItemModel):
         return parent
 
     @staticmethod
-    def save_index(index):
+    def _save_index(index):
         idx = index
         path = []
         while idx.isValid():

@@ -28,7 +28,7 @@ DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
 
 class MyController():
-    FOLDER, FAVORITE, ADVANCE = (1, 2, 4)
+    FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
 
     def __init__(self):
         view = Shared['AppWindow']
@@ -59,8 +59,6 @@ class MyController():
                 'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
                 'dirTree': self._populate_directory_tree,  # emit from Places
-                'Drag copy files': self._copy_in_db,
-                'Drag move files': self._move_in_db,
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
                 'Edit key words': self._edit_key_words,
@@ -128,6 +126,17 @@ class MyController():
             self._dbu.delete_other('VIRTUALS', (u_data[-2],))
             self._dbu.delete_other('VIRTUAL_DIR', (u_data[0],))
             self.ui.dirTree.model().remove_row(cur_idx)
+        else:
+            parent = self.ui.dirTree.model().parent(cur_idx)
+            if self.ui.dirTree.model().is_virtual(parent):
+                p_data = self.ui.dirTree.model().data(parent, role=Qt.UserRole)
+                u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
+                self._dbu.delete_other('FROM_VIRTUAL', (p_data[0], u_data[0]))
+                self.ui.dirTree.model().remove_row(cur_idx)
+
+    def _is_parent_virtual(self, index):
+        parent = self.ui.dirTree.model().parent(index)
+        return self.ui.dirTree.model().is_virtual(parent)
 
     def _rename_folder(self):
         print('--> _rename_folder')
@@ -146,7 +155,10 @@ class MyController():
     def _selected_files(self):
         """
         :return:  list of (model index, full path, user data, file name)
-                  where user data = (FileID, DirID, CommentID, ExtID, PlaceId)
+                  where user data = (FileID, DirID, CommentID, ExtID, PlaceId, Source)
+                  if Source > 0 then it is dir_id of virtual folder,
+                  if Source ==0 then it is real folder,
+                  if Source == -1 then it is advanced selection
         """
         files = []
         indexes = self._persistent_row_indexes(self.ui.filesList)
@@ -215,7 +227,7 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
-                place_id = self._copy_in_db(to_path)
+                place_id = self.copy_in_db(to_path)
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
                     print('--> _copy_files -- before _populate_directory_tree')
@@ -225,7 +237,7 @@ class MyController():
                 'File(s) inaccessible on "{}"'.format(
                     self._cb_places.get_curr_place().db_row[2]))
 
-    def _copy_in_db(self, to_path):
+    def copy_in_db(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
@@ -233,13 +245,13 @@ class MyController():
                 self._copy_file_to(dir_id, place_id, to_path, file)
         return place_id
 
-    def _remove_file(self, file):
+    def _remove_file(self, file_):
         try:
-            os.remove(file[1])
-            self._delete_from_db(file[2])
-            self.ui.filesList.model().sourceModel().delete_row(file[0])
+            os.remove(file_[1])
+            self._delete_from_db(file_[2])
+            self.ui.filesList.model().sourceModel().delete_row(file_[0])
         except FileNotFoundError:
-            self._show_message('File "{}" not found'.format(file[1]))
+            self._show_message('File "{}" not found'.format(file_[1]))
 
     def _remove_files(self):
         print('--> _remove_files')
@@ -257,7 +269,7 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to move')
             if to_path:
-                place_id = self._move_in_db(to_path)
+                place_id = self.move_in_db(to_path)
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
                     # todo - consider the use of append rows instead
@@ -268,7 +280,7 @@ class MyController():
                 'File(s) inaccessible on "{}"'.format(
                     self._cb_places.get_curr_place().db_row[2]))
 
-    def _move_in_db(self, to_path):
+    def move_in_db(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
@@ -534,6 +546,7 @@ class MyController():
     def _favorite_file_list(self):
         place_id = self._cb_places.get_curr_place().db_row[0]
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
+
         self._populate_favorites(fav_id[0])
 
     def _populate_favorites(self, dir_id):
@@ -542,14 +555,14 @@ class MyController():
         :param dir_id:
         :return: Show files on fileList widget with _show_files method
         """
-        self.file_list_source = MyController.FAVORITE
+        self.file_list_source = MyController.VIRTUAL
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
         print('--> _populate_favorites', dir_id)
         files = self._dbu.select_other('FAVORITES', (dir_id,)).fetchall()
         if files:
-            self._show_files(files, model)
+            self._show_files(files, model, dir_id)
             self.status_label.setText('Favorite files')
         else:
             self.status_label.setText('No data')
@@ -573,7 +586,7 @@ class MyController():
 
         curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().db_row[0])
         if curs:
-            self._show_files(curs, model)
+            self._show_files(curs, model, -1)
             self.file_list_source = MyController.ADVANCE
             settings = QSettings()
             settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
@@ -582,8 +595,11 @@ class MyController():
 
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
-        file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
-        self._dbu.insert_other('FAVORITES', (1, file_id))
+        file_id, *_ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
+        place_id = self._cb_places.get_curr_place().db_row[0]
+        fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
+
+        self._dbu.insert_other('IN_VIRTUAL_DIR', (fav_id, file_id))
 
     def _delete_files(self):
         indexes = self._persistent_row_indexes(self.ui.filesList)
@@ -593,12 +609,17 @@ class MyController():
                 u_data = model.data(f_idx, Qt.UserRole)
                 # todo - for MyController.FAVORITE and virtual folders
                 print('--> _delete_files', u_data)
-                if self.file_list_source == MyController.FAVORITE:
-                    self._dbu.delete_other('FAVORITES', (1, u_data[0]))
-                else:
-                    self._delete_from_db(u_data)
+                if self.file_list_source & (MyController.VIRTUAL | MyController.FOLDER):
+                    if self._is_virtual_dir():
+                        self._dbu.delete_other('FAVORITES', (u_data[1], u_data[0]))
+                    else:
+                        self._delete_from_db(u_data)
 
                 model.delete_row(f_idx)
+
+    def _is_virtual_dir(self):
+        cur_idx = self.ui.dirTree.currentIndex()
+        return self.ui.dirTree.model().is_virtual(cur_idx)
 
     @staticmethod
     def _persistent_row_indexes(view):
@@ -633,11 +654,11 @@ class MyController():
             self._open_file()
         elif column_head == 'Pages':
             pages = self.ui.filesList.model().data(f_idx)
-            file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
+            file_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
             self._update_pages(f_idx, file_id, pages)
         elif column_head == 'Issued':
             issue_date = self.ui.filesList.model().data(f_idx)
-            file_id, _, _, _, _ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
+            file_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
             self._update_issue_date(f_idx, file_id, issue_date)
 
     def _update_issue_date(self, f_idx, file_id, issue_date):
@@ -692,7 +713,7 @@ class MyController():
             if not f_idx.column() == 0:
                 f_idx = model.sourceModel().createIndex(f_idx.row(), 0)
             file_name = model.sourceModel().data(f_idx)
-            file_id, dir_id, _, _, _ = model.sourceModel().data(f_idx, role=Qt.UserRole)
+            file_id, dir_id, *_ = model.sourceModel().data(f_idx, role=Qt.UserRole)
             path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
             state = self._cb_places.get_state(place_id)
             if state == Places.MOUNTED:
@@ -812,22 +833,28 @@ class MyController():
         return res
 
     def _restore_file_list(self, curr_dir_idx):
+        if not curr_dir_idx.isValid():
+            curr_dir_idx = self.ui.dirTree.model().index(0, 0)
+        print('--> _restore_file_list', self.ui.dirTree.model().data(curr_dir_idx, role=Qt.DisplayRole))
         if self.same_db:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
+            print('  same DB', self.file_list_source)
             row = settings.value('FILE_IDX', 0)
         else:
-            self.file_list_source = MyController.FOLDER
+            if self.ui.dirTree.model().is_virtual(curr_dir_idx):
+                print('    VIRTUAL')
+                self.file_list_source = MyController.VIRTUAL
+            else:
+                print('    REAL')
+                self.file_list_source = MyController.FOLDER
             row = 0
 
-        if self.file_list_source == MyController.FAVORITE:
-            self._favorite_file_list()
+        dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
+        if self.file_list_source == MyController.VIRTUAL:
+            self._populate_favorites(dir_idx[0])
         elif self.file_list_source == MyController.FOLDER:
-            if not curr_dir_idx.isValid():
-                curr_dir_idx = self.ui.dirTree.model().index(0, 0)
-            dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
-            if dir_idx:
-                self._populate_file_list(dir_idx)
+            self._populate_file_list(dir_idx)
         else:                       # MyController.ADVANCE
             self._list_of_selected_files()
 
@@ -973,7 +1000,7 @@ class MyController():
         model = self._set_file_model()
         if dir_idx:
             files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
-            self._show_files(files, model)
+            self._show_files(files, model, 0)
 
             self.status_label.setText('{} ({})'.format(dir_idx[-1],
                                                        model.rowCount(QModelIndex())))
@@ -988,12 +1015,12 @@ class MyController():
         self.ui.filesList.setModel(proxy_model)
         return proxy_model
 
-    def _show_files(self, files, model):
+    def _show_files(self, files, model, source):
         idx = getattr(self.fields, 'indexes')
         s_model = model.sourceModel()
         for ff in files:
             ff1 = [ff[i] for i in idx]
-            s_model.append_row(tuple(ff1), ff[-5:])
+            s_model.append_row(tuple(ff1), (ff[-5:] + (source,)))
 
         self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
@@ -1038,8 +1065,7 @@ class MyController():
 
             if not self.file_list_source == MyController.FOLDER:
                 f_idx = self.ui.filesList.currentIndex()
-                file_id, dir_id, _, _, _ = \
-                    self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
+                file_id, dir_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
                 path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
                 self.status_label.setText(path[0])
 
@@ -1138,7 +1164,10 @@ class MyController():
         if curr_idx.isValid():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
-            self._populate_file_list(dir_idx)
+            if self.ui.dirTree.model().is_virtual(curr_idx):
+                self._populate_favorites(dir_idx[0])
+            else:
+                self._populate_file_list(dir_idx)
 
     @staticmethod
     def _save_path(index):

@@ -67,6 +67,7 @@ class AppWindow(QMainWindow):
         index = self.ui.dirTree.indexAt(event.pos())
         is_virtual = self.ui.dirTree.model().is_virtual(index)
         act = self._set_action(index, mime_data, event.pos())
+        print('   act', act)
         if act & (DropMoveFolder | DropMoveFile):
             event.setDropAction(Qt.MoveAction)
         elif act & (DropCopyFolder | DropCopyFile):
@@ -83,7 +84,7 @@ class AppWindow(QMainWindow):
             return DropCopyFolder
         if mime_data.hasFormat(MimeTypes[file]):
             if self.ui.dirTree.model().is_virtual(index):
-                return DropMoveFile
+                return DropCopyFile
             return self._ask_action_file(pos)
         if mime_data.hasFormat(MimeTypes[virtual_folder]):
             return self._ask_action_folder(pos)
@@ -228,6 +229,10 @@ class AppWindow(QMainWindow):
                     menu.addAction('Rename folder')
                     menu.addAction('Delete folder')
             else:
+                parent = self.ui.dirTree.model().parent(idx)
+                if self.ui.dirTree.model().is_virtual(parent):
+                    menu.addSeparator()
+                    menu.addAction('Delete folder')
                 menu.addAction('Rescan dir')
             menu.addSeparator()
             menu.addAction('Create virtual folder')
