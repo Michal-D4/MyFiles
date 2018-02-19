@@ -70,13 +70,6 @@ class TreeItem(object):
 
         return 0
 
-    def row_by_data(self, data):
-        for i in range(len(self.childItems)):
-            if self.childItems[i].itemData == data:
-                return i
-
-        return -1
-
     def set_data(self, data_):
         self.itemData = data_
 
@@ -106,10 +99,6 @@ class EditTreeModel(QAbstractItemModel):
         if index.isValid():
             return index.internalPointer().is_favorites()
         return False
-
-    def favorites_index(self):
-        row = self.rootItem.row_by_data(['Favorites'])
-        return self.index(row, 0)
 
     def columnCount(self, parent):
         return self.rootItem.columnCount()
