@@ -91,6 +91,7 @@ class FileInfo(QObject):
             self.conn.commit()
 
     def _insert_comment(self, _file):
+        print('--> _insert_comment')
         if len(self.file_info) > 2:
             try:
                 pages = self.file_info[2]
@@ -98,10 +99,10 @@ class FileInfo(QObject):
                 book_title = self.file_info[5]
             except IndexError:
                 print('IndexError ', len(self.file_info))
-
-            self.cursor.execute(INSERT_COMMENT, (book_title, ''))
-            self.conn.commit()
-            comm_id = self.cursor.lastrowid
+            else:
+                self.cursor.execute(INSERT_COMMENT, (book_title, ''))
+                self.conn.commit()
+                comm_id = self.cursor.lastrowid
         else:
             comm_id = _file.comment_id
             pages = _file.pages
@@ -125,20 +126,24 @@ class FileInfo(QObject):
             self.file_info.append('')
             self.file_info.append('')
 
-    def _get_pdf_info(self, file):
-        with (open(file, "rb")) as pdf_file:
+    def _get_pdf_info(self, file_):
+        with (open(file_, "rb")) as pdf_file:
             try:
                 fr = PdfFileReader(pdf_file, strict=False)
                 fi = fr.documentInfo
                 self.file_info.append(fr.getNumPages())
-            except (ValueError, utils.PdfReadError, utils.PdfStreamError):
+            except (ValueError, utils.PdfReadError, utils.PdfStreamError) as e:
+                print('--> _get_pdf_info, EXCEPTION', e)
                 self.file_info += [0, '', '', '']
             else:
+                print('--> _get_pdf_info, NO EXCEPTION, pages', self.file_info[2])
                 if fi is not None:
+                    print('   fi not None')
                     self.file_info.append(fi.getText('/Author'))
                     self.file_info.append(FileInfo._pdf_creation_date(fi))
                     self.file_info.append(fi.getText('/Title'))
                 else:
+                    print('   fi is None')
                     self.file_info += ['', '', '']
 
     @staticmethod
@@ -160,13 +165,15 @@ class FileInfo(QObject):
         :return: None
         """
         self._get_file_info(file_.full_name)
-        if file_.comment_id == 0:
+        print('--> _update_file', file_.comment_id)
+        if file_.comment_id is None:
             comm_id, pages, issue_date = self._insert_comment(file_)
         else:
             comm_id = file_.comment_id
             pages = file_.pages
             issue_date = file_.issue_date if file_.issue_date else '0001-01-01'
 
+        print(comm_id, file_.file_id)
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
                                           'date': self.file_info[1],
                                           'page': pages,
@@ -178,12 +185,6 @@ class FileInfo(QObject):
             self._insert_author(file_.file_id)
 
     def _update_files(self):
-        db_file_info = namedtuple('db_file_info',
-                                  'file_id full_name comment_id issue_date pages')
-        dir_ids = ','.join(self.upd_dirs)
-        file_list = self.cursor.execute(FILES_IN_LOAD.
-                                        format(dir_ids)).fetchall()
-
         cur_place = self.places.get_curr_place()
         if cur_place[2] == Places.MOUNTED:
             root = self.places.get_mount_point()
@@ -191,8 +192,14 @@ class FileInfo(QObject):
         else:
             full_path = lambda x: x
 
-        # file_id, file_name, path, comment_id, issue_date
+        db_file_info = namedtuple('db_file_info',
+                                  'file_id full_name comment_id issue_date pages')
+
+        dir_ids = ','.join(self.upd_dirs)
+        file_list = self.cursor.execute(FILES_IN_LOAD.format(dir_ids)).fetchall()
+        # not iterate all rows in cursor - so used fetchall(), why ???
         for it in file_list:
+            print(it[1])
             file_name = os.path.join(full_path(it[2]), it[1])
             file_ = db_file_info._make((it[0], file_name) + it[-3:])
             self._update_file(file_)
