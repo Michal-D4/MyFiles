@@ -70,16 +70,14 @@ class ProxyModel2(ProxyModel):
         count = 0
         file_ids = []
 
+        data_stream.writeInt(len(indexes))
         for idx in indexes:
+            print('  column #', idx.column())
             if idx.column() == 0:
                 count += 1
                 tmp = self.sourceModel().data(self.mapToSource(idx), role=Qt.UserRole)
-                file_ids.append(tmp[:2])
-
-        data_stream.writeInt(count)
-        for i in file_ids:
-            data_stream.writeInt(i[0])
-            data_stream.writeInt(i[1])
+                data_stream.writeInt(tmp[0])
+                data_stream.writeInt(tmp[1])
 
         mime_data = QMimeData()
         mime_data.setData(MimeTypes[file], item_data)
