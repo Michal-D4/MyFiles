@@ -282,9 +282,9 @@ class EditTreeModel(QAbstractItemModel):
         else:
             path = self.data(parent, role=Qt.UserRole)[-1]
             if action == DropCopyFile:
-                Shared['Controller'].copy_in_db(path)
+                Shared['Controller'].copy_files_to(path)
             else:
-                Shared['Controller'].move_in_db(path)
+                Shared['Controller'].move_files_to(path)
 
     def _drop_files_to_virtual(self, action, mime_data, parent):
         drop_data = mime_data.data(MimeTypes[file])
