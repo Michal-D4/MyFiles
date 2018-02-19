@@ -169,6 +169,7 @@ class MyController():
                 file_name = model.data(idx)
                 print('--> _selected_files', file_name)
                 u_dat = model.data(idx, Qt.UserRole)
+                print('--> _selected_files, u_dat', u_dat)
                 file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
                 if disk_letter:
                     file_path = os.altsep.join((disk_letter, file_path))
@@ -178,8 +179,11 @@ class MyController():
     def _move_file_to(self, dir_id, place_id, to_path, file):
         import shutil
         try:
+            print('--> _move _file {} _to {}'.format(file[1], to_path))
             shutil.move(file[1], to_path)
+            print('   ', dir_id, place_id, file[2][0])
             self._dbu.update_other('FILE_DIR_PLACE', (dir_id, place_id, file[2][0]))
+            print('   ', file)
             self.ui.filesList.model().sourceModel().delete_row(file[0])
         except IOError:
             self._show_message("Can't move file \"{}\" into folder \"{}\"".
@@ -227,17 +231,16 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
             if to_path:
-                place_id = self.copy_in_db(to_path)
+                place_id = self.copy_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
-                    print('--> _copy_files -- before _populate_directory_tree')
                     self._populate_directory_tree()
         else:
             self._show_message(
                 'File(s) inaccessible on "{}"'.format(
                     self._cb_places.get_curr_place().db_row[2]))
 
-    def copy_in_db(self, to_path):
+    def copy_files_to(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
@@ -269,22 +272,23 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to move')
             if to_path:
-                place_id = self.move_in_db(to_path)
+                print('--> _move_files, to_path:', to_path)
+                place_id = self.move_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
                     # todo - consider the use of append rows instead
-                    print('--> _move_files -- before _populate_directory_tree')
                     self._populate_directory_tree()
         else:
             self._show_message(
                 'File(s) inaccessible on "{}"'.format(
                     self._cb_places.get_curr_place().db_row[2]))
 
-    def move_in_db(self, to_path):
+    def move_files_to(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
             for file in selected_files:
+                print('--> move_files_to', file)
                 self._move_file_to(dir_id, place_id, to_path, file)
         return place_id
 
@@ -318,9 +322,7 @@ class MyController():
             self.fields = set_fields_dialog.get_result()
             settings = QSettings()
             settings.setValue('FIELDS', self.fields)
-            print('--> _set_fields')
             self._restore_file_list(self.ui.dirTree.currentIndex())
-            print('--> _set_fields -- after _restore_file_list')
             self._resize_columns()
 
     def _tag_rename(self):
@@ -458,11 +460,9 @@ class MyController():
         settings = QSettings()
         Shared['AppFont'] = settings.value('FONT', None)
         if Shared['AppFont']:
-            print(Shared['AppFont'].toString())
             self._change_font()
 
     def _change_font(self):
-        print('--> _change_font:', Shared['AppFont'].toString())
         self.ui.dirTree.setFont(Shared['AppFont'])
         self.ui.extList.setFont(Shared['AppFont'])
         self.ui.filesList.setFont(Shared['AppFont'])
@@ -607,8 +607,8 @@ class MyController():
         for f_idx in indexes:
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
+                print('--> _delete_files, u_data', u_data)
                 # todo - for MyController.FAVORITE and virtual folders
-                print('--> _delete_files', u_data)
                 if self.file_list_source & (MyController.VIRTUAL | MyController.FOLDER):
                     if self._is_virtual_dir():
                         self._dbu.delete_other('FAVORITES', (u_data[1], u_data[0]))
@@ -812,7 +812,7 @@ class MyController():
     def _check_existence(self):
         """
         Check if comment record already created for file
-        Note: user_data = (FileID, DirID, CommentID, ExtID, PlaceId)
+        Note: user_data = (FileID, DirID, CommentID, ExtID, PlaceId, Source)
         :return: (file_id, dir_id, comment_id, comment, book_title)
         """
         file_comment = namedtuple('file_comment',
@@ -1090,9 +1090,7 @@ class MyController():
         self._restore_tag_selection()
         self._populate_author_list()
         self._restore_author_selection()
-        print('--> _populate_all_widgets')
         self._populate_directory_tree()
-        print('--> _populate_all_widgets  --  after _populate_directory_tree')
 
     def _restore_ext_selection(self):
         if self.same_db:
@@ -1124,9 +1122,7 @@ class MyController():
 
         cur_dir_idx = self._restore_path()
 
-        print('--> _populate_directory_tree')
         self._restore_file_list(cur_dir_idx)
-        print('--> _populate_directory_tree -- after _restore_file_list')
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
