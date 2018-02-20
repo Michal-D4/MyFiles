@@ -3,6 +3,7 @@
 import re
 import sqlite3
 import webbrowser
+from collections import namedtuple
 
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate,
                           QDateTime, QVariant, QItemSelection, QThread,
@@ -160,6 +161,7 @@ class MyController():
                   if Source ==0 then it is real folder,
                   if Source == -1 then it is advanced selection
         """
+        file_ = namedtuple('file_', 'index name_with_path user_data name')
         files = []
         indexes = self._persistent_row_indexes(self.ui.filesList)
         model = self.ui.filesList.model().sourceModel()
@@ -173,7 +175,8 @@ class MyController():
                 file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
                 if disk_letter:
                     file_path = os.altsep.join((disk_letter, file_path))
-                files.append((idx, os.path.join(file_path, file_name), u_dat, file_name))
+                file_data = file_._make((idx, os.path.join(file_path, file_name), u_dat, file_name))
+                files.append(file_data)
         return files
 
     def _move_file_to(self, dir_id, place_id, to_path, file):
@@ -189,22 +192,24 @@ class MyController():
             self._show_message("Can't move file \"{}\" into folder \"{}\"".
                                format(file[3], to_path), 5000)
 
-    def _copy_file_to(self, dir_id, place_id, to_path, file):
+    def _copy_file_to(self, dir_id, place_id, to_path, file_):
+        # file_ = namedtuple('file_', 'index name_with_path user_data name')
         import shutil
         try:
-            shutil.copy2(file[1], to_path)
-            file_id = self._dbu.select_other2('FILE_IN_DIR', (dir_id, file[3])).fetchone()
+            shutil.copy2(file_.name_with_path, to_path)
+            file_id = self._dbu.select_other2('FILE_IN_DIR', (dir_id, file_.name)).fetchone()
             if file_id:
                 new_file_id = file_id[0]
             else:
                 new_file_id = self._dbu.insert_other2('COPY_FILE',
-                                                      (dir_id, place_id, file[2][0]))
+                                                      (dir_id, place_id,
+                                                       file_.user_data[0]))
 
-            self._dbu.insert_other2('COPY_TAGS', (new_file_id, file[2][0]))
-            self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file[2][0]))
+            self._dbu.insert_other2('COPY_TAGS', (new_file_id, file_.user_data[0]))
+            self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file_.user_data[0]))
         except IOError:
             self._show_message("Can't copy file \"{}\" into folder \"{}\"".
-                               format(file[3], to_path), 5000)
+                               format(file_[3], to_path), 5000)
 
     def _get_dir_id(self, to_path):
         place_name, state = self._cb_places.get_place_name(to_path)
@@ -610,10 +615,12 @@ class MyController():
                 print('--> _delete_files, u_data', u_data)
                 # todo - for MyController.FAVORITE and virtual folders
                 if self.file_list_source & (MyController.VIRTUAL | MyController.FOLDER):
-                    if self._is_virtual_dir():
-                        self._dbu.delete_other('FAVORITES', (u_data[1], u_data[0]))
-                    else:
+                    if u_data[-1] > 0:              # file is from virtual folder
+                        self._dbu.delete_other('FAVORITES', (u_data[-1], u_data[0]))
+                    elif u_data[-1] == 0:           # file is from real folder
                         self._delete_from_db(u_data)
+                    else:                           # -1   - advanced file list = do nothing
+                        pass
 
                 model.delete_row(f_idx)
 
