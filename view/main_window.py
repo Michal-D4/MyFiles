@@ -110,13 +110,12 @@ class AppWindow(QMainWindow):
 
     def _start_drag_files(self, action):
         print('--> _start_drag_files')
-        print('    CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
+        # print('    CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/List.png"))
         indexes = self.ui.filesList.selectionModel().selectedRows()
         mime_data = self.ui.filesList.model().mimeData(indexes)
         drag.setMimeData(mime_data)
-        print('   ', mime_data.formats(), mime_data.hasFormat(MimeTypes[file]))
         if mime_data.hasFormat(MimeTypes[file]):
             drag.exec_(Qt.CopyAction)
 
