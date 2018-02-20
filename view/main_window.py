@@ -44,19 +44,11 @@ class AppWindow(QMainWindow):
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
         self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
 
-        self.ui.dirTree.dragEnterEvent = self._drag_enter_event
         self.ui.dirTree.startDrag = self._start_drag
         self.ui.dirTree.dropEvent = self._drop_event
         self.ui.filesList.startDrag = self._start_drag_files
 
         self.ui.filesList.resizeEvent = self.resize_event
-
-    @staticmethod
-    def _check_format(mime_data):
-        res = (mime_data.hasFormat(MimeTypes[real_folder])
-               | mime_data.hasFormat(MimeTypes[virtual_folder])
-               | mime_data.hasFormat(MimeTypes[file]))
-        return res
 
     def _drop_event(self, event: QDropEvent):
         print('--> _drop_event')
@@ -65,7 +57,6 @@ class AppWindow(QMainWindow):
         action = event.dropAction()
         print(' CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         index = self.ui.dirTree.indexAt(event.pos())
-        is_virtual = self.ui.dirTree.model().is_virtual(index)
         act = self._set_action(index, mime_data, event.pos())
         print('   act', act)
         if act & (DropMoveFolder | DropMoveFile):
@@ -81,7 +72,9 @@ class AppWindow(QMainWindow):
 
     def _set_action(self, index, mime_data, pos):
         if mime_data.hasFormat(MimeTypes[real_folder]):
-            return DropCopyFolder
+            if self.ui.dirTree.model().is_virtual(index):
+                return DropCopyFolder
+            return DropNoAction
         if mime_data.hasFormat(MimeTypes[file]):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropCopyFile
@@ -110,7 +103,6 @@ class AppWindow(QMainWindow):
 
     def _start_drag_files(self, action):
         print('--> _start_drag_files')
-        # print('    CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/List.png"))
         indexes = self.ui.filesList.selectionModel().selectedRows()
@@ -121,7 +113,6 @@ class AppWindow(QMainWindow):
 
     def _start_drag(self, action):
         print('--> _start_drag')
-        print('    CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/Folder.png"))
         indexes = self.ui.dirTree.selectionModel().selectedRows()
@@ -131,15 +122,6 @@ class AppWindow(QMainWindow):
             drag.exec_(Qt.CopyAction)
         elif mime_data.hasFormat(MimeTypes[virtual_folder]):
             drag.exec_(Qt.MoveAction)
-
-    def _drag_enter_event(self, e):
-        print('--> _drag_enter_event', e.mimeData().formats())
-        if self._check_format(e.mimeData()):
-            print('   accept')
-            e.accept()
-        else:
-            print('   ignore')
-            e.ignore()
 
     def set_menus(self):
         """

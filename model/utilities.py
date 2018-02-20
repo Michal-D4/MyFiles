@@ -111,7 +111,12 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
-          'DIR->VIRTUAL': 'insert into Favorites (FavID, DirID) values (?, ?);'
+          'DIR->VIRTUAL': 'insert into Favorites (FavID, DirID) values (?, ?);',
+          'COPY_DIR': ' '.join(('insert into Dirs (Path, ParentID, PlaceId, isVirtual)',
+                                'select Path, {}, PlaceId, isVirtual from Dirs',
+                                'where DirID = {};')),
+          'COPY_VIRTUAL': ' '.join(('insert into Favorites (FavID, DirID, FileID) select',
+                                    '{}, DirId, FileID from Favorites where FavID = {};'))
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
@@ -129,7 +134,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;',
           'DIR_NAME': 'update Dirs set Path = ? where DirID = ?;',
           'DIR_PARENT': 'update Dirs set ParentId = ? where DirID = ?;',
-          'VIRTUAL_DIR': 'update Favorites set FavID = ? where FavID = ? and FileID = ?;'
+          'VIRTUAL_FILE_ID': 'update Favorites set FavID = ? where FavID = ? and FileID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
@@ -295,7 +300,7 @@ class DBUtils:
         return jj
 
     def insert_other2(self, sql, data):
-        # print('|---> insert_other2', Insert[sql].format(*data))
+        print('|---> insert_other2', Insert[sql].format(*data))
         self.curs.execute(Insert[sql].format(*data))
         jj = self.curs.lastrowid
         self.conn.commit()

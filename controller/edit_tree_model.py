@@ -264,7 +264,7 @@ class EditTreeModel(QAbstractItemModel):
         :param parent: where mime_data is dragged
         :return: True if dropped
         """
-        print('--> dropMimeData', action, self.data(parent, role=Qt.DisplayRole))
+        print('--> dropMimeData: action {}, to {}'.format(action, self.data(parent, role=Qt.DisplayRole)))
         if action & (DropMoveFolder | DropCopyFolder):
             self._drop_folders(action, mime_data, parent)
             return True
@@ -276,7 +276,7 @@ class EditTreeModel(QAbstractItemModel):
         return False
 
     def _drop_files(self, action, mime_data, parent):
-        print('    File(s) dragged')
+        print('--> _drop_files')
         if self.is_virtual(parent):
             self._drop_files_to_virtual(action, mime_data, parent)
         else:
@@ -287,6 +287,7 @@ class EditTreeModel(QAbstractItemModel):
                 Shared['Controller'].move_files_to(path)
 
     def _drop_files_to_virtual(self, action, mime_data, parent):
+        print('--> _drop_files_to_virtual')
         drop_data = mime_data.data(MimeTypes[file])
         stream = QDataStream(drop_data, QIODevice.ReadOnly)
         count = stream.readInt()
@@ -297,18 +298,17 @@ class EditTreeModel(QAbstractItemModel):
             file_id = stream.readInt()
             dir_id = stream.readInt()
             source = stream.readInt()
-            print('  file_id {}, dir_id {}'.format(file_id, dir_id))
+            print('  file_id {}, dir_id {}, source {}'.format(file_id, dir_id, source))
             if action == DropCopyFile:
                 print('  insert', parent_dir_id, file_id)
                 Shared['DB utility'].insert_other('IN_VIRTUAL_DIR', (parent_dir_id, file_id))
             else:
                 print('  update', parent_dir_id, dir_id, file_id)
-                Shared['DB utility'].update_other('VIRTUAL_DIR', (parent_dir_id, dir_id, file_id))
+                Shared['DB utility'].update_other('VIRTUAL_FILE_ID', (parent_dir_id, dir_id, file_id))
 
     def _drop_folders(self, action, mime_data, parent):
-        mime_format = mime_data.formats()[0]
-        print('    Folder(s) dragged:', mime_format)
-        drop_data = mime_data.data(mime_format)
+        mime_format = mime_data.formats()
+        drop_data = mime_data.data(mime_format[0])
         stream = QDataStream(drop_data, QIODevice.ReadOnly)
         idx_count = stream.readInt()
         for i in range(idx_count):
@@ -331,12 +331,18 @@ class EditTreeModel(QAbstractItemModel):
         self.remove_row(index)
 
     def _copy_folder(self, index, parent):
-        item = index.internalPointer()
-        self.append_child(copy.deepcopy(item), parent)
+        item: TreeItem = index.internalPointer()
+        new_item: TreeItem = copy.deepcopy(item)
+        self.append_child(new_item, parent)
 
         p_data = self.data(parent, role=Qt.UserRole)
         u_data = self.data(index, role=Qt.UserRole)
-        Shared['DB utility'].insert_other('DIR->VIRTUAL', ( p_data[0], u_data[0]))
+        if not item.is_virtual():
+            Shared['DB utility'].insert_other('DIR->VIRTUAL', ( p_data[0], u_data[0]))
+        else:
+            new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (p_data[0], u_data[0]))
+            Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, u_data[0]))
+            new_item.userData = (new_dir_id,) + new_item.userData[1:]
 
     def _restore_index(self, path):
         parent = QModelIndex()

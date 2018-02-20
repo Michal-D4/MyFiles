@@ -246,6 +246,7 @@ class MyController():
                     self._cb_places.get_curr_place().db_row[2]))
 
     def copy_files_to(self, to_path):
+        print('--> copy_files_to')
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
@@ -289,6 +290,7 @@ class MyController():
                     self._cb_places.get_curr_place().db_row[2]))
 
     def move_files_to(self, to_path):
+        print('--> move_files_to')
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
