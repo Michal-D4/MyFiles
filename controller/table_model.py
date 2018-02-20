@@ -76,8 +76,9 @@ class ProxyModel2(ProxyModel):
             if idx.column() == 0:
                 count += 1
                 tmp = self.sourceModel().data(self.mapToSource(idx), role=Qt.UserRole)
-                data_stream.writeInt(tmp[0])
-                data_stream.writeInt(tmp[1])
+                data_stream.writeInt(tmp[0])    # file ID
+                data_stream.writeInt(tmp[1])    # Dir ID
+                data_stream.writeInt(tmp[-1])   # Source: > 0 - virtual folder, 0 - real, -1 - adv.
 
         mime_data = QMimeData()
         mime_data.setData(MimeTypes[file], item_data)

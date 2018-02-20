@@ -296,6 +296,7 @@ class EditTreeModel(QAbstractItemModel):
         for i in range(count):
             file_id = stream.readInt()
             dir_id = stream.readInt()
+            source = stream.readInt()
             print('  file_id {}, dir_id {}'.format(file_id, dir_id))
             if action == DropCopyFile:
                 print('  insert', parent_dir_id, file_id)
