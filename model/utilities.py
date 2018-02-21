@@ -113,7 +113,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
           'VIRTUAL_DIR': 'insert into Favorites (FavID, DirID) values (?, ?);',
           'COPY_DIR': ' '.join(('insert into Dirs (Path, ParentID, PlaceId, isVirtual)',
-                                'select Path, {}, PlaceId, isVirtual from Dirs',
+                                'select Path, {}, PlaceId, 2 from Dirs',
                                 'where DirID = {};')),
           'COPY_VIRTUAL': ' '.join(('insert into Favorites (FavID, DirID, FileID) select',
                                     '{}, DirId, FileID from Favorites where FavID = {};'))
