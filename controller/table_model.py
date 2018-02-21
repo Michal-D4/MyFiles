@@ -60,28 +60,33 @@ class ProxyModel2(ProxyModel):
         return Qt.IgnoreAction
 
     def mimeTypes(self):
-        return [MimeTypes[file]]
+        return [MimeTypes[file], MimeTypes[file_virtual]]
 
     def mimeData(self, indexes):
         print('--> ProxyModel2.mimeData', len(indexes))
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
 
-        count = 0
-        file_ids = []
+        all_virtual = True
 
         data_stream.writeInt(len(indexes))
         for idx in indexes:
-            print('  column #', idx.column())
-            if idx.column() == 0:
-                count += 1
-                tmp = self.sourceModel().data(self.mapToSource(idx), role=Qt.UserRole)
-                data_stream.writeInt(tmp[0])    # file ID
-                data_stream.writeInt(tmp[1])    # Dir ID
-                data_stream.writeInt(tmp[-1])   # Source: > 0 - virtual folder, 0 - real, -1 - adv.
+            s_idx = self.mapToSource(idx)
+            tmp = self.sourceModel().data(s_idx, role=Qt.UserRole)
+            data_stream.writeInt(tmp[0])    # file ID
+            data_stream.writeInt(tmp[1])    # Dir ID
+            data_stream.writeInt(tmp[-1])   # Source: > 0 - virtual folder, 0 - real, -1 - adv.
+            all_virtual &= (tmp[-1] > 0)
+            print(tmp)
+            print(self.sourceModel().data(s_idx, role=Qt.DisplayRole))
+
+        print('   all_virtual', all_virtual)
 
         mime_data = QMimeData()
-        mime_data.setData(MimeTypes[file], item_data)
+        if all_virtual:
+            mime_data.setData(MimeTypes[file_virtual], item_data)
+        else:
+            mime_data.setData(MimeTypes[file], item_data)
         return mime_data
 
 

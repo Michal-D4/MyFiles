@@ -8,10 +8,11 @@ from PyQt5.QtGui import QFontDatabase
 EXT_ID_INCREMENT = 100000
 Fields = namedtuple('Fields', 'fields headers indexes')
 
-real_folder, file, virtual_folder = range(3)
+real_folder, virtual_folder, file, file_virtual = range(4)
 MimeTypes = ["application/x-folder-list",
+             "application/x-folder-list/virtual",
              "application/x-file-list",
-             "application/x-folder-list/virtual"]
+             "application/x-file-list/virtual"]
 
 DropNoAction, DropCopyFolder, DropMoveFolder, DropCopyFile, DropMoveFile = (0, 1, 2, 4, 8)
 

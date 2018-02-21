@@ -554,9 +554,9 @@ class MyController():
         place_id = self._cb_places.get_curr_place().db_row[0]
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
 
-        self._populate_favorites(fav_id[0])
+        self._populate_virtual(fav_id[0])
 
-    def _populate_favorites(self, dir_id):
+    def _populate_virtual(self, dir_id):
         """
         List of files from virtual folder
         :param dir_id:
@@ -565,14 +565,22 @@ class MyController():
         self.file_list_source = MyController.VIRTUAL
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
-        model = self._set_file_model()
-        print('--> _populate_favorites', dir_id)
-        files = self._dbu.select_other('FAVORITES', (dir_id,)).fetchall()
-        if files:
-            self._show_files(files, model, dir_id)
+        print('--> _populate_virtual', dir_id)
+        res = self.files_virtual_folder(dir_id)
+
+        if res:
             self.status_label.setText('Favorite files')
         else:
             self.status_label.setText('No data')
+
+    def files_virtual_folder(self, dir_id):
+        model = self._set_file_model()
+        files = self._dbu.select_other('FAVORITES', (dir_id,)).fetchall()
+
+        if files:
+            self._show_files(files, model, dir_id)
+            return True
+        return False
 
     def _selection_options(self):
         """
@@ -861,7 +869,7 @@ class MyController():
 
         dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
         if self.file_list_source == MyController.VIRTUAL:
-            self._populate_favorites(dir_idx[0])
+            self._populate_virtual(dir_idx[0])
         elif self.file_list_source == MyController.FOLDER:
             self._populate_file_list(dir_idx)
         else:                       # MyController.ADVANCE
@@ -1000,7 +1008,7 @@ class MyController():
             self._from_real_folder(dir_idx)
 
     def _form_virtual_folder(self, dir_idx):
-        self._populate_favorites(dir_idx[0])
+        self._populate_virtual(dir_idx[0])
 
     def _from_real_folder(self, dir_idx):
         self.file_list_source = MyController.FOLDER
@@ -1030,10 +1038,9 @@ class MyController():
         for ff in files:
             ff1 = [ff[i] for i in idx]
             s_model.append_row(tuple(ff1), (ff[-5:] + (source,)))
-
-        self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
         self.ui.filesList.setCurrentIndex(index_)
+        self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         self.ui.filesList.setFocus()
 
     def _cur_file_changed(self, curr_idx):
@@ -1170,7 +1177,7 @@ class MyController():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
             if self.ui.dirTree.model().is_virtual(curr_idx):
-                self._populate_favorites(dir_idx[0])
+                self._populate_virtual(dir_idx[0])
             else:
                 self._populate_file_list(dir_idx)
 

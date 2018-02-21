@@ -79,6 +79,8 @@ class AppWindow(QMainWindow):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropCopyFile
             return self._ask_action_file(pos)
+        if mime_data.hasFormat(MimeTypes[file_virtual]):
+            return self._ask_action_file(pos)
         if mime_data.hasFormat(MimeTypes[virtual_folder]):
             return self._ask_action_folder(pos)
         return DropNoAction
@@ -108,8 +110,7 @@ class AppWindow(QMainWindow):
         indexes = self.ui.filesList.selectionModel().selectedRows()
         mime_data = self.ui.filesList.model().mimeData(indexes)
         drag.setMimeData(mime_data)
-        if mime_data.hasFormat(MimeTypes[file]):
-            drag.exec_(Qt.CopyAction)
+        drag.exec_(Qt.CopyAction)
 
     def _start_drag(self, action):
         print('--> _start_drag')
