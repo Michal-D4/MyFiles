@@ -92,7 +92,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
-          'IN_VIRTUAL_DIR': 'insert into Favorites (FavID, FileID) values (?, ?);',
+          'VIRTUAL_FILE': 'insert into Favorites (FavID, FileID) values (?, ?);',
           'COMMENT': 'insert into Comments (Comment, BookTitle) values (?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',
@@ -111,7 +111,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
-          'DIR->VIRTUAL': 'insert into Favorites (FavID, DirID) values (?, ?);',
+          'VIRTUAL_DIR': 'insert into Favorites (FavID, DirID) values (?, ?);',
           'COPY_DIR': ' '.join(('insert into Dirs (Path, ParentID, PlaceId, isVirtual)',
                                 'select Path, {}, PlaceId, isVirtual from Dirs',
                                 'where DirID = {};')),

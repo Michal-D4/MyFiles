@@ -301,7 +301,7 @@ class EditTreeModel(QAbstractItemModel):
             print('  file_id {}, dir_id {}, source {}'.format(file_id, dir_id, source))
             if action == DropCopyFile:
                 print('  insert', parent_dir_id, file_id)
-                Shared['DB utility'].insert_other('IN_VIRTUAL_DIR', (parent_dir_id, file_id))
+                Shared['DB utility'].insert_other('VIRTUAL_FILE', (parent_dir_id, file_id))
             else:
                 print('  update', parent_dir_id, dir_id, file_id)
                 Shared['DB utility'].update_other('VIRTUAL_FILE_ID', (parent_dir_id, dir_id, file_id))
@@ -338,7 +338,7 @@ class EditTreeModel(QAbstractItemModel):
         p_data = self.data(parent, role=Qt.UserRole)
         u_data = self.data(index, role=Qt.UserRole)
         if not item.is_virtual():
-            Shared['DB utility'].insert_other('DIR->VIRTUAL', ( p_data[0], u_data[0]))
+            Shared['DB utility'].insert_other('VIRTUAL_DIR', ( p_data[0], u_data[0]))
         else:
             new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (p_data[0], u_data[0]))
             Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, u_data[0]))

@@ -606,7 +606,7 @@ class MyController():
         place_id = self._cb_places.get_curr_place().db_row[0]
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
 
-        self._dbu.insert_other('IN_VIRTUAL_DIR', (fav_id, file_id))
+        self._dbu.insert_other('VIRTUAL_FILE', (fav_id, file_id))
 
     def _delete_files(self):
         indexes = self._persistent_row_indexes(self.ui.filesList)
