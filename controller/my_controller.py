@@ -71,7 +71,7 @@ class MyController():
                 'File Copy file name': self._copy_file_name,
                 'File Copy file(s)': self._copy_files,
                 'File Copy path': self._copy_path,
-                'File Delete': self._delete_files,
+                'File Delete row': self._delete_files,
                 'File Delete file(s)': self._remove_files,
                 'File Move file(s)': self._move_files,
                 'File Open folder': self._open_folder,
