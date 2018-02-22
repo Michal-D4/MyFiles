@@ -1038,9 +1038,10 @@ class MyController():
         for ff in files:
             ff1 = [ff[i] for i in idx]
             s_model.append_row(tuple(ff1), (ff[-5:] + (source,)))
+
+        self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
         self.ui.filesList.setCurrentIndex(index_)
-        self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         self.ui.filesList.setFocus()
 
     def _cur_file_changed(self, curr_idx):
@@ -1079,11 +1080,12 @@ class MyController():
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'
                     .format(comment[0]))))
 
-            if not self.file_list_source == MyController.FOLDER:
-                f_idx = self.ui.filesList.currentIndex()
-                file_id, dir_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
-                path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-                self.status_label.setText(path[0])
+            # if not self.file_list_source == MyController.FOLDER:
+            #     f_idx = self.ui.filesList.currentIndex()
+            #     file_id, dir_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
+            dir_id = user_data[1]
+            path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
+            self.status_label.setText(path[0])
 
             if edit:
                 self._update_comment_date(file_id)
