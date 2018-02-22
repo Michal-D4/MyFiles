@@ -1138,6 +1138,7 @@ class MyController():
         model.setHeaderData(0, Qt.Horizontal, ("Directories",))
         self.ui.dirTree.setModel(model)
 
+        self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
         cur_dir_idx = self._restore_path()
 
         self._restore_file_list(cur_dir_idx)
@@ -1146,8 +1147,6 @@ class MyController():
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 self._show_message('Files are in an inaccessible place')
             self._resize_columns()
-
-        self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
 
     def _get_dirs(self, place_id):
         """
@@ -1225,6 +1224,7 @@ class MyController():
 
     def _del_empty_dirs(self):
         self._dbu.delete_other('EMPTY_DIRS', ())
+        self._populate_directory_tree()
 
     def _rescan_dir(self):
         idx = self.ui.dirTree.currentIndex()
