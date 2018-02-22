@@ -314,8 +314,8 @@ class EditTreeModel(QAbstractItemModel):
         return (fav_id != -1)
 
     def _drop_folders(self, action, mime_data, parent):
-        mime_format = mime_data.formats()
-        drop_data = mime_data.data(mime_format[0])
+        mime_format = mime_data.formats()[0]
+        drop_data = mime_data.data(mime_format)
         stream = QDataStream(drop_data, QIODevice.ReadOnly)
         idx_count = stream.readInt()
         for i in range(idx_count):

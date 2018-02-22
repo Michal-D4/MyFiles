@@ -300,7 +300,7 @@ class DBUtils:
         return jj
 
     def insert_other2(self, sql, data):
-        print('|---> insert_other2', Insert[sql].format(*data))
+        # print('|---> insert_other2', Insert[sql].format(*data))
         self.curs.execute(Insert[sql].format(*data))
         jj = self.curs.lastrowid
         self.conn.commit()
