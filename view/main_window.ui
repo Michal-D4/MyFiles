@@ -116,7 +116,7 @@
          <enum>Qt::ClickFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Conditional list of files</string>
+         <string>Select files/Push and hold for options</string>
         </property>
         <property name="text">
          <string>...</string>
