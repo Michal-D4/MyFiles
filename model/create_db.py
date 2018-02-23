@@ -97,8 +97,6 @@ FOREIGN KEY(FavID) REFERENCES Dirs(DirID) ON DELETE CASCADE
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
     'CREATE INDEX IF NOT EXISTS Files_ExtID ON Files(PlaceId, ExtID);',
     'CREATE INDEX IF NOT EXISTS Files_DirID ON Files(PlaceId, DirID);',
-    'CREATE INDEX IF NOT EXISTS Files_Date ON Files(PlaceId, FileDate);',
-    'CREATE INDEX IF NOT EXISTS Files_IssueDate ON Files(PlaceId, IssueDate);',
     'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ActTime desc)',
     'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ObjID, ActTime desc)'
 )
