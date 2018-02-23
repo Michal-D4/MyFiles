@@ -65,6 +65,7 @@ class MyController():
                 'Edit key words': self._edit_key_words,
                 'Edit title': self._edit_title,
                 'Ext Create group': self._ext_create_group,
+                'Ext Delete all files with current extension': self._ext_delete_current,
                 'Ext Remove unused': self._ext_remove_unused,
                 'Favorites': self._favorite_file_list,
                 'File Add to favorites': self._add_file_to_favorites,
@@ -383,7 +384,9 @@ class MyController():
                 show_message("Data base does not exist")
                 return
 
-        Shared['AppWindow'].setWindowTitle('File organizer - ' + file_name)
+        parts = file_name.rpartition(os.altsep)
+        Shared['AppWindow'].setWindowTitle('I manage the files you select. DB:{},  '
+                                           'In {}'.format(parts[2], parts[0]))
         self._dbu.set_connection(_connection)
         self._dbu.select_other('PRAGMA', ())
         self._populate_all_widgets()
@@ -471,6 +474,14 @@ class MyController():
         self._dbu.delete_other('UNUSED_EXT', ())
         self._dbu.delete_other('UNUSED_EXT_GROUP', ())
         self._populate_ext_list()
+
+    def _ext_delete_current(self):
+        cur_idx = self.ui.extList.currentIndex()
+        ext_id = self.ui.extList.model().data(cur_idx, role=Qt.UserRole)[0]
+        if ext_id > EXT_ID_INCREMENT:
+            self._dbu.delete_other('FILE_BY_EXT', (ext_id - EXT_ID_INCREMENT,))
+            self._dbu.delete_other('EXT', (ext_id - EXT_ID_INCREMENT,))
+            self._populate_ext_list()
 
     def _ext_create_group(self):
         ids = self._selected_db_indexes(self.ui.extList)

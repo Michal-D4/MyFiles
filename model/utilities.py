@@ -138,6 +138,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
+          'FILE_BY_EXT': 'delete from Files where ExtID = ?;',
           'UNUSED_EXT_GROUP': ' '.join(('delete from ExtGroups where NOT EXISTS (',
                                         'select * from Extensions where GroupID =',
                                         'ExtGroups.GroupID);')),

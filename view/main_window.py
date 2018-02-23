@@ -170,6 +170,7 @@ class AppWindow(QMainWindow):
         menu = QMenu(self)
         menu.addAction('Remove unused')
         menu.addAction('Create group')
+        menu.addAction('Delete all files with current extension')
         action = menu.exec_(self.ui.extList.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit('Ext {}'.format(action.text()))
