@@ -84,10 +84,11 @@ class LoadDBData:
         item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
         if not item:
             ext_id, ext = self.insert_extension(file)
-            self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
-                                              'file': file,
-                                              'ext_id': ext_id,
-                                              'placeId': self.place_id})
+            if ext_id > 0:      # files with an empty extension are not handled
+                self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
+                                                  'file': file,
+                                                  'ext_id': ext_id,
+                                                  'placeId': self.place_id})
 
     def insert_extension(self, file):
         ext = get_file_extension(file)
