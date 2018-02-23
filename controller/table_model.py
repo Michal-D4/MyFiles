@@ -66,7 +66,6 @@ class ProxyModel2(ProxyModel):
         return [MimeTypes[file], MimeTypes[file_virtual]]
 
     def mimeData(self, indexes):
-        print('--> ProxyModel2.mimeData', len(indexes))
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
 
@@ -77,13 +76,9 @@ class ProxyModel2(ProxyModel):
             s_idx = self.mapToSource(idx)
             tmp = self.sourceModel().data(s_idx, role=Qt.UserRole)
             data_stream.writeInt(tmp[0])    # file ID
-            data_stream.writeInt(tmp[1])    # Dir ID
+            # data_stream.writeInt(tmp[1])  # Dir ID  - may be restored, if refactor of copy/move from real folder
             data_stream.writeInt(tmp[-1])   # Source: > 0 - virtual folder, 0 - real, -1 - adv.
             all_virtual &= (tmp[-1] > 0)
-            print(tmp)
-            print(self.sourceModel().data(s_idx, role=Qt.DisplayRole))
-
-        print('   all_virtual', all_virtual)
 
         mime_data = QMimeData()
         if all_virtual:

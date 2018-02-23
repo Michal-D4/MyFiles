@@ -63,7 +63,6 @@ class FileInfo(QObject):
     def run(self):
         self._update_files()
         self.finished.emit()           # 'Updating of files is finished'
-        # print('--> FileInfo.run finished')
 
     def __init__(self, place_inst, updated_dirs):
         super().__init__()
@@ -91,7 +90,6 @@ class FileInfo(QObject):
             self.conn.commit()
 
     def _insert_comment(self, _file):
-        print('--> _insert_comment')
         if len(self.file_info) > 2:
             try:
                 pages = self.file_info[2]
@@ -136,14 +134,11 @@ class FileInfo(QObject):
                 print('--> _get_pdf_info, EXCEPTION', e)
                 self.file_info += [0, '', '', '']
             else:
-                print('--> _get_pdf_info, NO EXCEPTION, pages', self.file_info[2])
                 if fi is not None:
-                    print('   fi not None')
                     self.file_info.append(fi.getText('/Author'))
                     self.file_info.append(FileInfo._pdf_creation_date(fi))
                     self.file_info.append(fi.getText('/Title'))
                 else:
-                    print('   fi is None')
                     self.file_info += ['', '', '']
 
     @staticmethod
@@ -165,7 +160,6 @@ class FileInfo(QObject):
         :return: None
         """
         self._get_file_info(file_.full_name)
-        print('--> _update_file', file_.comment_id)
         if file_.comment_id is None:
             comm_id, pages, issue_date = self._insert_comment(file_)
         else:
@@ -173,7 +167,6 @@ class FileInfo(QObject):
             pages = file_.pages
             issue_date = file_.issue_date if file_.issue_date else '0001-01-01'
 
-        print(comm_id, file_.file_id)
         self.cursor.execute(UPDATE_FILE, {'comm_id': comm_id,
                                           'date': self.file_info[1],
                                           'page': pages,
@@ -199,7 +192,6 @@ class FileInfo(QObject):
         file_list = self.cursor.execute(FILES_IN_LOAD.format(dir_ids)).fetchall()
         # not iterate all rows in cursor - so used fetchall(), why ???
         for it in file_list:
-            print(it[1])
             file_name = os.path.join(full_path(it[2]), it[1])
             file_ = db_file_info._make((it[0], file_name) + it[-3:])
             self._update_file(file_)

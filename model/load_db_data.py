@@ -80,13 +80,10 @@ class LoadDBData:
         :return: None
         """
         file = os.path.split(full_file_name)[1]
-        print('--> insert_file', file)
 
         item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
         if not item:
             ext_id, ext = self.insert_extension(file)
-            print('  dir_id: {}, ext_id: {}, place_id: {}'.format(dir_id, ext_id, self.place_id))
-
             self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
                                               'file': file,
                                               'ext_id': ext_id,

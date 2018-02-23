@@ -318,7 +318,7 @@ class DBUtils:
         self.conn.commit()
 
     def delete_other2(self, sql, data):
-        print('|---> delete_other:', sql, data)
-        print(Delete[sql].format(*data))
+        # print('|---> delete_other:', sql, data)
+        # print(Delete[sql].format(*data))
         self.curs.execute(Delete[sql].format(*data))
         self.conn.commit()

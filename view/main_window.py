@@ -51,14 +51,10 @@ class AppWindow(QMainWindow):
         self.ui.filesList.resizeEvent = self.resize_event
 
     def _drop_event(self, event: QDropEvent):
-        print('--> _drop_event')
         mime_data: QMimeData = event.mimeData()
-        print('  mimeData format', mime_data.formats())
-        action = event.dropAction()
-        print(' CopyAction {}, MoveAction {}'.format(action == Qt.CopyAction, action == Qt.MoveAction))
         index = self.ui.dirTree.indexAt(event.pos())
+
         act = self._set_action(index, mime_data, event.pos())
-        print('   act', act)
         if act & (DropMoveFolder | DropMoveFile):
             event.setDropAction(Qt.MoveAction)
         elif act & (DropCopyFolder | DropCopyFile):
@@ -95,7 +91,6 @@ class AppWindow(QMainWindow):
         menu.addSeparator()
         menu.addAction('Cancel')
         action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
-        print(action)
         if action:
             if action.text() == 'Copy':
                 return DropCopyFolder
@@ -104,7 +99,6 @@ class AppWindow(QMainWindow):
         return DropNoAction
 
     def _start_drag_files(self, action):
-        print('--> _start_drag_files')
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/List.png"))
         indexes = self.ui.filesList.selectionModel().selectedRows()
@@ -113,7 +107,6 @@ class AppWindow(QMainWindow):
         drag.exec_(Qt.CopyAction)
 
     def _start_drag(self, action):
-        print('--> _start_drag')
         drag = QDrag(self)
         drag.setPixmap(QPixmap(":/image/Folder.png"))
         indexes = self.ui.dirTree.selectionModel().selectedRows()
@@ -202,7 +195,6 @@ class AppWindow(QMainWindow):
 
     def _dir_menu(self, pos):
         idx = self.ui.dirTree.indexAt(pos)
-        print('--> _dir_menu', self.ui.dirTree.model().is_favorites(idx))
         menu = QMenu(self)
         menu.addAction('Remove empty folders')
         if idx.isValid():

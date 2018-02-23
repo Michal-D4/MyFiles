@@ -119,11 +119,9 @@ class MyController():
         self.ui.dirTree.model().append_child(item, parent)
 
     def _delete_virtual(self):
-        print('--> _delete_virtual')
         cur_idx = self.ui.dirTree.currentIndex()
         if self.ui.dirTree.model().is_virtual(cur_idx):
             u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
-            print('  ', self.ui.dirTree.model().data(cur_idx, role=Qt.DisplayRole), u_data)
             self._dbu.delete_other('VIRTUALS', (u_data[-2],))
             self._dbu.delete_other('VIRTUAL_DIR', (u_data[0],))
             self.ui.dirTree.model().remove_row(cur_idx)
@@ -140,7 +138,6 @@ class MyController():
         return self.ui.dirTree.model().is_virtual(parent)
 
     def _rename_folder(self):
-        print('--> _rename_folder')
         cur_idx = self.ui.dirTree.currentIndex()
         u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
         folder_name = u_data[-1]
@@ -148,13 +145,13 @@ class MyController():
                                              'Input new folder name', '',
                                              QLineEdit.Normal, folder_name)
         if ok_:
-            print(new_name)
             self._dbu.update_other('DIR_NAME', (new_name, u_data[0]))
             self.ui.dirTree.model().update_folder_name(cur_idx, new_name)
 
 
     def _selected_files(self):
         """
+        used while copying, moving, deleting files
         :return:  list of (model index, full path, user data, file name)
                   where user data = (FileID, DirID, CommentID, ExtID, PlaceId, Source)
                   if Source > 0 then it is dir_id of virtual folder,
@@ -169,9 +166,7 @@ class MyController():
         for idx in indexes:
             if idx.column() == 0:
                 file_name = model.data(idx)
-                print('--> _selected_files', file_name)
                 u_dat = model.data(idx, Qt.UserRole)
-                print('--> _selected_files, u_dat', u_dat)
                 file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
                 if disk_letter:
                     file_path = os.altsep.join((disk_letter, file_path))
@@ -182,11 +177,8 @@ class MyController():
     def _move_file_to(self, dir_id, place_id, to_path, file):
         import shutil
         try:
-            print('--> _move _file {} _to {}'.format(file[1], to_path))
             shutil.move(file[1], to_path)
-            print('   ', dir_id, place_id, file[2][0])
             self._dbu.update_other('FILE_DIR_PLACE', (dir_id, place_id, file[2][0]))
-            print('   ', file)
             self.ui.filesList.model().sourceModel().delete_row(file[0])
         except IOError:
             self._show_message("Can't move file \"{}\" into folder \"{}\"".
@@ -246,7 +238,6 @@ class MyController():
                     self._cb_places.get_curr_place().db_row[2]))
 
     def copy_files_to(self, to_path):
-        print('--> copy_files_to')
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
@@ -263,11 +254,9 @@ class MyController():
             self._show_message('File "{}" not found'.format(file_[1]))
 
     def _remove_files(self):
-        print('--> _remove_files')
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             selected_files = self._selected_files()
             for file in selected_files:
-                print(file)
                 self._remove_file(file)
         else:
             self._show_message(
@@ -278,11 +267,9 @@ class MyController():
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
             to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to move')
             if to_path:
-                print('--> _move_files, to_path:', to_path)
                 place_id = self.move_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
-                    # todo - consider the use of append rows instead
                     self._populate_directory_tree()
         else:
             self._show_message(
@@ -290,12 +277,10 @@ class MyController():
                     self._cb_places.get_curr_place().db_row[2]))
 
     def move_files_to(self, to_path):
-        print('--> move_files_to')
         dir_id, place_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
             for file in selected_files:
-                print('--> move_files_to', file)
                 self._move_file_to(dir_id, place_id, to_path, file)
         return place_id
 
@@ -531,9 +516,7 @@ class MyController():
 
     def _dir_update(self):
         updated_dirs = self.obj_thread.get_updated_dirs()
-        print('--> _dir_update')
         self._populate_directory_tree()
-        print('--> _dir_update  -- after _populate_directory_tree')
         self._populate_ext_list()
 
         self.obj_thread = FileInfo(self._cb_places, updated_dirs)
@@ -565,7 +548,6 @@ class MyController():
         self.file_list_source = MyController.VIRTUAL
         settings = QSettings()
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
-        print('--> _populate_virtual', dir_id)
         res = self.files_virtual_folder(dir_id)
 
         if res:
@@ -622,15 +604,12 @@ class MyController():
         for f_idx in indexes:
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
-                print('--> _delete_files, u_data', u_data)
-                # todo - for MyController.FAVORITE and virtual folders
-                if self.file_list_source & (MyController.VIRTUAL | MyController.FOLDER):
-                    if u_data[-1] > 0:              # file is from virtual folder
-                        self._dbu.delete_other('FAVORITES', (u_data[-1], u_data[0]))
-                    elif u_data[-1] == 0:           # file is from real folder
-                        self._delete_from_db(u_data)
-                    else:                           # -1   - advanced file list = do nothing
-                        pass
+                if u_data[-1] > 0:              # file is from virtual folder
+                    self._dbu.delete_other('FAVORITES', (u_data[-1], u_data[0]))
+                elif u_data[-1] == 0:           # file is from real folder
+                    self._delete_from_db(u_data)
+                else:                           # -1   - advanced file list = do nothing
+                    pass
 
                 model.delete_row(f_idx)
 
@@ -852,18 +831,14 @@ class MyController():
     def _restore_file_list(self, curr_dir_idx):
         if not curr_dir_idx.isValid():
             curr_dir_idx = self.ui.dirTree.model().index(0, 0)
-        print('--> _restore_file_list', self.ui.dirTree.model().data(curr_dir_idx, role=Qt.DisplayRole))
         if self.same_db:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
-            print('  same DB', self.file_list_source)
             row = settings.value('FILE_IDX', 0)
         else:
             if self.ui.dirTree.model().is_virtual(curr_dir_idx):
-                print('    VIRTUAL')
                 self.file_list_source = MyController.VIRTUAL
             else:
-                print('    REAL')
                 self.file_list_source = MyController.FOLDER
             row = 0
 
@@ -1001,7 +976,6 @@ class MyController():
         :param dir_idx:
         :return:
         """
-        print('--> _populate_file_list', dir_idx)
         if dir_idx[-2] > 0:
             self._form_virtual_folder(dir_idx)
         else:
@@ -1173,7 +1147,6 @@ class MyController():
         :param curr_idx:
         :return: None
         """
-        print('--> _cur_dir_changed', curr_idx.isValid())
         if curr_idx.isValid():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)

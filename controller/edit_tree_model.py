@@ -167,7 +167,6 @@ class EditTreeModel(QAbstractItemModel):
         :return:
         """
         parentItem = self.getItem(parent)
-        print('--> removeRows', parentItem.userData, row, count)
 
         self.beginRemoveRows(parent, row, row + count - 1)
         success = parentItem.removeChildren(row, count)
@@ -176,7 +175,6 @@ class EditTreeModel(QAbstractItemModel):
         return success
 
     def remove_row(self, index):
-        print('--> remove_row', index.row())
         return self.removeRows(index.row(), 1, self.parent(index))
 
     def rowCount(self, parent=QModelIndex()):
@@ -236,7 +234,6 @@ class EditTreeModel(QAbstractItemModel):
         return MimeTypes
 
     def mimeData(self, indexes):
-        print('--> EditTreeModel.mimeData', self.data(indexes[0], role=Qt.DisplayRole))
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
         data_stream.writeInt(len(indexes))
@@ -264,7 +261,6 @@ class EditTreeModel(QAbstractItemModel):
         :param parent: where mime_data is dragged
         :return: True if dropped
         """
-        print('--> dropMimeData: action {}, to {}'.format(action, self.data(parent, role=Qt.DisplayRole)))
         if action & (DropMoveFolder | DropCopyFolder):
             return self._drop_folders(action, mime_data, parent)
 
@@ -274,7 +270,6 @@ class EditTreeModel(QAbstractItemModel):
         return False
 
     def _drop_files(self, action, mime_data, parent):
-        print('--> _drop_files')
         if self.is_virtual(parent):
             return self._drop_files_to_virtual(action, mime_data, parent)
         else:
@@ -287,28 +282,25 @@ class EditTreeModel(QAbstractItemModel):
             return True
 
     def _drop_files_to_virtual(self, action, mime_data, parent):
-        print('--> _drop_files_to_virtual')
+        parent_dir_id = self.data(parent, role=Qt.UserRole)[0]
+
         mime_format = mime_data.formats()
         drop_data = mime_data.data(mime_format[0])
         stream = QDataStream(drop_data, QIODevice.ReadOnly)
+
         count = stream.readInt()
-        parent_dir_id = self.data(parent, role=Qt.UserRole)[0]
-        p_data = self.data(parent, role=Qt.UserRole)
-        print('  count {}, dir_id {}, {}'.format(count, p_data[0], p_data[-1]))
         fav_id = 0
         for i in range(count):
             file_id = stream.readInt()
-            dir_id = stream.readInt()
+            # dir_id = stream.readInt()     # - may be restored, if refactor of copy/move from real folder
             fav_id = stream.readInt()
-            print('  file_id {}, dir_id {}, fav_id {}'.format(file_id, dir_id, fav_id))
             if action == DropCopyFile:
                 Shared['DB utility'].insert_other('VIRTUAL_FILE', (parent_dir_id, file_id))
             else:
-                print('  update', parent_dir_id, dir_id, file_id, fav_id)
                 if fav_id > 0:
                     Shared['DB utility'].update_other('VIRTUAL_FILE_ID', (parent_dir_id, fav_id, file_id))
 
-        if action == DropMoveFile:
+        if action == DropMoveFile:          # update file list after moving files
             Shared['Controller'].files_virtual_folder(fav_id)
 
         return (fav_id != -1)
