@@ -35,3 +35,7 @@ def get_file_extension(file_name):
 def get_parent_dir(path):
     return path.rpartition(os.altsep)[0]
 
+
+def show_message(message, time=3000):
+    Shared['AppWindow'].ui.statusbar.showMessage(message, time)
+

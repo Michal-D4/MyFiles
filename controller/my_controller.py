@@ -181,8 +181,8 @@ class MyController():
             self._dbu.update_other('FILE_DIR_PLACE', (dir_id, place_id, file[2][0]))
             self.ui.filesList.model().sourceModel().delete_row(file[0])
         except IOError:
-            self._show_message("Can't move file \"{}\" into folder \"{}\"".
-                               format(file[3], to_path), 5000)
+            show_message("Can't move file \"{}\" into folder \"{}\"".
+                         format(file[3], to_path), 5000)
 
     def _copy_file_to(self, dir_id, place_id, to_path, file_):
         # file_ = namedtuple('file_', 'index name_with_path user_data name')
@@ -200,8 +200,8 @@ class MyController():
             self._dbu.insert_other2('COPY_TAGS', (new_file_id, file_.user_data[0]))
             self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file_.user_data[0]))
         except IOError:
-            self._show_message("Can't copy file \"{}\" into folder \"{}\"".
-                               format(file_[3], to_path), 5000)
+            show_message("Can't copy file \"{}\" into folder \"{}\"".
+                         format(file_[3], to_path), 5000)
 
     def _get_dir_id(self, to_path):
         place_name, state = self._cb_places.get_place_name(to_path)
@@ -233,9 +233,8 @@ class MyController():
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
                     self._populate_directory_tree()
         else:
-            self._show_message(
-                'File(s) inaccessible on "{}"'.format(
-                    self._cb_places.get_curr_place().db_row[2]))
+            param = self._cb_places.get_curr_place().db_row[2]
+            show_message('File(s) inaccessible on "{}"'.format(param))
 
     def copy_files_to(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
@@ -251,7 +250,7 @@ class MyController():
             self._delete_from_db(file_[2])
             self.ui.filesList.model().sourceModel().delete_row(file_[0])
         except FileNotFoundError:
-            self._show_message('File "{}" not found'.format(file_[1]))
+            show_message('File "{}" not found'.format(file_[1]))
 
     def _remove_files(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
@@ -259,9 +258,8 @@ class MyController():
             for file in selected_files:
                 self._remove_file(file)
         else:
-            self._show_message(
-                'File(s) inaccessible on "{}"'.format(
-                    self._cb_places.get_curr_place().db_row[2]))
+            param = self._cb_places.get_curr_place().db_row[2]
+            show_message('File(s) inaccessible on "{}"'.format(param))
 
     def _move_files(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
@@ -272,9 +270,8 @@ class MyController():
                 if place_id == self._cb_places.get_curr_place().db_row[0]:
                     self._populate_directory_tree()
         else:
-            self._show_message(
-                'File(s) inaccessible on "{}"'.format(
-                    self._cb_places.get_curr_place().db_row[2]))
+            param = self._cb_places.get_curr_place().db_row[2]
+            show_message('File(s) inaccessible on "{}"'.format(param))
 
     def move_files_to(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
@@ -295,9 +292,8 @@ class MyController():
                 os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
                 self._dbu.update_other('FILE_NAME', (new_name, file_id))
         else:
-            self._show_message(
-                'File(s) inaccessible on "{}"'.format(
-                    self._cb_places.get_curr_place().db_row[2]))
+            param = self._cb_places.get_curr_place().db_row[2]
+            show_message('File(s) inaccessible on "{}"'.format(param))
 
     def _restore_fields(self):
         settings = QSettings()
@@ -384,7 +380,7 @@ class MyController():
                 _connection = sqlite3.connect(file_name, check_same_thread=False,
                                                    detect_types=DETECT_TYPES)
             else:
-                self._show_message("Data base does not exist")
+                show_message("Data base does not exist")
                 return
 
         Shared['AppWindow'].setWindowTitle('File organizer - ' + file_name)
@@ -405,14 +401,14 @@ class MyController():
             else:
                 self._on_data_methods()[act[0]](act[1:])
         except KeyError:
-            self._show_message('Action "{}" not implemented'.format(action), 5000)
+            show_message('Action "{}" not implemented'.format(action), 5000)
 
     def _scan_for_tags(self):
         """
         Tags are searched if files with selected EXTENSIONS
         :return:
         """
-        self._show_message('Scan in files with selected extensions')
+        show_message('Scan in files with selected extensions')
         ext_idx = MyController._selected_db_indexes(self.ui.extList)
         all_id = self._collect_all_ext(ext_idx)
 
@@ -531,7 +527,7 @@ class MyController():
         self.thread.start()
 
     def _finish_thread(self):
-        self._show_message('Updating of files is finished')  #
+        show_message('Updating of files is finished', 5000)
 
     def _favorite_file_list(self):
         place_id = self._cb_places.get_curr_place().db_row[0]
@@ -588,7 +584,7 @@ class MyController():
             settings = QSettings()
             settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         else:
-            self._show_message("Nothing found. Change you choices.", 5000)
+            show_message("Nothing found. Change you choices.", 5000)
 
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
@@ -596,7 +592,7 @@ class MyController():
         place_id = self._cb_places.get_curr_place().db_row[0]
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
 
-        self._dbu.insert_other('VIRTUAL_FILE', (fav_id, file_id))
+        self._dbu.insert_other('VIRTUAL_FILE', (fav_id[0], file_id))
 
     def _delete_files(self):
         indexes = self._persistent_row_indexes(self.ui.filesList)
@@ -639,9 +635,8 @@ class MyController():
         if state & (Places.MOUNTED | Places.NOT_REMOVAL):
             webbrowser.open(''.join(('file://', path)))
         else:
-            self._show_message(
-                'Path "{}" is not available on "{}"'.format(
-                    path, self._cb_places.get_curr_place().db_row[2]))
+            param = self._cb_places.get_curr_place().db_row[2]
+            show_message('File(s) inaccessible on "{}"'.format(param))
 
     def _double_click_file(self):
         f_idx = self.ui.filesList.currentIndex()
@@ -694,11 +689,11 @@ class MyController():
                         idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
                         model.sourceModel().update(idx_s, cur_date)
                 except OSError:
-                    self._show_message('Can\'t open file "{}"'.format(full_file_name))
+                    show_message('Can\'t open file "{}"'.format(full_file_name))
             else:
-                self._show_message("Can't find file \"{}\"".format(full_file_name))
+                show_message("Can't find file \"{}\"".format(full_file_name))
         else:
-            self._show_message('File "{}" is inaccessible'.format(full_file_name))
+            show_message('File "{}" is inaccessible'.format(full_file_name))
 
     def _file_path(self):
         # todo   is it exist currentRow() method ?
@@ -1119,7 +1114,7 @@ class MyController():
 
         if len(dirs):
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
-                self._show_message('Files are in an inaccessible place')
+                show_message('Files are in an inaccessible place')
             self._resize_columns()
 
     def _get_dirs(self, place_id):
@@ -1223,7 +1218,7 @@ class MyController():
             if _data:
                 self._load_files(_data)
         else:
-            self._show_message("Can't scan disk for files. Disk is not accessible.")
+            show_message("Can't scan disk for files. Disk is not accessible.")
 
     def _load_files(self, files):
         curr_place = self._cb_places.get_curr_place()
@@ -1241,13 +1236,10 @@ class MyController():
                 cur_place = self._cb_places.get_curr_place()
                 if place_name == cur_place.db_row[1]:
                     return MyController._yield_files(root, ext_item)
-                self._show_message('Folder "{}" not in the place "{}"'.
-                                   format(root, cur_place.db_row[2]), 5000)
+                show_message('Folder "{}" not in the place "{}"'.
+                             format(root, cur_place.db_row[2]), 5000)
 
         return ()  # not ok_pressed or root is empty or root is not in current place
-
-    def _show_message(self, message, time=3000):
-        self.ui.statusbar.showMessage(message, time)
 
     @staticmethod
     def get_selected_items(view):
