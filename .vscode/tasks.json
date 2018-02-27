@@ -1,0 +1,43 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "echo",
+            "type": "shell",
+            "command": "echo Hello"
+        },
+        {
+            "label": "Build py from ui",
+            "type": "shell",
+            "command": "D:\\Users\\mihal\\PGMs\\Python\\Scripts\\pyuic5.exe",
+            "args": [
+                "${file}", "-o",
+                "${fileDirname}\\ui_${fileBasenameNoExtension}.py",
+                "-x", "--import-from=view"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build py fron qrc",
+            "type": "shell",
+            "command": "D:\\Users\\mihal\\PGMs\\Python\\Scripts\\pyrcc5.exe",
+            "args": [
+                "${file}", "-o", 
+                "d:\\Users\\mihal\\_vs_prjs\\MyFiles\\view\\${fileBasenameNoExtension}_rc.py"
+            ]
+        },
+        {
+            "label": "Qt Designer",
+            "type": "shell",
+            "command": "d:\\users\\mihal\\PGMs\\python\\lib\\site-packages\\pyqt5-tools\\designer.exe",
+            "args": [
+                "${file}"
+            ]
+        }     
+    ]
+}
