@@ -245,7 +245,6 @@ class MethodsTree():
         ii = 0
         while True:
             bb = []
-            vv = 0
             for cc in lev_0:
                 off = -1
                 while True:
@@ -376,11 +375,11 @@ class MethodsTree():
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    dir_h = r'D:\Users\mihal\PycharmProjects\myFiles'   # Home
-    dir_w = r'D:\Users\PycharmProjects\MyFiles'         # Work
+    dir_h = r'd:\Users\mihal\_vs_prjs\MyFiles'    # Home
+    dir_w = r'D:\Users\PycharmProjects\MyFiles'   # Work
 
     # todo if there are methods with the same name in different class
-    # file_ = 'controller/my_controller.py'
+    file_ = 'controller/my_controller.py'
     # file_ = 'controller/places.py'
     # file_ = 'controller/table_model.py'
     # file_ = 'controller/tree_model.py'
@@ -390,7 +389,7 @@ if __name__ == "__main__":
     # file_ = 'model/utils/load_db_data.py'
     # file_ = 'view/input_date.py'
     # file_ = 'view/item_edit.py'
-    file_ = 'view/main_window.py'
+    # file_ = 'view/main_window.py'
     # file_ = 'view/db_choice.py'
     # file_ = 'view/sel_opt.py'
     # file_ = 'view/set_fields.py'
