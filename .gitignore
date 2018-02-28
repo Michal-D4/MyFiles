@@ -9,6 +9,7 @@
 
 .vscode
 __pycache__/
+__init__.py
 venv
 build
 dist

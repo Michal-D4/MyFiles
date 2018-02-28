@@ -1,5 +1,6 @@
 # controller/my_controller.py
 
+import os
 import re
 import sqlite3
 import webbrowser
@@ -16,8 +17,8 @@ from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
-from model.helper import (EXT_ID_INCREMENT, Fields, Shared, 
-                         get_file_extension, show_message)
+from model.helper import (EXT_ID_INCREMENT, Fields, Shared,
+                          get_file_extension, show_message)
 from model.utilities import DBUtils
 from model import create_db
 from model.load_db_data import LoadDBData
@@ -40,9 +41,10 @@ class MyController():
         self.status_label = QLabel(view)
         self.ui.statusbar.addPermanentWidget(self.status_label)
 
-        self.fields = Fields._make(((),(),()))
+        self.fields = Fields._make(((), (), ()))
         self.same_db = False
         self.obj_thread = None
+        self.in_thread = None
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
         self._cb_places = Places(self)
@@ -87,7 +89,7 @@ class MyController():
                 'Tag Remove unused': self._tag_remove_unused,
                 'Tag Rename': self._tag_rename,
                 'Tag Scan in names': self._scan_for_tags
-                }
+               }
 
     def _create_virtual_child(self):
         folder_name = 'New folder'
@@ -215,9 +217,10 @@ class MyController():
 
         tmp_place = Places.CurrPlace(0, registered_place, state)
 
-        return self._find_or_create_dir_id(tmp_place, to_path), tmp_place.db_row[0]
+        return MyController._find_or_create_dir_id(tmp_place, to_path), tmp_place.db_row[0]
 
-    def _find_or_create_dir_id(self, tmp_place, to_path):
+    @staticmethod
+    def _find_or_create_dir_id(tmp_place, to_path):
         trantab = str.maketrans(os.sep, os.altsep)
         path = to_path.translate(trantab)
         if tmp_place.disk_state == Places.MOUNTED:
@@ -228,7 +231,8 @@ class MyController():
 
     def _copy_files(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to copy')
+            to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
+                                                         'Select the folder to copy')
             if to_path:
                 place_id = self.copy_files_to(to_path)
 
@@ -265,7 +269,8 @@ class MyController():
 
     def _move_files(self):
         if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            to_path = QFileDialog().getExistingDirectory(self.ui.filesList, 'Select the folder to move')
+            to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
+                                                         'Select the folder to move')
             if to_path:
                 place_id = self.move_files_to(to_path)
 
@@ -319,12 +324,12 @@ class MyController():
         idx = self.ui.tagsList.currentIndex()
         if idx.isValid():
             tag = self.ui.tagsList.model().data(idx, role=Qt.DisplayRole)
-            id = self.ui.tagsList.model().data(idx, role=Qt.UserRole)
+            id_ = self.ui.tagsList.model().data(idx, role=Qt.UserRole)
             tag, ok = QInputDialog.getText(self.ui.extList,
                                            'Input new name',
                                            '', QLineEdit.Normal, tag)
             if ok:
-                self._dbu.update_other('UPDATE_TAG', (tag, id))
+                self._dbu.update_other('UPDATE_TAG', (tag, id_))
                 self.ui.tagsList.model().update(idx, tag, Qt.DisplayRole)
 
     def _copy_file_name(self):
@@ -375,12 +380,12 @@ class MyController():
         self.same_db = the_same
         if create:
             _connection = sqlite3.connect(file_name, check_same_thread=False,
-                                               detect_types=DETECT_TYPES)
+                                          detect_types=DETECT_TYPES)
             create_db.create_all_objects(_connection)
         else:
             if os.path.isfile(file_name):
                 _connection = sqlite3.connect(file_name, check_same_thread=False,
-                                                   detect_types=DETECT_TYPES)
+                                              detect_types=DETECT_TYPES)
             else:
                 show_message("Data base does not exist")
                 return
@@ -528,17 +533,18 @@ class MyController():
         self._populate_ext_list()
 
         self.obj_thread = FileInfo(self._cb_places, updated_dirs)
-        self._run_in_qthread(self._finish_thread)
+        self._run_in_qthread(MyController._finish_thread)
 
     def _run_in_qthread(self, finish):
-        self.thread = QThread()
-        self.obj_thread.moveToThread(self.thread)
-        self.obj_thread.finished.connect(self.thread.quit)
-        self.thread.finished.connect(finish)
-        self.thread.started.connect(self.obj_thread.run)
-        self.thread.start()
+        self.in_thread = QThread()
+        self.obj_thread.moveToThread(self.in_thread)
+        self.obj_thread.finished.connect(self.in_thread.quit)
+        self.in_thread.finished.connect(finish)
+        self.in_thread.started.connect(self.obj_thread.run)
+        self.in_thread.start()
 
-    def _finish_thread(self):
+    @staticmethod
+    def _finish_thread():
         show_message('Updating of files is finished', 5000)
 
     def _favorite_file_list(self):
@@ -829,7 +835,7 @@ class MyController():
             comment_id = self._dbu.insert_other('COMMENT', comment)
             self._dbu.update_other('FILE_COMMENT', (comment_id, res.file_id))
             self.ui.filesList.model().update(curr_idx,
-                                               user_data[:2] + (comment_id,)
+                                             user_data[:2] + (comment_id,)
                                              + user_data[3:], Qt.UserRole)
             res = res._replace(comment_id=comment_id,
                                comment=comment[0], book_title=comment[1])
@@ -869,7 +875,8 @@ class MyController():
     def _edit_title(self):
         checked = self._check_existence()
         data_, ok_pressed = QInputDialog.getText(self.ui.extList, 'Input book title',
-                                                 '', QLineEdit.Normal, getattr(checked, 'book_title'))
+                                                 '', QLineEdit.Normal,
+                                                 getattr(checked, 'book_title'))
         if ok_pressed:
             self._dbu.update_other('BOOK_TITLE', (data_, checked.comment_id))
             self._populate_comment_field(checked, edit=True)
@@ -902,16 +909,17 @@ class MyController():
         :return: None
         """
         model = self.ui.extList.model()
-        for id in selected.indexes():
-            if model.rowCount(id) > 0:
-                self.ui.extList.setExpanded(id, True)
-                sel = QItemSelection(model.index(0, 0, id),
-                                     model.index(model.rowCount(id) - 1, model.columnCount(id) - 1, id))
+        for id_ in selected.indexes():
+            if model.rowCount(id_) > 0:
+                self.ui.extList.setExpanded(id_, True)
+                sel = QItemSelection(model.index(0, 0, id_),
+                                     model.index(model.rowCount(id_) - 1,
+                                                 model.columnCount(id_) - 1, id_))
                 self.ui.extList.selectionModel().select(sel, QItemSelectionModel.Select)
 
-        for id in deselected.indexes():
-            if id.parent().isValid():
-                self.ui.extList.selectionModel().select(id.parent(), QItemSelectionModel.Deselect)
+        for id_ in deselected.indexes():
+            if id_.parent().isValid():
+                self.ui.extList.selectionModel().select(id_.parent(), QItemSelectionModel.Deselect)
 
         self._save_ext_selection()
 
@@ -1054,12 +1062,12 @@ class MyController():
 
             self.ui.commentField.setText(''.join((
                 '<html><body><p><a href="Edit key words">Key words</a>: {}</p>'
-                    .format(', '.join([tag[0] for tag in tags])),
+                .format(', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'
-                    .format(', '.join([author[0] for author in authors])),
+                .format(', '.join([author[0] for author in authors])),
                 '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'
-                    .format(comment[0]))))
+                .format(comment[0]))))
 
             # if not self.file_list_source == MyController.FOLDER:
             #     f_idx = self.ui.filesList.currentIndex()
@@ -1124,7 +1132,7 @@ class MyController():
 
         self._restore_file_list(cur_dir_idx)
 
-        if len(dirs):
+        if dirs:
             if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 show_message('Files are in an inaccessible place')
             self._resize_columns()
@@ -1142,7 +1150,8 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2], os.altsep.join((root, rr[0]))))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2],
+                             os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
                 dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2], rr[0]))
@@ -1189,11 +1198,11 @@ class MyController():
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
             parent = QModelIndex()
-            for id in aux:
+            for id_ in aux:
                 if parent.isValid():
                     if not self.ui.dirTree.isExpanded(parent):
                         self.ui.dirTree.setExpanded(parent, True)
-                idx = model.index(int(id), 0, parent)
+                idx = model.index(int(id_), 0, parent)
                 self.ui.dirTree.setCurrentIndex(idx)
                 parent = idx
             return parent
@@ -1215,8 +1224,7 @@ class MyController():
                                                     QLineEdit.Normal, ext_)
         if ok_pressed:
             files = MyController._yield_files(dir_[-1], ext_item.strip())
-            if files:
-                self._load_files(files)
+            self._load_files(files)
 
     def on_scan_files(self):
         """
@@ -1292,8 +1300,8 @@ class MyController():
                 widths[0] = w * 0.25
                 for i in range(1, len(widths)):
                     widths[i] = ww / sum_w * widths[i]
-            for k in range(0, len(widths)):
-                self.ui.filesList.setColumnWidth(k, widths[k])
+            for k, width in enumerate(widths):
+                self.ui.filesList.setColumnWidth(k, width)
         else:
             self.ui.filesList.setColumnWidth(0, w)
 

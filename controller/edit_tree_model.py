@@ -6,8 +6,8 @@ from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteA
                           QDataStream, QIODevice)
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QFont
-from model.helper import (real_folder, virtual_folder, file_virtual, 
-                          MimeTypes, DropCopyFolder, DropMoveFolder, 
+from model.helper import (real_folder, virtual_folder,
+                          MimeTypes, DropCopyFolder, DropMoveFolder,
                           DropCopyFile, DropMoveFile, Shared)
 
 
@@ -88,7 +88,7 @@ class EditTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
-        self.rootItem = TreeItem(data_=("", (0,0,0,"Root")))
+        self.rootItem = TreeItem(data_=("", (0, 0, 0, "Root")))
 
     @staticmethod
     def is_virtual(index):
@@ -200,7 +200,7 @@ class EditTreeModel(QAbstractItemModel):
 
     def update_folder_name(self, index, name):
         item = self.getItem(index)
-        name=name.strip()
+        name = name.strip()
         item.itemData = (name,)
         item.userData = item.userData[:-1] + item.itemData
 
@@ -235,7 +235,8 @@ class EditTreeModel(QAbstractItemModel):
     def mimeTypes(self):
         return MimeTypes
 
-    def mimeData(self, indexes):
+    @classmethod
+    def mimeData(cls, indexes):
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
         data_stream.writeInt(len(indexes))
@@ -244,7 +245,7 @@ class EditTreeModel(QAbstractItemModel):
         for idx in indexes:
             it: TreeItem = idx.internalPointer()
             all_virtual &= (it.is_virtual() & (not it.is_favorites()))
-            pack = EditTreeModel._save_index(idx)
+            pack = cls._save_index(idx)
             data_stream.writeQString(','.join((str(x) for x in pack)))
 
         mime_data = QMimeData()
@@ -294,13 +295,14 @@ class EditTreeModel(QAbstractItemModel):
         fav_id = 0
         for i in range(count):
             file_id = stream.readInt()
-            # dir_id = stream.readInt()     # - may be restored, if refactor of copy/move from real folder
+            # dir_id = stream.readInt() # may be restored, if copy/move from real folder
             fav_id = stream.readInt()
             if action == DropCopyFile:
                 Shared['DB utility'].insert_other('VIRTUAL_FILE', (parent_dir_id, file_id))
             else:
                 if fav_id > 0:
-                    Shared['DB utility'].update_other('VIRTUAL_FILE_ID', (parent_dir_id, fav_id, file_id))
+                    Shared['DB utility'].update_other('VIRTUAL_FILE_ID', 
+                                                      (parent_dir_id, fav_id, file_id))
 
         if action == DropMoveFile:          # update file list after moving files
             Shared['Controller'].files_virtual_folder(fav_id)
@@ -340,7 +342,7 @@ class EditTreeModel(QAbstractItemModel):
         p_data = self.data(parent, role=Qt.UserRole)
         u_data = self.data(index, role=Qt.UserRole)
         if not item.is_virtual():
-            Shared['DB utility'].insert_other('VIRTUAL_DIR', ( p_data[0], u_data[0]))
+            Shared['DB utility'].insert_other('VIRTUAL_DIR', (p_data[0], u_data[0]))
         else:
             new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (p_data[0], u_data[0]))
             Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, u_data[0]))
