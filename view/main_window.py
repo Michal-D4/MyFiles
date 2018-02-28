@@ -1,11 +1,11 @@
 # view/main_flow.py
 
 from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent, QMimeData)
-from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent
+from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent, QDragEnterEvent
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.ui_main_window import Ui_MainWindow
-from model.helper import (real_folder, virtual_folder, file_real, 
+from model.helper import (real_folder, virtual_folder, file_real,
                           file_virtual, MimeTypes, DropNoAction, 
                           DropCopyFolder, DropMoveFolder, DropMoveFile, 
                           DropCopyFile, Shared)
@@ -16,7 +16,7 @@ class AppWindow(QMainWindow):
     scan_files_signal = pyqtSignal()
 
     def __init__(self, parent=None):
-        QWidget.__init__(self, parent)
+        QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         Shared['AppWindow'] = self
@@ -49,19 +49,40 @@ class AppWindow(QMainWindow):
 
         self.ui.dirTree.startDrag = self._start_drag
         self.ui.dirTree.dropEvent = self._drop_event
+        self.ui.dirTree.dragEnterEvent = self._drag_enter_event
+        self.ui.dirTree.dragMoveEvent = self._drag_move_event
         self.ui.filesList.startDrag = self._start_drag_files
 
         self.ui.filesList.resizeEvent = self.resize_event
+
+    def _drag_move_event(self, event):  # never called !!!
+        print('--> _drag_move_event')
+        self._drag_enter_event(event)
+
+    def _drag_enter_event(self, event: QDragEnterEvent):
+        index = self.ui.dirTree.indexAt(event.pos())
+        mime_data = event.mimeData()
+        if mime_data.hasFormat(MimeTypes[real_folder]):
+            print('--> real_folder')
+            if not self.ui.dirTree.model().is_virtual(index):
+                print('    ignore')
+                event.ignore()
+            else:
+                print('    accept')
+                event.accept()
+        else:
+            print('--> anything except real_folder')
+            event.accept()
 
     def _drop_event(self, event: QDropEvent):
         mime_data: QMimeData = event.mimeData()
         index = self.ui.dirTree.indexAt(event.pos())
 
         act = self._set_action(index, mime_data, event.pos())
-        if act & (DropMoveFolder | DropMoveFile):
-            event.setDropAction(Qt.MoveAction)
-        elif act & (DropCopyFolder | DropCopyFile):
-            event.setDropAction(Qt.CopyAction)
+        # if act & (DropMoveFolder | DropMoveFile):
+        #     event.setDropAction(Qt.MoveAction)
+        # elif act & (DropCopyFolder | DropCopyFile):
+        #     event.setDropAction(Qt.CopyAction)
 
         res = self.ui.dirTree.model().dropMimeData(mime_data, act, -1, -1, index)
         if res:
@@ -70,6 +91,12 @@ class AppWindow(QMainWindow):
             event.ignore()
 
     def _set_action(self, index, mime_data, pos):
+        """
+        index: in dirTree at drop position
+        mime_data:
+        pos: position where menu to be shown
+        return: DropNoAction, DropCopyFolder, DropMoveFolder, DropCopyFile, DropMoveFile
+        """
         if mime_data.hasFormat(MimeTypes[real_folder]):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropCopyFolder
