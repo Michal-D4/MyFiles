@@ -6,7 +6,9 @@ from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteA
                           QDataStream, QIODevice)
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QFont
-from model.helper import *
+from model.helper import (real_folder, virtual_folder, file_virtual, 
+                          MimeTypes, DropCopyFolder, DropMoveFolder, 
+                          DropCopyFile, DropMoveFile, Shared)
 
 
 class TreeItem(object):

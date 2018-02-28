@@ -5,7 +5,7 @@ from collections import namedtuple
 from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtWidgets import QDialog
 
-from model.helper import *
+from model.helper import EXT_ID_INCREMENT, DropCopyFile
 from view.ui_sel_opt import Ui_SelOpt
 
 

@@ -1,4 +1,4 @@
-# model/helpers.py
+# model/helper.py
 import os
 from collections import namedtuple
 from PyQt5.QtGui import QFontDatabase
@@ -8,7 +8,7 @@ from PyQt5.QtGui import QFontDatabase
 EXT_ID_INCREMENT = 100000
 Fields = namedtuple('Fields', 'fields headers indexes')
 
-real_folder, virtual_folder, file, file_virtual = range(4)
+real_folder, virtual_folder, file_real, file_virtual = range(4)
 MimeTypes = ["application/x-folder-list",
              "application/x-folder-list/virtual",
              "application/x-file-list",

@@ -16,7 +16,8 @@ from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
-from model.helper import *
+from model.helper import (EXT_ID_INCREMENT, Fields, Shared, 
+                         get_file_extension, show_message)
 from model.utilities import DBUtils
 from model import create_db
 from model.load_db_data import LoadDBData

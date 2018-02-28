@@ -1,7 +1,7 @@
 # model/load_db_data.py
 
 from controller.places import Places
-from model.helper import *
+from model.helper import Shared, get_file_extension, get_parent_dir
 
 FIND_PART_PATH = 'select ParentID from Dirs where Path like :newPath and PlaceId = :place;'
 

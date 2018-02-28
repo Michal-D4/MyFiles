@@ -1,6 +1,6 @@
 # model/utilities.py
 import datetime
-from model.helper import *
+from model.helper import EXT_ID_INCREMENT, Shared
 
 
 Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)

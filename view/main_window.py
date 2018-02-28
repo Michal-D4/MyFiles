@@ -5,7 +5,10 @@ from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
 
 from view.ui_main_window import Ui_MainWindow
-from model.helper import *
+from model.helper import (real_folder, virtual_folder, file_real, 
+                          file_virtual, MimeTypes, DropNoAction, 
+                          DropCopyFolder, DropMoveFolder, DropMoveFile, 
+                          DropCopyFile, Shared)
 
 
 class AppWindow(QMainWindow):
@@ -71,7 +74,7 @@ class AppWindow(QMainWindow):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropCopyFolder
             return DropNoAction
-        if mime_data.hasFormat(MimeTypes[file]):
+        if mime_data.hasFormat(MimeTypes[file_real]):
             if self.ui.dirTree.model().is_virtual(index):
                 return DropCopyFile
             return self._ask_action_file(pos)

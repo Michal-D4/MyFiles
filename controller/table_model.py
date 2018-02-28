@@ -5,7 +5,7 @@ from collections import Iterable
 # from PyQt5.QtCore import QModelIndex, Qt, QAbstractTableModel, QSortFilterProxyModel
 from PyQt5.QtCore import (QAbstractTableModel, QModelIndex, Qt, QMimeData, QByteArray,
                           QDataStream, QIODevice, QSortFilterProxyModel)
-from model.helper import *
+from model.helper import MimeTypes, file_virtual, file_real
 
 class ProxyModel(QSortFilterProxyModel):
 
@@ -63,7 +63,7 @@ class ProxyModel2(ProxyModel):
         return Qt.IgnoreAction
 
     def mimeTypes(self):
-        return [MimeTypes[file], MimeTypes[file_virtual]]
+        return [MimeTypes[file_real], MimeTypes[file_virtual]]
 
     def mimeData(self, indexes):
         item_data = QByteArray()
@@ -84,7 +84,7 @@ class ProxyModel2(ProxyModel):
         if all_virtual:
             mime_data.setData(MimeTypes[file_virtual], item_data)
         else:
-            mime_data.setData(MimeTypes[file], item_data)
+            mime_data.setData(MimeTypes[file_real], item_data)
         return mime_data
 
 
