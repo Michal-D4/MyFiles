@@ -2,12 +2,12 @@
 
 from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent, QMimeData)
 from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent, QDragEnterEvent
-from PyQt5.QtWidgets import QMainWindow, QWidget, QMenu
+from PyQt5.QtWidgets import QMainWindow, QMenu
 
 from view.ui_main_window import Ui_MainWindow
 from model.helper import (real_folder, virtual_folder, file_real,
-                          file_virtual, MimeTypes, DropNoAction, 
-                          DropCopyFolder, DropMoveFolder, DropMoveFile, 
+                          file_virtual, MimeTypes, DropNoAction,
+                          DropCopyFolder, DropMoveFolder,
                           DropCopyFile, Shared)
 
 
@@ -352,4 +352,3 @@ class AppWindow(QMainWindow):
         settings.setValue("OptSplitter", QVariant(self.ui.opt_splitter.saveState()))
         settings.setValue("MainSplitter", QVariant(self.ui.main_splitter.saveState()))
         super(AppWindow, self).closeEvent(event)
-
