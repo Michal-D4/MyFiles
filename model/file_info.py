@@ -1,5 +1,7 @@
 # model/file_info.py
 
+import os
+from collections import namedtuple
 import datetime
 import re
 
@@ -38,17 +40,20 @@ UPDATE_FILE = ' '.join(('update Files set',
 class LoadFiles(QObject):
     finished = pyqtSignal()
 
-    def __init__(self, cur_place, data_):
+    def __init__(self, cur_place, path_, ext_):
         super().__init__()
+        print('--> LoadFiles.__init__')
         self.cur_place = cur_place
         self.conn = Shared['DB connection']
-        self.data = data_
+        self.path_ = path_
+        self.ext_ = ext_
         self.updated_dirs = None
 
     @pyqtSlot()
     def run(self):
+        print('--> LoadFiles.run')
         files = LoadDBData(self.cur_place)
-        files.load_data(self.data)
+        files.load_data(self.path_, self.ext_)
         self.updated_dirs = files.get_updated_dirs()
         self.finished.emit()
 
@@ -61,11 +66,13 @@ class FileInfo(QObject):
 
     @pyqtSlot()
     def run(self):
+        print('--> FileInfo.run')
         self._update_files()
         self.finished.emit()           # 'Updating of files is finished'
 
     def __init__(self, place_inst, updated_dirs):
         super().__init__()
+        print('--> FileInfo.__init__')
         self.upd_dirs = updated_dirs
         self.places = place_inst
         self.conn = Shared['DB connection']

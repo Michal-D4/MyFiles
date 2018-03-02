@@ -1,7 +1,7 @@
 # view/main_flow.py
 
 from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent, QMimeData)
-from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent, QDragEnterEvent
+from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent, QDragMoveEvent
 from PyQt5.QtWidgets import QMainWindow, QMenu
 
 from view.ui_main_window import Ui_MainWindow
@@ -49,17 +49,14 @@ class AppWindow(QMainWindow):
 
         self.ui.dirTree.startDrag = self._start_drag
         self.ui.dirTree.dropEvent = self._drop_event
-        self.ui.dirTree.dragEnterEvent = self._drag_enter_event
+        # self.ui.dirTree.dragEnterEvent = self._drag_enter_event
         self.ui.dirTree.dragMoveEvent = self._drag_move_event
         self.ui.filesList.startDrag = self._start_drag_files
 
         self.ui.filesList.resizeEvent = self.resize_event
 
-    def _drag_move_event(self, event):  # never called !!!
+    def _drag_move_event(self, event: QDragMoveEvent):
         print('--> _drag_move_event')
-        self._drag_enter_event(event)
-
-    def _drag_enter_event(self, event: QDragEnterEvent):
         index = self.ui.dirTree.indexAt(event.pos())
         mime_data = event.mimeData()
         if mime_data.hasFormat(MimeTypes[real_folder]):
@@ -73,6 +70,21 @@ class AppWindow(QMainWindow):
         else:
             print('--> anything except real_folder')
             event.accept()
+
+    # def _drag_enter_event(self, event: QDragEnterEvent):
+    #     index = self.ui.dirTree.indexAt(event.pos())
+    #     mime_data = event.mimeData()
+    #     if mime_data.hasFormat(MimeTypes[real_folder]):
+    #         print('--> real_folder')
+    #         if not self.ui.dirTree.model().is_virtual(index):
+    #             print('    ignore')
+    #             event.ignore()
+    #         else:
+    #             print('    accept')
+    #             event.accept()
+    #     else:
+    #         print('--> anything except real_folder')
+    #         event.accept()
 
     def _drop_event(self, event: QDropEvent):
         mime_data: QMimeData = event.mimeData()

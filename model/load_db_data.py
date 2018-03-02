@@ -1,5 +1,6 @@
 # model/load_db_data.py
 
+import os
 from controller.places import Places
 from model.helper import Shared, get_file_extension, get_parent_dir
 
@@ -55,19 +56,22 @@ class LoadDBData:
     def get_updated_dirs(self):
         return self.updated_dirs
 
-    def load_data(self, data):
+    def load_data(self, path_, ext_):
         """
         Load data in data base
         :param data: - iterable lines of file names with full path
         :return: None
         """
+        print('-> load_data', path_, ext_)
+        files = LoadDBData._yield_files(path_, ext_)
         trantab = str.maketrans(os.sep, os.altsep)
-        for line in data:
+        for line in files:
             line = line.translate(trantab)
             if self.place_status == Places.MOUNTED:
                 line = line.partition(os.altsep)[2]    # path without disk letter for removable disks
             path = line.rpartition(os.altsep)[0]
             idx = self.insert_dir(path)
+            print('-> load_data', idx, path)
             self.updated_dirs.add(str(idx))
             self.insert_file(idx, line)
         self.conn.commit()
@@ -79,14 +83,16 @@ class LoadDBData:
         :param full_file_name:
         :return: None
         """
-        file = os.path.split(full_file_name)[1]
+        file_ = os.path.split(full_file_name)[1]
 
-        item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file}).fetchone()
+        item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file_}).fetchone()
+        print('--> insert_file', file_, item)
         if not item:
-            ext_id, ext = self.insert_extension(file)
+            ext_id, ext = self.insert_extension(file_)
+            print('--> insert_file', ext_id, ext)
             if ext_id > 0:      # files with an empty extension are not handled
                 self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
-                                                  'file': file,
+                                                  'file': file_,
                                                   'ext_id': ext_id,
                                                   'placeId': self.place_id})
 
@@ -158,6 +164,25 @@ class LoadDBData:
                 break
             path = get_parent_dir(path)
         return res
+
+    @staticmethod
+    def _yield_files(root, extensions):
+        """
+        generator of file list
+        :param root: root directory
+        :param extensions: list of extensions
+        :return: generator
+        """
+        print('--> _yield_files', root, extensions)
+        ext_ = tuple(x.strip('. ') for x in extensions.split(','))
+        for dir_name, _, file_names in os.walk(root):
+            if (not extensions) | (extensions == '*'):
+                for filename in file_names:
+                    yield os.path.join(dir_name, filename)
+            else:
+                for filename in file_names:
+                    if get_file_extension(filename) in ext_:
+                        yield os.path.join(dir_name, filename)
 
 
 if __name__ == "__main__":
