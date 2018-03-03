@@ -62,16 +62,15 @@ class LoadDBData:
         :param data: - iterable lines of file names with full path
         :return: None
         """
-        print('-> load_data', path_, ext_)
         files = LoadDBData._yield_files(path_, ext_)
         trantab = str.maketrans(os.sep, os.altsep)
         for line in files:
             line = line.translate(trantab)
             if self.place_status == Places.MOUNTED:
-                line = line.partition(os.altsep)[2]    # path without disk letter for removable disks
+                # path without disk letter for removable disks
+                line = line.partition(os.altsep)[2]
             path = line.rpartition(os.altsep)[0]
             idx = self.insert_dir(path)
-            print('-> load_data', idx, path)
             self.updated_dirs.add(str(idx))
             self.insert_file(idx, line)
         self.conn.commit()
@@ -86,10 +85,8 @@ class LoadDBData:
         file_ = os.path.split(full_file_name)[1]
 
         item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file_}).fetchone()
-        print('--> insert_file', file_, item)
         if not item:
             ext_id, ext = self.insert_extension(file_)
-            print('--> insert_file', ext_id, ext)
             if ext_id > 0:      # files with an empty extension are not handled
                 self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
                                                   'file': file_,
@@ -173,7 +170,6 @@ class LoadDBData:
         :param extensions: list of extensions
         :return: generator
         """
-        print('--> _yield_files', root, extensions)
         ext_ = tuple(x.strip('. ') for x in extensions.split(','))
         for dir_name, _, file_names in os.walk(root):
             if (not extensions) | (extensions == '*'):

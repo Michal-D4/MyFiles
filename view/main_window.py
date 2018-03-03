@@ -49,54 +49,29 @@ class AppWindow(QMainWindow):
 
         self.ui.dirTree.startDrag = self._start_drag
         self.ui.dirTree.dropEvent = self._drop_event
-        # self.ui.dirTree.dragEnterEvent = self._drag_enter_event
         self.ui.dirTree.dragMoveEvent = self._drag_move_event
         self.ui.filesList.startDrag = self._start_drag_files
 
         self.ui.filesList.resizeEvent = self.resize_event
 
     def _drag_move_event(self, event: QDragMoveEvent):
-        print('--> _drag_move_event')
         index = self.ui.dirTree.indexAt(event.pos())
         mime_data = event.mimeData()
         if mime_data.hasFormat(MimeTypes[real_folder]):
-            print('--> real_folder')
             if not self.ui.dirTree.model().is_virtual(index):
-                print('    ignore')
                 event.ignore()
             else:
-                print('    accept')
                 event.accept()
         else:
-            print('--> anything except real_folder')
             event.accept()
-
-    # def _drag_enter_event(self, event: QDragEnterEvent):
-    #     index = self.ui.dirTree.indexAt(event.pos())
-    #     mime_data = event.mimeData()
-    #     if mime_data.hasFormat(MimeTypes[real_folder]):
-    #         print('--> real_folder')
-    #         if not self.ui.dirTree.model().is_virtual(index):
-    #             print('    ignore')
-    #             event.ignore()
-    #         else:
-    #             print('    accept')
-    #             event.accept()
-    #     else:
-    #         print('--> anything except real_folder')
-    #         event.accept()
 
     def _drop_event(self, event: QDropEvent):
         mime_data: QMimeData = event.mimeData()
         index = self.ui.dirTree.indexAt(event.pos())
 
         act = self._set_action(index, mime_data, event.pos())
-        # if act & (DropMoveFolder | DropMoveFile):
-        #     event.setDropAction(Qt.MoveAction)
-        # elif act & (DropCopyFolder | DropCopyFile):
-        #     event.setDropAction(Qt.CopyAction)
 
-        res = self.ui.dirTree.model().dropMimeData(mime_data, act, -1, -1, index)
+        res = self.ui.dirTree.model().dropMimeData(mime_data, act, index)
         if res:
             event.accept()
         else:

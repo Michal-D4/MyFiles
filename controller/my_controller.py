@@ -351,25 +351,6 @@ class MyController():
     def get_place_instance(self):
         return self._cb_places
 
-    # @staticmethod
-    # def _yield_files(root, extensions):
-    #     """
-    #     generator of file list
-    #     :param root: root directory
-    #     :param extensions: list of extensions
-    #     :return: generator
-    #     """
-    #     print('--> _yield_files', root, extensions)
-    #     ext_ = tuple(x.strip('. ') for x in extensions.split(','))
-    #     for dir_name, _, file_names in os.walk(root):
-    #         if (not extensions) | (extensions == '*'):
-    #             for filename in file_names:
-    #                 yield os.path.join(dir_name, filename)
-    #         else:
-    #             for filename in file_names:
-    #                 if get_file_extension(filename) in ext_:
-    #                     yield os.path.join(dir_name, filename)
-
     def on_open_db(self, file_name, create, the_same):
         """
         Open or Create DB
@@ -529,7 +510,6 @@ class MyController():
         return all_id
 
     def _dir_update(self):
-        print('--> _dir_update')
         updated_dirs = self.obj_thread.get_updated_dirs()
         self._populate_directory_tree()
         self._populate_ext_list()
@@ -538,7 +518,6 @@ class MyController():
         self._run_in_qthread(MyController._finish_thread)
 
     def _run_in_qthread(self, finish):
-        print('--> _run_in_qthread', finish.__name__)
         self.in_thread = QThread()
         self.obj_thread.moveToThread(self.in_thread)
         self.obj_thread.finished.connect(self.in_thread.quit)
@@ -1244,23 +1223,19 @@ class MyController():
             show_message("Can't scan disk for files. Disk is not accessible.")
 
     def _load_files(self, path_, ext_):
-        print('--> _load_files')
         curr_place = self._cb_places.get_curr_place()
         self.obj_thread = LoadFiles(curr_place, path_, ext_)
         self._run_in_qthread(self._dir_update)
 
     def _scan_file_system(self):
-        print('--> _scan_file_system')
         ext_ = self._get_selected_ext()
         ext_item, ok_pressed = QInputDialog.getText(self.ui.extList, "Input extensions",
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
-            print('    root:', root)
             if root:
                 place_name, _ = self._cb_places.get_place_name(root)
                 cur_place = self._cb_places.get_curr_place()
-                print('   ', place_name, cur_place.db_row[1])
                 if place_name == cur_place.db_row[1]:
                     return root, ext_item
                     # return MyController._yield_files(root, ext_item)
