@@ -69,19 +69,18 @@ class ProxyModel2(ProxyModel):
         item_data = QByteArray()
         data_stream = QDataStream(item_data, QIODevice.WriteOnly)
 
-        all_virtual = True
-
         data_stream.writeInt(len(indexes))
+        tmp = None
         for idx in indexes:
             s_idx = self.mapToSource(idx)
             tmp = self.sourceModel().data(s_idx, role=Qt.UserRole)
             data_stream.writeInt(tmp[0])    # file ID
-            # data_stream.writeInt(tmp[1])  # Dir ID  - may be restored, if refactor of copy/move from real folder
+            # tmp[1] = DirID  - may be restored, if refactor of copy/move methods for real folder
+            # data_stream.writeInt(tmp[1])
             data_stream.writeInt(tmp[-1])   # Source: > 0 - virtual folder, 0 - real, -1 - adv.
-            all_virtual &= (tmp[-1] > 0)
 
         mime_data = QMimeData()
-        if all_virtual:
+        if tmp[-1] > 0:         # files are from virtual folder
             mime_data.setData(MimeTypes[file_virtual], item_data)
         else:
             mime_data.setData(MimeTypes[file_real], item_data)
