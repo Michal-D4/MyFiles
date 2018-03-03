@@ -89,7 +89,7 @@ class EditTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
-        self.rootItem = TreeItem(data_=("", (0, 0, 0, "Root")))
+        self.rootItem = TreeItem(data_=(), user_data=(0, 0, 0, "Root"))
 
     @staticmethod
     def is_virtual(index):
