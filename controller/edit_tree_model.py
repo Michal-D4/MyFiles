@@ -12,6 +12,7 @@ from model.helper import (real_folder, virtual_folder,
 
 
 class TreeItem(object):
+    
     def __init__(self, data_, user_data=None, parent=None):
         self.parentItem = parent
         self.userData = user_data
@@ -189,8 +190,11 @@ class EditTreeModel(QAbstractItemModel):
             value = value.split(';')
         self.rootItem.set_data(value)
 
-    def append_child(self, item, parent):
-        parentItem = self.getItem(parent)
+    def append_child(self, item: TreeItem, parent):
+        parentItem: TreeItem = self.getItem(parent)
+        item.userData = (item.userData[0],
+                         parentItem.userData[0],
+                         2) + item.userData[3:]
         position = parentItem.childCount()
 
         self.beginInsertRows(parent, position, position)
@@ -256,11 +260,12 @@ class EditTreeModel(QAbstractItemModel):
 
         return mime_data
 
-    def dropMimeData(self, mime_data: QMimeData, action, row, column, parent):
+    def dropMimeData(self, mime_data: QMimeData, action, parent):
         """
+        Intensionally list of parameters differs from standard:
+          row, column - parameters are not used.
         :param mime_data:
         :param action:  not Qt defined actions, instead Drop* from helper.py
-        :param row, column:  always -1, means that mime_data be append as child
         :param parent: where mime_data is dragged
         :return: True if dropped
         """
