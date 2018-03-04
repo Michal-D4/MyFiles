@@ -4,22 +4,22 @@ from model.helper import EXT_ID_INCREMENT, Shared
 
 
 Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
-               (' '.join(('WITH x(Path, DirID, ParentID, isVirtual, level, virtual) AS',
-                          '(SELECT Path, DirID, ParentID, isVirtual, 0 as level, (isVirtual > 0) as virtual',)),
+               (' '.join(('WITH x(Path, DirID, ParentID, isVirtual, level) AS',
+                          '(SELECT Path, DirID, ParentID, isVirtual, 0 as level',)),
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
                 'FROM Dirs WHERE ParentID = {} and PlaceId = {}',
                 ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.isVirtual,',
-                          'x.level + 1 as lvl, (t.isVirtual > 0) as virtual FROM x INNER JOIN Dirs AS t',
+                          'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID')),
                 ' '.join(('and lvl <= {}) SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.isVirtual, d.isVirtual, z.level+1, 1 as virtual',
+                          'Select d.Path, d.DirID, f.isVirtual, d.isVirtual, z.level+1',
                           'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
-                          'inner join x as z on z.dirId = d.DirID order by level desc, Path;'
+                          'inner join x as z on z.dirId = d.DirID order by isVirtual, level desc, Path;'
                           )),
                 ' '.join((') SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.FavID, d.isVirtual, z.level+1, 1 as virtual',
+                          'Select d.Path, d.DirID, f.FavID, 2, z.level+1',
                           'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
-                          'inner join x as z on z.dirId = d.DirID order by level desc, Path;'
+                          'inner join x as z on z.dirId = d.DirID order by isVirtual, level desc, Path;'
                           ))),
 
            'DIR_IDS':
@@ -246,7 +246,7 @@ class DBUtils:
         :return: cursor of directories
         """
         sql = DBUtils.generate_sql(dir_id, level, place_id)
-        # print(sql)
+        print(sql)
 
         self.curs.execute(sql)
 

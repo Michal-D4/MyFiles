@@ -17,8 +17,7 @@ from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.edit_tree_model import EditTreeModel, TreeItem
 from model.file_info import FileInfo, LoadFiles
-from model.helper import (EXT_ID_INCREMENT, Fields, Shared,
-                          get_file_extension, show_message)
+from model.helper import (EXT_ID_INCREMENT, Fields, Shared, show_message)
 from model.utilities import DBUtils
 from model import create_db
 from model.load_db_data import LoadDBData
@@ -1132,11 +1131,11 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2],
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1],
                              os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2], rr[0]))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
         return dirs
 
     def _cur_dir_changed(self, curr_idx):
