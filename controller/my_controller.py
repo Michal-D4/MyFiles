@@ -823,20 +823,27 @@ class MyController():
         return res
 
     def _restore_file_list(self, curr_dir_idx):
+        print('--> _restore_file_list', self.file_list_source)
+        # FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
         if not curr_dir_idx.isValid():
+            print('   1')
             curr_dir_idx = self.ui.dirTree.model().index(0, 0)
         if self.same_db:
+            print('   2')
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
             row = settings.value('FILE_IDX', 0)
         else:
             if self.ui.dirTree.model().is_virtual(curr_dir_idx):
+                print('   3')
                 self.file_list_source = MyController.VIRTUAL
             else:
+                print('   4')
                 self.file_list_source = MyController.FOLDER
             row = 0
 
         dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
+        print('  dir_idx', dir_idx)
         if self.file_list_source == MyController.VIRTUAL:
             self._populate_virtual(dir_idx[0])
         elif self.file_list_source == MyController.FOLDER:
@@ -1099,6 +1106,8 @@ class MyController():
     def _populate_directory_tree(self):
         # todo - do not correctly restore when reopen from toolbar button
         dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
+        for dir_ in dirs:
+            print(dir_)
 
         model = EditTreeModel()
         model.set_alt_font(Shared['AppFont'])
@@ -1111,6 +1120,8 @@ class MyController():
         self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
         cur_dir_idx = self._restore_path()
 
+        # print('--> _populate_directory_tree', cur_dir_idx.isValid())
+        # if cur_dir_idx.isValid():
         self._restore_file_list(cur_dir_idx)
 
         if dirs:
@@ -1131,11 +1142,12 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1],
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2],
                              os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
+                print('** ', rr)
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2], rr[0]))
         return dirs
 
     def _cur_dir_changed(self, curr_idx):
@@ -1174,11 +1186,13 @@ class MyController():
         restore expand state and current index of dirTree
         :return: current index
         """
+        print('--> _restore_path: same_db=', self.same_db)
         model = self.ui.dirTree.model()
+        parent = QModelIndex()
         if self.same_db:
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
-            parent = QModelIndex()
+            print('   aux', aux)
             for id_ in aux:
                 if parent.isValid():
                     if not self.ui.dirTree.isExpanded(parent):
@@ -1186,9 +1200,14 @@ class MyController():
                 idx = model.index(int(id_), 0, parent)
                 self.ui.dirTree.setCurrentIndex(idx)
                 parent = idx
+
+        if parent.isValid():
+            print('   parent.isValid')
             return parent
 
-        idx = model.index(0, 0)
+        idx = model.index(0, 0, QModelIndex())
+        print('   idx.isValid', idx.isValid())
+
         self.ui.dirTree.setCurrentIndex(idx)
         return idx
 
