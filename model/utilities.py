@@ -11,16 +11,9 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 ' '.join(('UNION ALL SELECT t.Path, t.DirID, t.ParentID, t.isVirtual,',
                           'x.level + 1 as lvl FROM x INNER JOIN Dirs AS t',
                           'ON t.ParentID = x.DirID')),
-                ' '.join(('and lvl <= {}) SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.isVirtual, d.isVirtual, z.level+1',
-                          'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
-                          'inner join x as z on z.dirId = d.DirID order by isVirtual, level desc, Path;'
-                          )),
-                ' '.join((') SELECT * FROM x union',
-                          'Select d.Path, d.DirID, f.FavID, 2, z.level+1',
-                          'from Dirs as d inner join favorites as f on f.DirID = d.DirID',
-                          'inner join x as z on z.dirId = d.DirID order by isVirtual, level desc, Path;'
-                          ))),
+                'and lvl <= {}) SELECT * FROM x order by level desc, Path;',
+                ') SELECT * FROM x order by level desc, Path;',
+                ),
 
            'DIR_IDS':
                ('WITH x(DirID, ParentID, isVirtual, level) AS (SELECT DirID, ParentID, isVirtual, 0 as level',
@@ -83,16 +76,16 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
            'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
                                        'Opened, Commented, FileID, DirID, coalesce(CommentID, 0),',
                                        'ExtID, PlaceId from Files where DirId = ?;')),
-           'FAVORITES': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
+           'FILES_VIRT': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
                                   'Commented, FileID, DirID, coalesce(CommentID, 0), ExtID, PlaceId',
-                                  'from Files where FileID in (select FileID from Favorites where',
-                                  'FavID = ? and DirID = 0);')),
+                                  'from Files where FileID in (select FileID from FilesInVirt where',
+                                  'DirID = ?);')),
            'FAV_ID': 'select DirID from Dirs where isVirtual = 1 and PlaceId = ?',
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
-          'VIRTUAL_FILE': 'insert into Favorites (FavID, FileID) values (?, ?);',
+          'VIRTUAL_FILE': 'insert into FilesInVirt (DirID, FileID) values (?, ?);',
           'COMMENT': 'insert into Comments (Comment, BookTitle) values (?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',
@@ -111,12 +104,12 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
-          'VIRTUAL_DIR': 'insert into Favorites (FavID, DirID) values (?, ?);',
+          'VIRTUAL_DIR': 'insert into VirtDirs (ParentID, DirID) values (?, ?);',
           'COPY_DIR': ' '.join(('insert into Dirs (Path, ParentID, PlaceId, isVirtual)',
                                 'select Path, {}, PlaceId, 2 from Dirs',
                                 'where DirID = {};')),
-          'COPY_VIRTUAL': ' '.join(('insert into Favorites (FavID, DirID, FileID) select',
-                                    '{}, DirId, FileID from Favorites where FavID = {};'))
+          'COPY_VIRTUAL': ' '.join(('insert into VirtDirs (ParentID, DirID) select',
+                                    '{}, DirId from VirtDirs where ParentID = {};'))
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
@@ -134,7 +127,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;',
           'DIR_NAME': 'update Dirs set Path = ? where DirID = ?;',
           'DIR_PARENT': 'update Dirs set ParentId = ? where DirID = ?;',
-          'VIRTUAL_FILE_ID': 'update Favorites set FavID = ? where FavID = ? and FileID = ?;'
+          'VIRTUAL_FILE_MOVE': 'update FilesInVirt set DirID = ? where DirID = ? and FileID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
@@ -148,8 +141,8 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
                                    'from FileTag where TagID = Tags.TagID);')),
           'UNUSED_EXT': ' '.join(('delete from Extensions where NOT EXISTS (select *',
                                   'from Files where ExtID = Extensions.ExtID);')),
-          'FAVORITES': 'delete from Favorites where FavID = ? and FileID = ?;',
-          'FAVOR_ALL': 'delete from Favorites where FileID = ?;',
+          'FILES_VIRT': 'delete from FilesInVirt where DirID = ? and FileID = ?;',
+          'FAVOR_ALL': 'delete from FilesInVirt where FileID = ?;',
           'PLACES': 'delete from Places where PlaceId = ?;',
           'COMMENT': ' '.join(('delete from Comments where CommentID = {} and',
                                'not exists (select * from Files where CommentID = {});')),
@@ -163,8 +156,8 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'EMPTY_DIRS': ' '.join(('delete from Dirs where isVirtual = 0 and NOT EXISTS',
                                   '(select * from Files where DirID = Dirs.DirID);')),
           'VIRTUAL_DIR': 'delete from Dirs where DirID = ? and isVirtual > 0;',
-          'VIRTUALS': 'delete from Favorites where FavID = ?;',
-          'FROM_VIRTUAL': 'delete from Favorites where FavID = ? and DirID = ?;'
+          'VIRTUALS': 'delete from FilesInVirt where DirID = ?;',
+          'FROM_VIRTUAL': 'delete from VirtDirs where (ParentID = ? and DirID = ?;'
           }
 
 

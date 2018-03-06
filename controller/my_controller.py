@@ -552,7 +552,7 @@ class MyController():
 
     def files_virtual_folder(self, dir_id):
         model = self._set_file_model()
-        files = self._dbu.select_other('FAVORITES', (dir_id,)).fetchall()
+        files = self._dbu.select_other('FILES_VIRT', (dir_id,)).fetchall()
 
         if files:
             self._show_files(files, model, dir_id)

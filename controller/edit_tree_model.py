@@ -311,7 +311,7 @@ class EditTreeModel(QAbstractItemModel):
                 Shared['DB utility'].insert_other('VIRTUAL_FILE', (parent_dir_id, file_id))
             else:
                 if fav_id > 0:
-                    Shared['DB utility'].update_other('VIRTUAL_FILE_ID', 
+                    Shared['DB utility'].update_other('VIRTUAL_FILE_MOVE', 
                                                       (parent_dir_id, fav_id, file_id))
 
         if action == DropMoveFile:          # update file list after moving files
