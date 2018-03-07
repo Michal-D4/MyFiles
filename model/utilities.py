@@ -78,14 +78,14 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                                        'ExtID, PlaceId from Files where DirId = ?;')),
            'FILES_VIRT': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
                                   'Commented, FileID, DirID, coalesce(CommentID, 0), ExtID, PlaceId',
-                                  'from Files where FileID in (select FileID from FilesInVirt where',
+                                  'from Files where FileID in (select FileID from FilesVirt where',
                                   'DirID = ?);')),
            'FAV_ID': 'select DirID from Dirs where isVirtual = 1 and PlaceId = ?',
            'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
-          'VIRTUAL_FILE': 'insert into FilesInVirt (DirID, FileID) values (?, ?);',
+          'VIRTUAL_FILE': 'insert into FilesVirt (DirID, FileID) values (?, ?);',
           'COMMENT': 'insert into Comments (Comment, BookTitle) values (?, ?);',
           'EXT': 'insert into Extensions (Extension, GroupID) values (:ext, 0);',
           'EXT_GROUP': 'insert into ExtGroups (GroupName) values (?);',
@@ -127,7 +127,7 @@ Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :plac
           'UPDATE_TAG': 'update Tags set Tag = ? where TagID = ?;',
           'DIR_NAME': 'update Dirs set Path = ? where DirID = ?;',
           'DIR_PARENT': 'update Dirs set ParentId = ? where DirID = ?;',
-          'VIRTUAL_FILE_MOVE': 'update FilesInVirt set DirID = ? where DirID = ? and FileID = ?;'
+          'VIRTUAL_FILE_MOVE': 'update FilesVirt set DirID = ? where DirID = ? and FileID = ?;'
           }
 
 Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
@@ -141,8 +141,8 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
                                    'from FileTag where TagID = Tags.TagID);')),
           'UNUSED_EXT': ' '.join(('delete from Extensions where NOT EXISTS (select *',
                                   'from Files where ExtID = Extensions.ExtID);')),
-          'FILES_VIRT': 'delete from FilesInVirt where DirID = ? and FileID = ?;',
-          'FAVOR_ALL': 'delete from FilesInVirt where FileID = ?;',
+          'FILE_VIRT': 'delete from FilesVirt where DirID = ? and FileID = ?;',
+          'FAVOR_ALL': 'delete from FilesVirt where FileID = ?;',
           'PLACES': 'delete from Places where PlaceId = ?;',
           'COMMENT': ' '.join(('delete from Comments where CommentID = {} and',
                                'not exists (select * from Files where CommentID = {});')),
@@ -155,9 +155,9 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'TAG': 'delete from Tags where TagID=:tag_id;',
           'EMPTY_DIRS': ' '.join(('delete from Dirs where isVirtual = 0 and NOT EXISTS',
                                   '(select * from Files where DirID = Dirs.DirID);')),
-          'VIRTUAL_DIR': 'delete from Dirs where DirID = ? and isVirtual > 0;',
-          'VIRTUALS': 'delete from FilesInVirt where DirID = ?;',
-          'FROM_VIRTUAL': 'delete from VirtDirs where (ParentID = ? and DirID = ?;'
+          'VIRT_FROM_DIRS': 'delete from Dirs where DirID = ? and isVirtual > 0;',
+          'FILES_VIRT_DIR': 'delete from FilesVirt where DirID = ?;',
+          'FROM_VIRT_DIRS': 'delete from VirtDirs where ParentID = ? and DirID = ?;'
           }
 
 

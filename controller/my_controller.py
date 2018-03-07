@@ -125,7 +125,7 @@ class MyController():
         cur_idx = self.ui.dirTree.currentIndex()
         if self.ui.dirTree.model().is_virtual(cur_idx):
             u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
-            self._dbu.delete_other('VIRTUALS', (u_data[-2],))
+            self._dbu.delete_other('FILES_VIRT_DIR', (u_data[-2],))
             self._dbu.delete_other('VIRTUAL_DIR', (u_data[0],))
             self.ui.dirTree.model().remove_row(cur_idx)
         else:
@@ -133,7 +133,7 @@ class MyController():
             if self.ui.dirTree.model().is_virtual(parent):
                 p_data = self.ui.dirTree.model().data(parent, role=Qt.UserRole)
                 u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
-                self._dbu.delete_other('FROM_VIRTUAL', (p_data[0], u_data[0]))
+                self._dbu.delete_other('FROM_VIRT_DIRS', (p_data[0], u_data[0]))
                 self.ui.dirTree.model().remove_row(cur_idx)
 
     def _is_parent_virtual(self, index):
@@ -600,7 +600,7 @@ class MyController():
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
                 if u_data[-1] > 0:              # file is from virtual folder
-                    self._dbu.delete_other('FAVORITES', (u_data[-1], u_data[0]))
+                    self._dbu.delete_other('FILE_VIRT', (u_data[-1], u_data[0]))
                 elif u_data[-1] == 0:           # file is from real folder
                     self._delete_from_db(u_data)
                 else:                           # -1   - advanced file list = do nothing
