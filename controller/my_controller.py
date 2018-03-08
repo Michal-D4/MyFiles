@@ -114,7 +114,7 @@ class MyController():
             parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole)[0]
         else:
             parent_id = 0
-        place_id = self._cb_places.get_curr_place().db_row[0]
+        place_id = self._cb_places.get_curr_place().id_
         dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 2))
 
         item = TreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
@@ -214,9 +214,9 @@ class MyController():
                                  'Please create place before copy to {}'.format(to_path))
             return 0, 0
 
-        tmp_place = Places.CurrPlace(0, registered_place, state)
+        tmp_place = Places.CurrPlace._make(0, state, *registered_place)
 
-        return MyController._find_or_create_dir_id(tmp_place, to_path), tmp_place.db_row[0]
+        return MyController._find_or_create_dir_id(tmp_place, to_path), tmp_place.id_
 
     @staticmethod
     def _find_or_create_dir_id(tmp_place, to_path):
@@ -235,10 +235,10 @@ class MyController():
             if to_path:
                 place_id = self.copy_files_to(to_path)
 
-                if place_id == self._cb_places.get_curr_place().db_row[0]:
+                if place_id == self._cb_places.get_curr_place().id_:
                     self._populate_directory_tree()
         else:
-            param = self._cb_places.get_curr_place().db_row[2]
+            param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
 
     def copy_files_to(self, to_path):
@@ -263,7 +263,7 @@ class MyController():
             for file in selected_files:
                 self._remove_file(file)
         else:
-            param = self._cb_places.get_curr_place().db_row[2]
+            param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
 
     def _move_files(self):
@@ -273,10 +273,10 @@ class MyController():
             if to_path:
                 place_id = self.move_files_to(to_path)
 
-                if place_id == self._cb_places.get_curr_place().db_row[0]:
+                if place_id == self._cb_places.get_curr_place().id_:
                     self._populate_directory_tree()
         else:
-            param = self._cb_places.get_curr_place().db_row[2]
+            param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
 
     def move_files_to(self, to_path):
@@ -298,7 +298,7 @@ class MyController():
                 os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
                 self._dbu.update_other('FILE_NAME', (new_name, file_id))
         else:
-            param = self._cb_places.get_curr_place().db_row[2]
+            param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
 
     def _restore_fields(self):
@@ -529,7 +529,7 @@ class MyController():
         show_message('Updating of files is finished', 5000)
 
     def _favorite_file_list(self):
-        place_id = self._cb_places.get_curr_place().db_row[0]
+        place_id = self._cb_places.get_curr_place().id_
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
 
         self._populate_virtual(fav_id[0])
@@ -576,7 +576,7 @@ class MyController():
         res = self._opt.get_result()
         model = self._set_file_model()
 
-        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().db_row[0])
+        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().id_)
         if curs:
             self._show_files(curs, model, -1)
             self.file_list_source = MyController.ADVANCE
@@ -588,7 +588,7 @@ class MyController():
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
         file_id, *_ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
-        place_id = self._cb_places.get_curr_place().db_row[0]
+        place_id = self._cb_places.get_curr_place().id_
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
 
         self._dbu.insert_other('VIRTUAL_FILE', (fav_id[0], file_id))
@@ -634,7 +634,7 @@ class MyController():
         if state & (Places.MOUNTED | Places.NOT_REMOVAL):
             webbrowser.open(''.join(('file://', path)))
         else:
-            param = self._cb_places.get_curr_place().db_row[2]
+            param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
 
     def _double_click_file(self):
@@ -1105,7 +1105,7 @@ class MyController():
 
     def _populate_directory_tree(self):
         # todo - do not correctly restore when reopen from toolbar button
-        dirs = self._get_dirs(self._cb_places.get_curr_place().db_row[0])
+        dirs = self._get_dirs(self._cb_places.get_curr_place().id_)
         for dir_ in dirs:
             print(dir_)
 
@@ -1254,11 +1254,11 @@ class MyController():
             if root:
                 place_name, _ = self._cb_places.get_place_name(root)
                 cur_place = self._cb_places.get_curr_place()
-                if place_name == cur_place.db_row[1]:
+                if place_name == cur_place.place:
                     return root, ext_item
                     # return MyController._yield_files(root, ext_item)
                 show_message('Folder "{}" not in the place "{}"'.
-                             format(root, cur_place.db_row[2]), 5000)
+                             format(root, cur_place.title), 5000)
 
         return ()  # not ok_pressed or root is empty or root is not in current place
 

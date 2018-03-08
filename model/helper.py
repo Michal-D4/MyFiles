@@ -23,7 +23,8 @@ Shared = {'AppFont': QFontDatabase.systemFont(QFontDatabase.GeneralFont),
           'Controller': None,
           'DB choice dialog': None,
           'DB connection': None,
-          'DB utility': None}
+          'DB utility': None,
+          'Places': None}
 
 
 def get_file_extension(file_name):
