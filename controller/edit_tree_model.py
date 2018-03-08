@@ -352,7 +352,10 @@ class EditTreeModel(QAbstractItemModel):
         p_data = self.data(parent, role=Qt.UserRole)
         u_data = self.data(index, role=Qt.UserRole)
         if not item.is_virtual():
-            Shared['DB utility'].insert_other('VIRTUAL_DIR', (p_data[0], u_data[0]))
+            Shared['DB utility'].insert_other('VIRTUAL_DIR', 
+                                              (p_data[0], 
+                                               u_data[0],
+                                               Shared['Places'].get_curr_place().id_))
         else:
             new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (p_data[0], u_data[0]))
             Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, u_data[0]))

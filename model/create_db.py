@@ -87,13 +87,14 @@ ActCode INTEGER
 );''',
 
     '''CREATE TABLE IF NOT EXISTS VirtDirs (
-ParentID INTEGER NOT NULL,
+ParentID INTEGER not null,
 DirID INTEGER not null,
+PlaceID INTEGER not null,
 FOREIGN KEY(ParentID) REFERENCES Dirs(DirID) ON DELETE CASCADE
 )''',
     '''CREATE TABLE IF NOT EXISTS FilesVirt (
 DirID INTEGER not null,
-FileID INTEGER NOT NULL,
+FileID INTEGER not null,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID) ON DELETE CASCADE
 )''',
 
@@ -124,8 +125,8 @@ def initiate_db(connection):
     cursor.execute('insert into Places (Place, Title) values (:place, :title);', (loc, loc))
     try:
         cursor.execute('insert into Dirs (DirID) values (0);')
-        cursor.execute(' '.join(('insert into Dirs (Path, PlaceId, ParentID, isVirtual)',
-                                 ' values ("Favorites", 1, 0, 1);')))
+        # cursor.execute(' '.join(('insert into Dirs (Path, PlaceId, ParentID, isVirtual)',
+        #                          ' values ("Favorites", 1, 0, 1);')))
     except sqlite3.Error as err:
         print("An error occurred:", err.args[0])
 

@@ -104,12 +104,12 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
-          'VIRTUAL_DIR': 'insert into VirtDirs (ParentID, DirID) values (?, ?);',
+          'VIRTUAL_DIR': 'insert into VirtDirs (ParentID, DirID, PlaceID) values (?, ?, ?);',
           'COPY_DIR': ' '.join(('insert into Dirs (Path, ParentID, PlaceId, isVirtual)',
                                 'select Path, {}, PlaceId, 2 from Dirs',
                                 'where DirID = {};')),
           'COPY_VIRTUAL': ' '.join(('insert into VirtDirs (ParentID, DirID) select',
-                                    '{}, DirId from VirtDirs where ParentID = {};'))
+                                    '{}, DirId, PlaceId from VirtDirs where ParentID = {};'))
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',

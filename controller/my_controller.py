@@ -214,9 +214,9 @@ class MyController():
                                  'Please create place before copy to {}'.format(to_path))
             return 0, 0
 
-        tmp_place = Places.CurrPlace(0, registered_place, state)
+        tmp_place = Places.CurrPlace._make(0, state, *registered_place)
 
-        return MyController._find_or_create_dir_id(tmp_place, to_path), tmp_place.db_row[0]
+        return MyController._find_or_create_dir_id(tmp_place, to_path), tmp_place.id_
 
     @staticmethod
     def _find_or_create_dir_id(tmp_place, to_path):
