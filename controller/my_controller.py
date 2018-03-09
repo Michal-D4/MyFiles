@@ -979,6 +979,7 @@ class MyController():
         :param dir_idx:
         :return:
         """
+        print('--> _populate_file_list', dir_idx)
         if dir_idx[-2] > 0:
             self._form_virtual_folder(dir_idx)
         else:
@@ -1137,18 +1138,24 @@ class MyController():
         """
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
+        virt_dirs = self._dbu.select_other('VIRT_DIRS', (self._cb_places.get_curr_place().id_,))
+        self._insert_virt_dirs(dir_tree, virt_dirs)
 
         if self._cb_places.get_disk_state() == Places.MOUNTED:
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2],
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1],
                              os.altsep.join((root, rr[0]))))
         else:
             for rr in dir_tree:
                 print('** ', rr)
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-2], rr[0]))
+                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
         return dirs
+
+    @staticmethod
+    def _insert_virt_dirs(dir_tree, virt_dirs):
+        pass
 
     def _cur_dir_changed(self, curr_idx):
         """
@@ -1256,11 +1263,9 @@ class MyController():
                 cur_place = self._cb_places.get_curr_place()
                 if place_name == cur_place.place:
                     return root, ext_item
-                    # return MyController._yield_files(root, ext_item)
                 show_message('Folder "{}" not in the place "{}"'.
                              format(root, cur_place.title), 5000)
-
-        return ()  # not ok_pressed or root is empty or root is not in current place
+        return ('', '')  # not ok_pressed or root is empty or root is not in current place
 
     @staticmethod
     def get_selected_items(view):

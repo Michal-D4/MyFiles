@@ -15,6 +15,8 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 ') SELECT * FROM x order by level desc, Path;',
                 ),
 
+           'VIRT_DIRS': ' '.join(('select d.Path, d.DirID, v.ParentID, isVirtual from Dirs d', 
+                                  'inner join VirtDirs v on d.DirID = v.DirID where v.PlaceID = ?;')),
            'DIR_IDS':
                ('WITH x(DirID, ParentID, isVirtual, level) AS (SELECT DirID, ParentID, isVirtual, 0 as level',
                 'FROM Dirs WHERE DirID = {} and PlaceId = {}',
