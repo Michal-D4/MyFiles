@@ -1107,6 +1107,8 @@ class MyController():
     def _populate_directory_tree(self):
         # todo - do not correctly restore when reopen from toolbar button
         dirs = self._get_dirs(self._cb_places.get_curr_place().id_)
+        self._insert_virt_dirs(dirs)
+
         for dir_ in dirs:
             print(dir_)
 
@@ -1138,8 +1140,6 @@ class MyController():
         """
         dirs = []
         dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
-        virt_dirs = self._dbu.select_other('VIRT_DIRS', (self._cb_places.get_curr_place().id_,))
-        self._insert_virt_dirs(dir_tree, virt_dirs)
 
         if self._cb_places.get_disk_state() == Places.MOUNTED:
             # bind dirs with mount point
@@ -1153,9 +1153,29 @@ class MyController():
                 dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
         return dirs
 
-    @staticmethod
-    def _insert_virt_dirs(dir_tree, virt_dirs):
-        pass
+    def _insert_virt_dirs(self, dir_tree: list):
+        virt_dirs = self._dbu.select_other('VIRT_DIRS', (self._cb_places.get_curr_place().id_,))
+        id_list = [x[1] for x in dir_tree]
+
+        if self._cb_places.get_disk_state() == Places.MOUNTED:
+            # bind dirs with mount point
+            root = self._cb_places.get_mount_point()
+            for vd in virt_dirs:
+                try:
+                    idx = id_list.index(vd[2])
+                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], 
+                                          os.altsep.join((root, vd[0]))))
+                    id_list.insert(idx, vd[1])
+                except ValueError:
+                    pass
+        else:
+            for vd in virt_dirs:
+                try:
+                    idx = id_list.index(vd[2])
+                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], vd[0]))
+                    id_list.insert(idx, vd[1])
+                except ValueError:
+                    pass
 
     def _cur_dir_changed(self, curr_idx):
         """

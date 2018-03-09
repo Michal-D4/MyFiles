@@ -225,11 +225,9 @@ class EditTreeModel(QAbstractItemModel):
         """
         id_list = []
         items_dict = {0: self.rootItem}
-        # dict_keys = items_dict.keys()
         for row in rows:
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
-            # if not row[1] in dict_keys:
             items_dict[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
             id_list.append((row[1:]))
 
