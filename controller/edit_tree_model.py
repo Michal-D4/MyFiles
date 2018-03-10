@@ -9,13 +9,19 @@ from PyQt5.QtGui import QFont
 from model.helper import (real_folder, virtual_folder,
                           MimeTypes, DropCopyFolder, DropMoveFolder,
                           DropCopyFile, DropMoveFile, Shared)
+from collections import namedtuple
+
+DirData = namedtuple('DirData', 'dir_id parent_id is_virtual path')
 
 
 class TreeItem(object):
-    
+
     def __init__(self, data_, user_data=None, parent=None):
         self.parentItem = parent
-        self.userData = user_data
+        if user_data:
+            self.userData = DirData(*user_data)
+        else:
+            self.userData = None
         self.itemData = data_
         self.childItems = []
 
@@ -29,10 +35,10 @@ class TreeItem(object):
         return True
 
     def is_virtual(self):
-        return self.userData[-2] > 0
+        return self.userData.is_virtual > 0
 
     def is_favorites(self):
-        return (self.userData[-2] == 1)
+        return (self.userData.is_virtual == 1)
 
     def child(self, row):
         return self.childItems[row]
@@ -63,7 +69,7 @@ class TreeItem(object):
     def appendChild(self, item):
         item.parentItem = self
         print('--> appendChild to:', self.userData)
-        item.userData = (item.userData[0], self.userData[0], *item.userData[2:])
+        item.userData = item.userData._replace(parent_id=self.userData.dir_id)
         print('             Child:', item.userData)
         self.childItems.append(item)
 
@@ -195,9 +201,7 @@ class EditTreeModel(QAbstractItemModel):
 
     def append_child(self, item: TreeItem, parent):
         parentItem: TreeItem = self.getItem(parent)
-        item.userData = (item.userData[0],
-                         parentItem.userData[0],
-                         2) + item.userData[3:]
+        item.userData = item.userData._replace(parent_id=parentItem.userData.dir_id)
         position = parentItem.childCount()
 
         self.beginInsertRows(parent, position, position)
@@ -209,7 +213,7 @@ class EditTreeModel(QAbstractItemModel):
         item = self.getItem(index)
         name = name.strip()
         item.itemData = (name,)
-        item.userData = item.userData[:-1] + item.itemData
+        item.userData = item.userData._replace(path=name)
 
     def set_model_data(self, rows):
         """
@@ -284,7 +288,7 @@ class EditTreeModel(QAbstractItemModel):
         if self.is_virtual(parent):
             return self._drop_files_to_virtual(action, mime_data, parent)
         else:
-            path = self.data(parent, role=Qt.UserRole)[-1]
+            path = self.data(parent, role=Qt.UserRole).path
             if action == DropCopyFile:
                 Shared['Controller'].copy_files_to(path)
             else:
@@ -293,7 +297,7 @@ class EditTreeModel(QAbstractItemModel):
             return True
 
     def _drop_files_to_virtual(self, action, mime_data, parent):
-        parent_dir_id = self.data(parent, role=Qt.UserRole)[0]
+        parent_dir_id = self.data(parent, role=Qt.UserRole).dir_id
 
         mime_format = mime_data.formats()
         drop_data = mime_data.data(mime_format[0])
@@ -336,9 +340,9 @@ class EditTreeModel(QAbstractItemModel):
         item = index.internalPointer()
         self.append_child(copy.deepcopy(item), parent)
 
-        p_data = self.data(parent, role=Qt.UserRole)
-        u_data = self.data(index, role=Qt.UserRole)
-        Shared['DB utility'].update_other('DIR_PARENT', (p_data[0], u_data[0]))
+        parent_id = self.data(parent, role=Qt.UserRole).dir_id
+        item_id = self.data(index, role=Qt.UserRole).dir_id
+        Shared['DB utility'].update_other('DIR_PARENT', (parent_id, item_id))
 
         self.remove_row(index)
 
@@ -347,17 +351,17 @@ class EditTreeModel(QAbstractItemModel):
         new_item: TreeItem = copy.deepcopy(item)
         self.append_child(new_item, parent)
 
-        p_data = self.data(parent, role=Qt.UserRole)
-        u_data = self.data(index, role=Qt.UserRole)
+        parent_id = self.data(parent, role=Qt.UserRole).dir_id
+        item_id = self.data(index, role=Qt.UserRole).dir_id
         if not item.is_virtual():
             Shared['DB utility'].insert_other('VIRTUAL_DIR', 
-                                              (p_data[0], 
-                                               u_data[0],
+                                              (parent_id, 
+                                               item_id,
                                                Shared['Places'].get_curr_place().id_))
         else:
-            new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (p_data[0], u_data[0]))
-            Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, u_data[0]))
-            new_item.userData = (new_dir_id,) + new_item.userData[1:]
+            new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (parent_id, item_id))
+            Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, item_id))
+            new_item.userData = new_item.userData._replace(dir_id=new_dir_id)
 
     def _restore_index(self, path):
         parent = QModelIndex()

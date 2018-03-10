@@ -15,7 +15,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                 ') SELECT * FROM x order by level desc, Path;',
                 ),
 
-           'VIRT_DIRS': ' '.join(('select d.Path, d.DirID, v.ParentID, isVirtual from Dirs d', 
+           'VIRT_DIRS': ' '.join(('select d.Path, d.DirID, v.ParentID, d.isVirtual from Dirs d', 
                                   'inner join VirtDirs v on d.DirID = v.DirID where v.PlaceID = ?;')),
            'DIR_IDS':
                ('WITH x(DirID, ParentID, isVirtual, level) AS (SELECT DirID, ParentID, isVirtual, 0 as level',
@@ -110,7 +110,7 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
           'COPY_DIR': ' '.join(('insert into Dirs (Path, ParentID, PlaceId, isVirtual)',
                                 'select Path, {}, PlaceId, 2 from Dirs',
                                 'where DirID = {};')),
-          'COPY_VIRTUAL': ' '.join(('insert into VirtDirs (ParentID, DirID) select',
+          'COPY_VIRTUAL': ' '.join(('insert into VirtDirs (ParentID, DirID, PlaceId) select',
                                     '{}, DirId, PlaceId from VirtDirs where ParentID = {};'))
           }
 
@@ -158,7 +158,6 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'EMPTY_DIRS': ' '.join(('delete from Dirs where isVirtual = 0 and NOT EXISTS',
                                   '(select * from Files where DirID = Dirs.DirID);')),
           'VIRT_FROM_DIRS': 'delete from Dirs where DirID = ? and isVirtual > 0;',
-          'FILES_VIRT_DIR': 'delete from FilesVirt where DirID = ?;',
           'FROM_VIRT_DIRS': 'delete from VirtDirs where ParentID = ? and DirID = ?;'
           }
 

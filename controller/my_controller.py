@@ -111,7 +111,7 @@ class MyController():
 
     def _create_virtual_folder(self, folder_name, parent):
         if parent.isValid():
-            parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole)[0]
+            parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
         else:
             parent_id = 0
         place_id = self._cb_places.get_curr_place().id_
@@ -124,16 +124,15 @@ class MyController():
     def _delete_virtual(self):
         cur_idx = self.ui.dirTree.currentIndex()
         if self.ui.dirTree.model().is_virtual(cur_idx):
-            u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
-            self._dbu.delete_other('FILES_VIRT_DIR', (u_data[-2],))
-            self._dbu.delete_other('VIRTUAL_DIR', (u_data[0],))
+            dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
+            self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
             self.ui.dirTree.model().remove_row(cur_idx)
         else:
             parent = self.ui.dirTree.model().parent(cur_idx)
             if self.ui.dirTree.model().is_virtual(parent):
-                p_data = self.ui.dirTree.model().data(parent, role=Qt.UserRole)
-                u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
-                self._dbu.delete_other('FROM_VIRT_DIRS', (p_data[0], u_data[0]))
+                parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
+                dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
+                self._dbu.delete_other('FROM_VIRT_DIRS', (parent_id, dir_id))
                 self.ui.dirTree.model().remove_row(cur_idx)
 
     def _is_parent_virtual(self, index):
@@ -143,12 +142,12 @@ class MyController():
     def _rename_folder(self):
         cur_idx = self.ui.dirTree.currentIndex()
         u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)
-        folder_name = u_data[-1]
+        folder_name = u_data.path
         new_name, ok_ = QInputDialog.getText(self.ui.dirTree,
                                              'Input new folder name', '',
                                              QLineEdit.Normal, folder_name)
         if ok_:
-            self._dbu.update_other('DIR_NAME', (new_name, u_data[0]))
+            self._dbu.update_other('DIR_NAME', (new_name, u_data.dir_id))
             self.ui.dirTree.model().update_folder_name(cur_idx, new_name)
 
 
@@ -845,7 +844,7 @@ class MyController():
         dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
         print('  dir_idx', dir_idx)
         if self.file_list_source == MyController.VIRTUAL:
-            self._populate_virtual(dir_idx[0])
+            self._populate_virtual(dir_idx.dir_id)
         elif self.file_list_source == MyController.FOLDER:
             self._populate_file_list(dir_idx)
         else:                       # MyController.ADVANCE
@@ -1058,9 +1057,6 @@ class MyController():
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'
                 .format(comment[0]))))
 
-            # if not self.file_list_source == MyController.FOLDER:
-            #     f_idx = self.ui.filesList.currentIndex()
-            #     file_id, dir_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
             dir_id = user_data[1]
             path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
             self.status_label.setText(path[0])
@@ -1187,7 +1183,7 @@ class MyController():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
             if self.ui.dirTree.model().is_virtual(curr_idx):
-                self._populate_virtual(dir_idx[0])
+                self._populate_virtual(dir_idx.dir_id)
             else:
                 self._populate_file_list(dir_idx)
 
@@ -1250,9 +1246,7 @@ class MyController():
                                                     'Input extensions (* - all)',
                                                     QLineEdit.Normal, ext_)
         if ok_pressed:
-            # files = MyController._yield_files(dir_[-1], ext_item.strip())
-            # self._load_files(files)
-            self._load_files(dir_[-1], ext_item.strip())
+            self._load_files(dir_.path, ext_item.strip())
 
     def on_scan_files(self):
         """
