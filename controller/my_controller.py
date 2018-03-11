@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
 from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
-from controller.edit_tree_model import EditTreeModel, TreeItem
+from controller.edit_tree_model import EditTreeModel, EditTreeItem
 from model.file_info import FileInfo, LoadFiles
 from model.helper import (EXT_ID_INCREMENT, Fields, Shared, show_message)
 from model.utilities import DBUtils
@@ -118,23 +118,29 @@ class MyController():
         place_id = self._cb_places.get_curr_place().id_
         dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 2))
 
-        item = TreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
+        item = EditTreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
 
         self.ui.dirTree.model().append_child(item, parent)
 
     def _delete_virtual(self):
         cur_idx = self.ui.dirTree.currentIndex()
-        if self.ui.dirTree.model().is_virtual(cur_idx):
-            dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
-            self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
+        parent = self.ui.dirTree.model().parent(cur_idx)
+        parent_id = 0 if not parent.isValid() else \
+                    self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
+        dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
+        print('*** parent_id {}, dir_id {}'.format(parent_id, dir_id))
+
+        if self._exist_in_virt_dirs(dir_id, parent_id):
+            self._dbu.delete_other('FROM_VIRT_DIRS', (parent_id, dir_id))
             self.ui.dirTree.model().remove_row(cur_idx)
+            print('***     exist')
         else:
-            parent = self.ui.dirTree.model().parent(cur_idx)
-            if self.ui.dirTree.model().is_virtual(parent):
-                parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
-                dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
-                self._dbu.delete_other('FROM_VIRT_DIRS', (parent_id, dir_id))
-                self.ui.dirTree.model().remove_row(cur_idx)
+            self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
+            self.ui.dirTree.model().remove_all_copies(cur_idx)
+            print('*** not exist')
+
+    def _exist_in_virt_dirs(self, dir_id, parent_id):
+        return self._dbu.select_other('EXIST_IN_VIRT_DIRS', (dir_id, parent_id)).fetchone()
 
     def _is_parent_virtual(self, index):
         parent = self.ui.dirTree.model().parent(index)
@@ -150,7 +156,6 @@ class MyController():
         if ok_:
             self._dbu.update_other('DIR_NAME', (new_name, u_data.dir_id))
             self.ui.dirTree.model().update_folder_name(cur_idx, new_name)
-
 
     def _selected_files(self):
         """
@@ -825,19 +830,15 @@ class MyController():
         print('--> _restore_file_list', self.file_list_source)
         # FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
         if not curr_dir_idx.isValid():
-            print('   1')
             curr_dir_idx = self.ui.dirTree.model().index(0, 0)
         if self.same_db:
-            print('   2')
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
             row = settings.value('FILE_IDX', 0)
         else:
             if self.ui.dirTree.model().is_virtual(curr_dir_idx):
-                print('   3')
                 self.file_list_source = MyController.VIRTUAL
             else:
-                print('   4')
                 self.file_list_source = MyController.FOLDER
             row = 0
 
@@ -1126,8 +1127,6 @@ class MyController():
         self.ui.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
         cur_dir_idx = self._restore_path()
 
-        # print('--> _populate_directory_tree', cur_dir_idx.isValid())
-        # if cur_dir_idx.isValid():
         self._restore_file_list(cur_dir_idx)
 
         if dirs:
@@ -1164,6 +1163,8 @@ class MyController():
             # bind dirs with mount point
             root = self._cb_places.get_mount_point()
             for vd in virt_dirs:
+                if vd[-1] == 1:
+                    vd = (*vd[:-1], 2)
                 try:
                     idx = id_list.index(vd[2])
                     dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], 
@@ -1173,6 +1174,8 @@ class MyController():
                     pass
         else:
             for vd in virt_dirs:
+                if vd[-1] == 1:
+                    vd = (*vd[:-1], 2)
                 try:
                     idx = id_list.index(vd[2])
                     dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], vd[0]))
@@ -1222,7 +1225,6 @@ class MyController():
         if self.same_db:
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
-            print('   aux', aux)
             for id_ in aux:
                 if parent.isValid():
                     if not self.ui.dirTree.isExpanded(parent):
