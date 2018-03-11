@@ -27,6 +27,7 @@ from view.sel_opt import SelOpt
 from view.set_fields import SetFields
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+FileData = namedtuple('FileData', 'file_id dir_id comment_id ext_id place_id source')
 
 
 class MyController():
@@ -169,7 +170,7 @@ class MyController():
             if idx.column() == 0:
                 file_name = model.data(idx)
                 u_dat = model.data(idx, Qt.UserRole)
-                file_path, _ = self._dbu.select_other('PATH', (u_dat[1],)).fetchone()
+                file_path, _ = self._dbu.select_other('PATH', (u_dat.dir_id,)).fetchone()
                 if disk_letter:
                     file_path = os.altsep.join((disk_letter, file_path))
                 file_data = file_._make((idx, os.path.join(file_path, file_name), u_dat, file_name))
@@ -537,7 +538,7 @@ class MyController():
         """
         List of files from virtual folder
         :param dir_id:
-        :return: Show files on fileList widget with _show_files method
+        :return: None
         """
         self.file_list_source = MyController.VIRTUAL
         settings = QSettings()
@@ -586,7 +587,7 @@ class MyController():
 
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
-        file_id, *_ = self.ui.filesList.model().data(f_idx, Qt.UserRole)
+        file_id = self.ui.filesList.model().data(f_idx, Qt.UserRole).file_id
         place_id = self._cb_places.get_curr_place().id_
         fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
 
@@ -598,9 +599,9 @@ class MyController():
         for f_idx in indexes:
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
-                if u_data[-1] > 0:              # file is from virtual folder
-                    self._dbu.delete_other('FILE_VIRT', (u_data[-1], u_data[0]))
-                elif u_data[-1] == 0:           # file is from real folder
+                if u_data.source > 0:              # file is from virtual folder
+                    self._dbu.delete_other('FILE_VIRT', (u_data.source, u_data.file_id))
+                elif u_data.source == 0:           # file is from real folder
                     self._delete_from_db(u_data)
                 else:                           # -1   - advanced file list = do nothing
                     pass
@@ -643,11 +644,11 @@ class MyController():
             self._open_file()
         elif column_head == 'Pages':
             pages = self.ui.filesList.model().data(f_idx)
-            file_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
+            file_id = self.ui.filesList.model().data(f_idx, role=Qt.UserRole).file_id
             self._update_pages(f_idx, file_id, pages)
         elif column_head == 'Issued':
             issue_date = self.ui.filesList.model().data(f_idx)
-            file_id, *_ = self.ui.filesList.model().data(f_idx, role=Qt.UserRole)
+            file_id = self.ui.filesList.model().data(f_idx, role=Qt.UserRole).file_id
             self._update_issue_date(f_idx, file_id, issue_date)
 
     def _update_issue_date(self, f_idx, file_id, issue_date):
@@ -718,7 +719,7 @@ class MyController():
         titles = ('Enter new tags', 'Select tags from list',
                   'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        sel_tags = self._dbu.select_other('FILE_TAGS', (u_data[0],)).fetchall()
+        sel_tags = self._dbu.select_other('FILE_TAGS', (u_data.file_id,)).fetchall()
 
         edit_tags = ItemEdit(titles,
                              [tag[0] for tag in tag_list],
@@ -729,9 +730,9 @@ class MyController():
 
             to_del, to_add = self._del_add_items(res, sel_tags)
 
-            self._del_item_links(to_del, file_id=u_data[0],
+            self._del_item_links(to_del, file_id=u_data.file_id,
                                  sqls=('TAG_FILE', 'TAG_FILES', 'TAG'))
-            self._add_item_links(to_add, file_id=u_data[0],
+            self._add_item_links(to_add, file_id=u_data.file_id,
                                  sqls=('TAGS_BY_NAME', 'TAGS', 'TAG_FILE'))
 
             self._populate_tag_list()
@@ -779,7 +780,7 @@ class MyController():
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
         authors = self._dbu.select_other('AUTHORS').fetchall()
-        sel_authors = self._dbu.select_other('FILE_AUTHORS', (u_data[0],)).fetchall()
+        sel_authors = self._dbu.select_other('FILE_AUTHORS', (u_data.file_id,)).fetchall()
 
         edit_authors = ItemEdit(titles,
                                 [tag[0] for tag in authors],
@@ -790,9 +791,9 @@ class MyController():
 
             to_del, to_add = self._del_add_items(res, sel_authors)
 
-            self._del_item_links(to_del, file_id=u_data[0],
+            self._del_item_links(to_del, file_id=u_data.file_id,
                                  sqls=('AUTHOR_FILE', 'AUTHOR_FILES', 'AUTHOR'))
-            self._add_item_links(to_add, file_id=u_data[0],
+            self._add_item_links(to_add, file_id=u_data.file_id,
                                  sqls=('AUTHORS_BY_NAME', 'AUTHORS', 'AUTHOR_FILE'))
 
             self._populate_author_list()
@@ -808,15 +809,14 @@ class MyController():
                                   'file_id dir_id comment_id comment book_title')
         curr_idx = self.ui.filesList.currentIndex()
         user_data = self.ui.filesList.model().data(curr_idx, Qt.UserRole)
-        comment = self._dbu.select_other("FILE_COMMENT", (user_data[2],)).fetchone()
+        comment = self._dbu.select_other("FILE_COMMENT", (user_data.comment_id,)).fetchone()
         res = file_comment._make(user_data[:3] + (comment if comment else ('', '')))
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
             self._dbu.update_other('FILE_COMMENT', (comment_id, res.file_id))
-            self.ui.filesList.model().update(curr_idx,
-                                             user_data[:2] + (comment_id,)
-                                             + user_data[3:], Qt.UserRole)
+            user_data = user_data._replace(comment_id=comment_id)
+            self.ui.filesList.model().update(curr_idx, user_data, Qt.UserRole)
             res = res._replace(comment_id=comment_id,
                                comment=comment[0], book_title=comment[1])
         return res
@@ -1010,11 +1010,19 @@ class MyController():
         return proxy_model
 
     def _show_files(self, files, model, source):
+        """
+        populateS file's model
+        :param files
+        :param model
+        :param source -  0 - if file from real folder,
+                        -1 - if custom list of files
+                        >0 - it is dir_id of virtual folder
+        """
         idx = getattr(self.fields, 'indexes')
         s_model = model.sourceModel()
         for ff in files:
             ff1 = [ff[i] for i in idx]
-            s_model.append_row(tuple(ff1), (ff[-5:] + (source,)))
+            s_model.append_row(tuple(ff1), FileData(*ff[-5:], source))
 
         self.ui.filesList.selectionModel().currentRowChanged.connect(self._cur_file_changed)
         index_ = model.index(0, 0)
@@ -1034,8 +1042,8 @@ class MyController():
             self._populate_comment_field(data)
 
     def _populate_comment_field(self, user_data, edit=False):
-        file_id = user_data[0]
-        comment_id = user_data[2]
+        file_id = user_data.file_id
+        comment_id = user_data.comment_id
         if file_id:
             assert isinstance(file_id, int), \
                 "the type of file_id is {} instead of int".format(type(file_id))
@@ -1057,8 +1065,7 @@ class MyController():
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'
                 .format(comment[0]))))
 
-            dir_id = user_data[1]
-            path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
+            path = self._dbu.select_other('PATH', (user_data.dir_id,)).fetchone()
             self.status_label.setText(path[0])
 
             if edit:

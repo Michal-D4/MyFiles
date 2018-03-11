@@ -74,13 +74,13 @@ class ProxyModel2(ProxyModel):
         for idx in indexes:
             s_idx = self.mapToSource(idx)
             tmp = self.sourceModel().data(s_idx, role=Qt.UserRole)
-            data_stream.writeInt(tmp[0])    # file ID
-            # tmp[1] = DirID  - may be restored, if refactor of copy/move methods for real folder
-            # data_stream.writeInt(tmp[1])
-            data_stream.writeInt(tmp[-1])   # Source: > 0 - virtual folder, 0 - real, -1 - adv.
+            data_stream.writeInt(tmp.file_id)    # file ID
+            # may need, in case of copy/move for real folder using mimeData
+            # data_stream.writeInt(tmp.dir_id)
+            data_stream.writeInt(tmp.source)   # > 0 - virtual folder, 0 - real, -1 - adv.
 
         mime_data = QMimeData()
-        if tmp[-1] > 0:         # files are from virtual folder
+        if tmp.source > 0:         # files are from virtual folder
             mime_data.setData(MimeTypes[file_virtual], item_data)
         else:
             mime_data.setData(MimeTypes[file_real], item_data)
