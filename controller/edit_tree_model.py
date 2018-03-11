@@ -349,19 +349,16 @@ class EditTreeModel(QAbstractItemModel):
     def _copy_folder(self, index, parent):
         item: TreeItem = index.internalPointer()
         new_item: TreeItem = copy.deepcopy(item)
+        if item.is_favorites():
+            new_item.userData = item.userData._replace(is_virtual=2)
         self.append_child(new_item, parent)
 
         parent_id = self.data(parent, role=Qt.UserRole).dir_id
         item_id = self.data(index, role=Qt.UserRole).dir_id
-        if not item.is_virtual():
-            Shared['DB utility'].insert_other('VIRTUAL_DIR', 
-                                              (parent_id, 
-                                               item_id,
-                                               Shared['Places'].get_curr_place().id_))
-        else:
-            new_dir_id = Shared['DB utility'].insert_other2('COPY_DIR', (parent_id, item_id))
-            Shared['DB utility'].insert_other2('COPY_VIRTUAL', (new_dir_id, item_id))
-            new_item.userData = new_item.userData._replace(dir_id=new_dir_id)
+        Shared['DB utility'].insert_other('VIRTUAL_DIR', 
+                                            (parent_id, 
+                                            item_id,
+                                            Shared['Places'].get_curr_place().id_))
 
     def _restore_index(self, path):
         parent = QModelIndex()
