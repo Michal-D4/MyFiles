@@ -83,7 +83,8 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                                   'from Files where FileID in (select FileID from FilesVirt where',
                                   'DirID = ?);')),
            'FAV_ID': 'select DirID from Dirs where isVirtual = 1 and PlaceId = ?',
-           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;'
+           'ISSUE_DATE': 'select IssueDate from Files where FileID = ?;',
+           'EXIST_IN_VIRT_DIRS': 'select * from VirtDirs where DirID = ? and ParentID = ?;'
            }
 
 Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
@@ -282,7 +283,7 @@ class DBUtils:
         return self.curs
 
     def insert_other(self, sql, data):
-        # print('|---> insert_other', sql, data)
+        # print('|---> insert_other', Insert[sql], data)
         self.curs.execute(Insert[sql], data)
         jj = self.curs.lastrowid
         self.conn.commit()

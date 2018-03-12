@@ -9,28 +9,28 @@ from PyQt5.QtGui import QFont
 from model.helper import (real_folder, virtual_folder,
                           MimeTypes, DropCopyFolder, DropMoveFolder,
                           DropCopyFile, DropMoveFile, Shared)
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 DirData = namedtuple('DirData', 'dir_id parent_id is_virtual path')
+ALL_ITEMS = defaultdict(list)
 
-
-class TreeItem(object):
+class EditTreeItem(object):
 
     def __init__(self, data_, user_data=None, parent=None):
-        self.parentItem = parent
+        self.parent_ = parent
         if user_data:
             self.userData = DirData(*user_data)
         else:
             self.userData = None
         self.itemData = data_
-        self.childItems = []
+        self.children = []
 
     def removeChildren(self, position, count):
-        if position < 0 or position + count > len(self.childItems):
+        if position < 0 or position + count > len(self.children):
             return False
 
         for row in range(count):
-            self.childItems.pop(position)
+            self.children.pop(position)
 
         return True
 
@@ -41,10 +41,10 @@ class TreeItem(object):
         return (self.userData.is_virtual == 1)
 
     def child(self, row):
-        return self.childItems[row]
+        return self.children[row]
 
     def childCount(self):
-        return len(self.childItems)
+        return len(self.children)
 
     def columnCount(self):
         return len(self.itemData)
@@ -67,18 +67,19 @@ class TreeItem(object):
         return None
 
     def appendChild(self, item):
-        item.parentItem = self
+        item.parent_ = self
         print('--> appendChild to:', self.userData)
         item.userData = item.userData._replace(parent_id=self.userData.dir_id)
         print('             Child:', item.userData)
-        self.childItems.append(item)
+        ALL_ITEMS[item.userData.dir_id].append(item)
+        self.children.append(item)
 
     def parent(self):
-        return self.parentItem
+        return self.parent_
 
     def row(self):
-        if self.parentItem:
-            return self.parentItem.childItems.index(self)
+        if self.parent_:
+            return self.parent_.children.index(self)
 
         return 0
 
@@ -98,7 +99,7 @@ class EditTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
-        self.rootItem = TreeItem(data_=(), user_data=(0, 0, 0, "Root"))
+        self.rootItem = EditTreeItem(data_=(), user_data=(0, 0, 0, "Root"))
 
     @staticmethod
     def is_virtual(index):
@@ -162,7 +163,7 @@ class EditTreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        child_item = index.internalPointer()
+        child_item: EditTreeItem = index.internalPointer()
         parent_item = child_item.parent()
 
         if parent_item == self.rootItem:
@@ -172,7 +173,7 @@ class EditTreeModel(QAbstractItemModel):
 
     def removeRows(self, row, count, parent=QModelIndex()):
         """
-         removes count rows starting with the given row under parent parent
+         removes count rows starting with the given row under parent 
         :param row:
         :param count:
         :param parent:
@@ -189,6 +190,37 @@ class EditTreeModel(QAbstractItemModel):
     def remove_row(self, index):
         return self.removeRows(index.row(), 1, self.parent(index))
 
+    def remove_all_copies(self, index):
+        dir_id = index.internalPointer().userData.dir_id
+        items = ALL_ITEMS[dir_id]
+        print('--> remove_all_copies, DirID:', dir_id)
+        for item in items:
+            print('   1', item.userData, item.row())
+            idx = self._calc_index(item)
+            print('   2', idx.internalPointer().userData)
+            self.remove_row(idx)
+<<<<<<< HEAD
+        ALL_ITEMS.pop(dir_id)
+=======
+>>>>>>> cb25097c380872b6d97c76b4055b8e92e3389531
+
+    def _calc_index(self, item):
+        chain = []
+        while True:
+            chain.append(item.row())
+            item = item.parent()
+            if item == self.rootItem:
+                break
+        
+        print('   ',chain)
+        parent_idx = QModelIndex()
+        chain.reverse()
+        for row in chain:
+            print('  row', row)
+            parent_idx = self.index(row, 0, parent_idx)
+
+        return parent_idx
+
     def rowCount(self, parent=QModelIndex()):
         parentItem = self.getItem(parent)
 
@@ -199,8 +231,8 @@ class EditTreeModel(QAbstractItemModel):
             value = value.split(';')
         self.rootItem.set_data(value)
 
-    def append_child(self, item: TreeItem, parent):
-        parentItem: TreeItem = self.getItem(parent)
+    def append_child(self, item: EditTreeItem, parent):
+        parentItem: EditTreeItem = self.getItem(parent)
         item.userData = item.userData._replace(parent_id=parentItem.userData.dir_id)
         position = parentItem.childCount()
 
@@ -232,12 +264,11 @@ class EditTreeModel(QAbstractItemModel):
         for row in rows:
             if not isinstance(row[0], tuple):
                 row = ((row[0],),) + tuple(row[1:])
-            items_dict[row[1]] = TreeItem(data_=row[0], user_data=(row[1:]))
+            items_dict[row[1]] = EditTreeItem(data_=row[0], user_data=(row[1:]))
             id_list.append((row[1:]))
 
         for id_ in id_list:
             if id_[1] in items_dict:
-                # use copy because the same item may used in different branches
                 items_dict[id_[1]].appendChild(copy.deepcopy(items_dict[id_[0]]))
 
     def supportedDropActions(self):
@@ -254,7 +285,7 @@ class EditTreeModel(QAbstractItemModel):
         all_virtual = True
 
         for idx in indexes:
-            it: TreeItem = idx.internalPointer()
+            it: EditTreeItem = idx.internalPointer()
             all_virtual &= (it.is_virtual() & (not it.is_favorites()))
             pack = cls._save_index(idx)
             data_stream.writeQString(','.join((str(x) for x in pack)))
@@ -347,8 +378,8 @@ class EditTreeModel(QAbstractItemModel):
         self.remove_row(index)
 
     def _copy_folder(self, index, parent):
-        item: TreeItem = index.internalPointer()
-        new_item: TreeItem = copy.deepcopy(item)
+        item: EditTreeItem = index.internalPointer()
+        new_item: EditTreeItem = copy.deepcopy(item)
         if item.is_favorites():
             new_item.userData = item.userData._replace(is_virtual=2)
         self.append_child(new_item, parent)
