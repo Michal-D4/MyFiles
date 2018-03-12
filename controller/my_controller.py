@@ -62,6 +62,7 @@ class MyController():
                 'Dirs Remove empty folders': self._del_empty_dirs,
                 'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
+                'Dirs Rescan for parent folder': self._add_parent_folder,
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
@@ -91,6 +92,15 @@ class MyController():
                 'Tag Scan in names': self._scan_for_tags
                }
 
+    def _add_parent_folder(self):
+        curr_idx = self.ui.dirTree.currentIndex()
+        dat = self.ui.dirTree.model().data(curr_idx, role=Qt.UserRole)
+        parent_folder = dat.path.rpartition(os.altsep)[0]
+        if os.path.isdir(parent_folder):
+            print('   folder "{}" found'.format(parent_folder))
+            # todo  -- add parent folder and dummy file in it with place_id=0, to not show it
+            # and to not delete parent folder as empty
+    
     def _create_virtual_child(self):
         folder_name = 'New folder'
         new_name, ok_ = QInputDialog.getText(self.ui.filesList,

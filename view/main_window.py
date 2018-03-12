@@ -227,6 +227,7 @@ class AppWindow(QMainWindow):
                     menu.addSeparator()
                     menu.addAction('Delete folder')
                 menu.addAction('Rescan dir')
+                menu.addAction('Rescan for parent folder')
             menu.addSeparator()
             menu.addAction('Create virtual folder')
             menu.addAction('Create virtual folder as child')
