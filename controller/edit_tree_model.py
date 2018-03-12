@@ -199,10 +199,7 @@ class EditTreeModel(QAbstractItemModel):
             idx = self._calc_index(item)
             print('   2', idx.internalPointer().userData)
             self.remove_row(idx)
-<<<<<<< HEAD
         ALL_ITEMS.pop(dir_id)
-=======
->>>>>>> cb25097c380872b6d97c76b4055b8e92e3389531
 
     def _calc_index(self, item):
         chain = []
