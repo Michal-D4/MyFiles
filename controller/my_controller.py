@@ -98,8 +98,9 @@ class MyController():
         parent_folder = dat.path.rpartition(os.altsep)[0]
         if os.path.isdir(parent_folder):
             print('   folder "{}" found'.format(parent_folder))
-            # todo  -- add parent folder and dummy file in it with place_id=0, to not show it
-            # and to not delete parent folder as empty
+            dir_id = self._find_or_create_dir_id(self._cb_places.get_curr_place(), parent_folder)
+            # self._dbu.insert_other('DUMMY_FILE', (dir_id, )) # will not delete until any subfolder has file(s)
+            self._populate_directory_tree()
     
     def _create_virtual_child(self):
         folder_name = 'New folder'
@@ -1004,7 +1005,7 @@ class MyController():
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
         if dir_idx:
-            files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
+            files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0], self._cb_places.get_curr_place().id_))
             self._show_files(files, model, 0)
 
             self.status_label.setText('{} ({})'.format(dir_idx[-1],

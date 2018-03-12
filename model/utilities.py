@@ -1,4 +1,6 @@
 # model/utilities.py
+
+import sqlite3
 import datetime
 from model.helper import EXT_ID_INCREMENT, Shared
 
@@ -77,7 +79,7 @@ Selects = {'TREE':  # (Dir name, DirID, ParentID, Full path of dir)
                ),
            'FILES_CURR_DIR': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate,',
                                        'Opened, Commented, FileID, DirID, coalesce(CommentID, 0),',
-                                       'ExtID, PlaceId from Files where DirId = ?;')),
+                                       'ExtID, PlaceId from Files where DirId = ? and PlaceId = ?;')),
            'FILES_VIRT': ' '.join(('select FileName, FileDate, Pages, Size, IssueDate, Opened,',
                                   'Commented, FileID, DirID, coalesce(CommentID, 0), ExtID, PlaceId',
                                   'from Files where FileID in (select FileID from FilesVirt where',
@@ -107,7 +109,8 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'Size, IssueDate, Opened, Commented FROM Files',
                                  'where FileID = {};')),
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
-          'VIRTUAL_DIR': 'insert into VirtDirs (ParentID, DirID, PlaceID) values (?, ?, ?);'
+          'VIRTUAL_DIR': 'insert into VirtDirs (ParentID, DirID, PlaceID) values (?, ?, ?);',
+        #   'DUMMY_FILE': 'insert into Files (DirID, ExtID, PlaceId, FileName) values (?, 0, 0, "dummy");'
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',
@@ -305,8 +308,12 @@ class DBUtils:
 
     def delete_other(self, sql, data):
         # print('|---> delete_other:', sql, data)
-        self.curs.execute(Delete[sql], data)
-        self.conn.commit()
+        try:
+            self.curs.execute(Delete[sql], data)
+        except sqlite3.IntegrityError:
+            pass
+        else:
+            self.conn.commit()
 
     def delete_other2(self, sql, data):
         # print('|---> delete_other:', sql, data)
