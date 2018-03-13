@@ -26,11 +26,14 @@ class EditTreeItem(object):
         self.children = []
 
     def removeChildren(self, position, count):
+        print('--> removeChildren from', self.userData)
         if position < 0 or position + count > len(self.children):
             return False
 
         for row in range(count):
+            print('  ', self.children[position].userData)
             self.children.pop(position)
+        print('  childCount', self.childCount(), len(self.children))
 
         return True
 
@@ -160,6 +163,9 @@ class EditTreeModel(QAbstractItemModel):
         return QModelIndex()
 
     def parent(self, index):
+        """
+        return parent index for index
+        """
         if not index.isValid():
             return QModelIndex()
 
@@ -188,35 +194,25 @@ class EditTreeModel(QAbstractItemModel):
         return success
 
     def remove_row(self, index):
+        print('--> remove_row', self.data(index, Qt.UserRole))
         return self.removeRows(index.row(), 1, self.parent(index))
 
     def remove_all_copies(self, index):
+        """
+        removes all copy of virtual folder when initial folder deleted
+        :param  index
+        :return None 
+        """
         dir_id = index.internalPointer().userData.dir_id
         items = ALL_ITEMS[dir_id]
-        print('--> remove_all_copies, DirID:', dir_id)
+        print('--> remove_all_copies', dir_id)
         for item in items:
-            print('   1', item.userData, item.row())
-            idx = self._calc_index(item)
-            print('   2', idx.internalPointer().userData)
-            self.remove_row(idx)
+            print('  1', item.userData, item.row())
+            idx = self.createIndex(item.row(), 0, item)
+            print('  2', self.data(idx, Qt.UserRole), idx.row())
+            res = self.remove_row(idx)
+            print('   res=', res)
         ALL_ITEMS.pop(dir_id)
-
-    def _calc_index(self, item):
-        chain = []
-        while True:
-            chain.append(item.row())
-            item = item.parent()
-            if item == self.rootItem:
-                break
-        
-        print('   ',chain)
-        parent_idx = QModelIndex()
-        chain.reverse()
-        for row in chain:
-            print('  row', row)
-            parent_idx = self.index(row, 0, parent_idx)
-
-        return parent_idx
 
     def rowCount(self, parent=QModelIndex()):
         parentItem = self.getItem(parent)
