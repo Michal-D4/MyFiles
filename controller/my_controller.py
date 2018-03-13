@@ -148,7 +148,9 @@ class MyController():
         else:
             self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
             self._dbu.delete_other('VIRT_DIR_ID', (dir_id,))
-            self.ui.dirTree.model().remove_all_copies(cur_idx)
+            # self.ui.dirTree.model().remove_all_copies(cur_idx)          doesn't work - signal 
+            # rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)
+            self._populate_directory_tree()
             print('*** not exist')
 
     def _exist_in_virt_dirs(self, dir_id, parent_id):

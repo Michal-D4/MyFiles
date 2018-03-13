@@ -26,7 +26,7 @@ class EditTreeItem(object):
         self.children = []
 
     def removeChildren(self, position, count):
-        print('--> removeChildren from', self.userData)
+        print('--> removeChildren from', len(self.children), self.userData)
         if position < 0 or position + count > len(self.children):
             return False
 
@@ -103,6 +103,7 @@ class EditTreeModel(QAbstractItemModel):
         super(EditTreeModel, self).__init__(parent)
 
         self.rootItem = EditTreeItem(data_=(), user_data=(0, 0, 0, "Root"))
+        ALL_ITEMS.clear()
 
     @staticmethod
     def is_virtual(index):
@@ -203,9 +204,15 @@ class EditTreeModel(QAbstractItemModel):
         :param  index
         :return None 
         """
+        # print('===> remove_all_copies')
+        # for key, node in ALL_ITEMS.items():
+        #     print('  key', key)
+        #     for item in node:
+        #         idx = self.createIndex(item.row(), 0, item)
+        #         print('%%% ', self.data(idx, Qt.UserRole), idx.row())
         dir_id = index.internalPointer().userData.dir_id
         items = ALL_ITEMS[dir_id]
-        print('--> remove_all_copies', dir_id)
+        print('--> remove_all_copies', dir_id, len(items))
         for item in items:
             print('  1', item.userData, item.row())
             idx = self.createIndex(item.row(), 0, item)
@@ -213,6 +220,12 @@ class EditTreeModel(QAbstractItemModel):
             res = self.remove_row(idx)
             print('   res=', res)
         ALL_ITEMS.pop(dir_id)
+
+        for key, node in ALL_ITEMS.items():
+            print('  key', key)
+            for item in node:
+                idx = self.createIndex(item.row(), 0, item)
+                print('%%% ', self.data(idx, Qt.UserRole), idx.row())
 
     def rowCount(self, parent=QModelIndex()):
         parentItem = self.getItem(parent)
