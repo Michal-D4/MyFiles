@@ -157,7 +157,8 @@ Delete = {'EXT': 'delete from Extensions where ExtID = ?;',
           'EMPTY_DIRS': ' '.join(('delete from Dirs where isVirtual = 0 and NOT EXISTS',
                                   '(select * from Files where DirID = Dirs.DirID);')),
           'VIRT_FROM_DIRS': 'delete from Dirs where DirID = ? and isVirtual > 0;',
-          'FROM_VIRT_DIRS': 'delete from VirtDirs where ParentID = ? and DirID = ?;'
+          'FROM_VIRT_DIRS': 'delete from VirtDirs where ParentID = ? and DirID = ?;',
+          'VIRT_DIR_ID': 'delete from VirtDirs where DirID = ?;'
           }
 
 

@@ -147,6 +147,7 @@ class MyController():
             print('***     exist')
         else:
             self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
+            self._dbu.delete_other('VIRT_DIR_ID', (dir_id,))
             self.ui.dirTree.model().remove_all_copies(cur_idx)
             print('*** not exist')
 
@@ -1121,6 +1122,7 @@ class MyController():
 
     def _populate_directory_tree(self):
         # todo - do not correctly restore when reopen from toolbar button
+        print('====> _populate_directory_tree')
         dirs = self._get_dirs(self._cb_places.get_curr_place().id_)
         self._insert_virt_dirs(dirs)
 
@@ -1203,6 +1205,7 @@ class MyController():
         if curr_idx.isValid():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
+            print('--> _cur_dir_changed', self.ui.dirTree.model().rowCount(curr_idx), dir_idx)
             if self.ui.dirTree.model().is_virtual(curr_idx):
                 self._populate_virtual(dir_idx.dir_id)
             else:
