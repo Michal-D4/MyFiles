@@ -290,7 +290,7 @@ class DBUtils:
         self.curs.execute(Insert[sql], data)
         jj = self.curs.lastrowid
         self.conn.commit()
-        # print('  comment_id:', jj)
+        # print('  lastrowid:', jj)
         return jj
 
     def insert_other2(self, sql, data):
@@ -302,7 +302,7 @@ class DBUtils:
         return jj
 
     def update_other(self, sql, data):
-        # print('|---> update_other:', sql, data)
+        # print('|---> update_other:', Update[sql], data)
         self.curs.execute(Update[sql], data)
         self.conn.commit()
 

@@ -190,13 +190,15 @@ class EditTreeModel(QAbstractItemModel):
            4 - is_virtual = 3
         :param: idx_list - indexes of items to change parent = new_parent
         """
-        new_parent_item = EditTreeItem((new_parent_data[1]),
+        new_parent_item = EditTreeItem((new_parent_data[1],),
                                        (new_parent_data[0],
                                         *new_parent_data[2:4],
                                         new_parent_data[1]))
         for idx in idx_list:
             item = copy.deepcopy(QModelIndex(idx).internalPointer())
             item.userData = item.userData._replace(parent_id=new_parent_data[2])
+            Shared['DB utility'].update_other('DIR_PARENT', (new_parent_data[0], 
+                                              item.userData.dir_id))
             new_parent_item.appendChild(item)
         
         curr_idx.internalPointer().parent().appendChild(new_parent_item)
