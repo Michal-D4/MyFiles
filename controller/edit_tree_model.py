@@ -178,6 +178,32 @@ class EditTreeModel(QAbstractItemModel):
 
         return self.createIndex(parent_item.row(), 0, parent_item)
 
+    def create_new_parent(self, curr_idx, new_parent_data, idx_list):
+        """
+        update parent for selected items
+        :param curr_idx  - to find parent for new_parent_item,
+        :param new_parent_data  - data to create new_parent_item:
+           0 - dir_id of new_parent_item,
+           1 - path,
+           2 - parent_id for new_parent,
+           3 - place_id,
+           4 - is_virtual = 3
+        :param: idx_list - indexes of items to change parent = new_parent
+        """
+        new_parent_item = EditTreeItem((new_parent_data[1]),
+                                       (new_parent_data[0],
+                                        *new_parent_data[2:4],
+                                        new_parent_data[1]))
+        for idx in idx_list:
+            item = copy.deepcopy(QModelIndex(idx).internalPointer())
+            item.userData = item.userData._replace(parent_id=new_parent_data[2])
+            new_parent_item.appendChild(item)
+        
+        curr_idx.internalPointer().parent().appendChild(new_parent_item)
+
+        for idx in idx_list:
+            self.remove_row(QModelIndex(idx))
+
     def removeRows(self, row, count, parent=QModelIndex()):
         """
          removes count rows starting with the given row under parent 

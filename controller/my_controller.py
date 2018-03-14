@@ -93,6 +93,9 @@ class MyController():
                }
 
     def _add_group_folder(self):
+        """
+        group of real folders - organise for better vision
+        """
         folder_name = '<Group name>'
         new_name, ok_ = QInputDialog.getText(self.ui.filesList,
                                              'Input folder name', '',
@@ -100,16 +103,24 @@ class MyController():
         print('--> _add_group_folder', new_name, ok_)
         if ok_:
             curr_idx = self.ui.dirTree.currentIndex()
+            idx_list = self._curr_selected_dirs(curr_idx)
+            
             d_dat = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
-            indexes = self.ui.dirTree.selectionModel().selectedRows()
-            if indexes:
-                dir_id = self._dbu.insert_other('DIR', (new_name, d_dat.parent_id, 
-                                                        d_dat.place_id, 3))
-                idx_list = []
-                for idx in indexes:
-                    idx_list.append(QPersistentModelIndex(idx))
-            # self._populate_directory_tree()
+            new_parent = (new_name, d_dat.parent_id, self._cb_places.get_curr_place().id_, 3)
+            new_parent_id = self._dbu.insert_other('DIR', new_parent)
+            self.ui.dirTree.model().create_new_parent(curr_idx, (new_parent_id, *new_parent), idx_list)
     
+    def _curr_selected_dirs(self, curr_idx):
+        if not self.ui.dirTree.selectionModel().isSelected(curr_idx):
+            self.ui.dirTree.selectionModel().select(curr_idx, QItemSelectionModel.SelectCurrent)
+        selected_indexes = self.ui.dirTree.selectionModel().selectedRows()
+        
+        idx_list = []
+        for idx in selected_indexes:
+            idx_list.append(QPersistentModelIndex(idx))
+        
+        return idx_list
+
     def _create_virtual_child(self):
         folder_name = 'New folder'
         new_name, ok_ = QInputDialog.getText(self.ui.filesList,
