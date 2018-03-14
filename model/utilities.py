@@ -110,7 +110,6 @@ Insert = {'PLACES': 'insert into Places (Place, Title) values(?, ?);',
                                  'where FileID = {};')),
           'DIR': 'insert into Dirs (Path, ParentID, PlaceId, isVirtual) values (?, ?, ?, ?);',
           'VIRTUAL_DIR': 'insert into VirtDirs (ParentID, DirID, PlaceID) values (?, ?, ?);',
-        #   'DUMMY_FILE': 'insert into Files (DirID, ExtID, PlaceId, FileName) values (?, 0, 0, "dummy");'
           }
 
 Update = {'PLACE_TITLE': 'update Places set Title = :title where PlaceId = :place_id;',

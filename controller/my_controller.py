@@ -60,9 +60,9 @@ class MyController():
                 'Dirs Create virtual folder': self._create_virtual,
                 'Dirs Delete folder': self._delete_virtual,
                 'Dirs Remove empty folders': self._del_empty_dirs,
+                'Dirs Group': self._add_group_folder,
                 'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
-                'Dirs Rescan for parent folder': self._add_parent_folder,
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
@@ -92,15 +92,23 @@ class MyController():
                 'Tag Scan in names': self._scan_for_tags
                }
 
-    def _add_parent_folder(self):
-        curr_idx = self.ui.dirTree.currentIndex()
-        dat = self.ui.dirTree.model().data(curr_idx, role=Qt.UserRole)
-        parent_folder = dat.path.rpartition(os.altsep)[0]
-        if os.path.isdir(parent_folder):
-            print('   folder "{}" found'.format(parent_folder))
-            dir_id = self._find_or_create_dir_id(self._cb_places.get_curr_place(), parent_folder)
-            # self._dbu.insert_other('DUMMY_FILE', (dir_id, )) # will not delete until any subfolder has file(s)
-            self._populate_directory_tree()
+    def _add_group_folder(self):
+        folder_name = '<Group name>'
+        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+                                             'Input folder name', '',
+                                             QLineEdit.Normal, folder_name)
+        print('--> _add_group_folder', new_name, ok_)
+        if ok_:
+            curr_idx = self.ui.dirTree.currentIndex()
+            d_dat = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
+            indexes = self.ui.dirTree.selectionModel().selectedRows()
+            if indexes:
+                dir_id = self._dbu.insert_other('DIR', (new_name, d_dat.parent_id, 
+                                                        d_dat.place_id, 3))
+                idx_list = []
+                for idx in indexes:
+                    idx_list.append(QPersistentModelIndex(idx))
+            # self._populate_directory_tree()
     
     def _create_virtual_child(self):
         folder_name = 'New folder'
