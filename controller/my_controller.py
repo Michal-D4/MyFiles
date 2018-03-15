@@ -158,7 +158,7 @@ class MyController():
         parent_id = 0 if not parent.isValid() else \
                     self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
         dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
-        print('*** parent_id {}, dir_id {}'.format(parent_id, dir_id))
+        print('--> _delete_virtual: parent_id {}, dir_id {}'.format(parent_id, dir_id))
 
         if self._exist_in_virt_dirs(dir_id, parent_id):
             self._dbu.delete_other('FROM_VIRT_DIRS', (parent_id, dir_id))
@@ -167,9 +167,7 @@ class MyController():
         else:
             self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
             self._dbu.delete_other('VIRT_DIR_ID', (dir_id,))
-            # self.ui.dirTree.model().remove_all_copies(cur_idx)          doesn't work - signal 
-            # rowsAboutToBeRemoved(const QModelIndex &parent, int first, int last)
-            self._populate_directory_tree()
+            self.ui.dirTree.model().remove_all_copies(cur_idx)         
             print('*** not exist')
 
     def _exist_in_virt_dirs(self, dir_id, parent_id):

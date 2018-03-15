@@ -3,7 +3,7 @@
 import copy
 
 from PyQt5.QtCore import (QAbstractItemModel, QModelIndex, Qt, QMimeData, QByteArray,
-                          QDataStream, QIODevice)
+                          QDataStream, QIODevice, QPersistentModelIndex)
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QFont
 from model.helper import (real_folder, virtual_folder,
@@ -24,6 +24,11 @@ class EditTreeItem(object):
             self.userData = None
         self.itemData = data_
         self.children = []
+
+    def childNumber(self):
+        if self.parent_ != None:
+            return self.parent_.children.index(self)
+        return 0
 
     def removeChildren(self, position, count):
         print('--> removeChildren from', len(self.children), self.userData)
@@ -102,7 +107,7 @@ class EditTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
-        self.rootItem = EditTreeItem(data_=(), user_data=(0, 0, 0, "Root"))
+        self.rootItem = EditTreeItem(data_=('',), user_data=(0, 0, 0, "Root"))
         ALL_ITEMS.clear()
 
     @staticmethod
@@ -176,7 +181,7 @@ class EditTreeModel(QAbstractItemModel):
         if parent_item == self.rootItem:
             return QModelIndex()
 
-        return self.createIndex(parent_item.row(), 0, parent_item)
+        return self.createIndex(parent_item.childNumber(), 0, parent_item)
 
     def create_new_parent(self, curr_idx, new_parent_data, idx_list):
         """
@@ -208,11 +213,11 @@ class EditTreeModel(QAbstractItemModel):
 
     def removeRows(self, row, count, parent=QModelIndex()):
         """
-         removes count rows starting with the given row under parent 
+        removes count of rows starting with the given row in parent item
         :param row:
         :param count:
         :param parent:
-        :return:
+        :return: bool
         """
         parentItem = self.getItem(parent)
 
@@ -224,6 +229,7 @@ class EditTreeModel(QAbstractItemModel):
 
     def remove_row(self, index):
         print('--> remove_row', self.data(index, Qt.UserRole))
+        print('    parent', self.getItem(index).parent().itemData)
         return self.removeRows(index.row(), 1, self.parent(index))
 
     def remove_all_copies(self, index):
@@ -232,28 +238,22 @@ class EditTreeModel(QAbstractItemModel):
         :param  index
         :return None 
         """
-        # print('===> remove_all_copies')
-        # for key, node in ALL_ITEMS.items():
-        #     print('  key', key)
-        #     for item in node:
-        #         idx = self.createIndex(item.row(), 0, item)
-        #         print('%%% ', self.data(idx, Qt.UserRole), idx.row())
         dir_id = index.internalPointer().userData.dir_id
         items = ALL_ITEMS[dir_id]
         print('--> remove_all_copies', dir_id, len(items))
+        idx_list = []
         for item in items:
             print('  1', item.userData, item.row())
             idx = self.createIndex(item.row(), 0, item)
-            print('  2', self.data(idx, Qt.UserRole), idx.row())
-            res = self.remove_row(idx)
-            print('   res=', res)
-        ALL_ITEMS.pop(dir_id)
+            idx_list.append(QPersistentModelIndex(idx))
 
-        for key, node in ALL_ITEMS.items():
-            print('  key', key)
-            for item in node:
-                idx = self.createIndex(item.row(), 0, item)
-                print('%%% ', self.data(idx, Qt.UserRole), idx.row())
+        for idx in idx_list:
+            print('  2', self.data(QModelIndex(idx), Qt.UserRole), 
+                  QModelIndex(idx).row())
+            res = self.remove_row(QModelIndex(idx))
+            print('   res=', res)
+            
+        ALL_ITEMS.pop(dir_id)
 
     def rowCount(self, parent=QModelIndex()):
         parentItem = self.getItem(parent)
