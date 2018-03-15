@@ -97,7 +97,7 @@ class MyController():
         group of real folders - organise for better vision
         """
         folder_name = '<Group name>'
-        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+        new_name, ok_ = QInputDialog.getText(self.ui.dirTree,
                                              'Input folder name', '',
                                              QLineEdit.Normal, folder_name)
         print('--> _add_group_folder', new_name, ok_)
@@ -123,7 +123,7 @@ class MyController():
 
     def _create_virtual_child(self):
         folder_name = 'New folder'
-        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+        new_name, ok_ = QInputDialog.getText(self.ui.dirTree,
                                              'Input folder name', '',
                                              QLineEdit.Normal, folder_name)
         if ok_:
@@ -860,6 +860,7 @@ class MyController():
     def _restore_file_list(self, curr_dir_idx):
         print('--> _restore_file_list', self.file_list_source)
         # FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
+        # TODO check curr_dir_idx before call _restore_file_list ???
         if not curr_dir_idx.isValid():
             curr_dir_idx = self.ui.dirTree.model().index(0, 0)
         if self.same_db:
