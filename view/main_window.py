@@ -220,10 +220,10 @@ class AppWindow(QMainWindow):
                 if not self.ui.dirTree.model().is_favorites(idx):
                     menu.addSeparator()
                     menu.addAction('Rename folder')
-                    menu.addAction('Delete folder')
+                    if not self.ui.dirTree.model().is_group():
+                        menu.addAction('Delete folder')
             else:
-                parent = self.ui.dirTree.model().parent(idx)
-                if self.ui.dirTree.model().is_virtual(parent):
+                if self._can_be_deleted(idx):
                     menu.addSeparator()
                     menu.addAction('Delete folder')
                 menu.addAction('Rescan dir')
@@ -238,6 +238,10 @@ class AppWindow(QMainWindow):
         action = menu.exec_(self.ui.dirTree.mapToGlobal(pos))
         if action:
             self.change_data_signal.emit('Dirs {}'.format(action.text()))
+
+    def _can_be_deleted(self, index):
+        parent = self.ui.dirTree.model().parent(index)
+        return self.ui.dirTree.model().is_virtual(parent) & (not self.ui.dirTree.model().is_group(parent))
 
     def ref_clicked(self, href):
         """

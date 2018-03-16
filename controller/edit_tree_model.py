@@ -46,7 +46,10 @@ class EditTreeItem(object):
         return self.userData.is_virtual > 0
 
     def is_favorites(self):
-        return (self.userData.is_virtual == 1)
+        return self.userData.is_virtual == 1
+
+    def is_group(self):
+        return self.userData.is_virtual == 3
 
     def child(self, row):
         return self.children[row]

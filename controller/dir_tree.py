@@ -83,10 +83,6 @@ class DirTree():
     def _exist_in_virt_dirs(self, dir_id, parent_id):
         return self._dbu.select_other('EXIST_IN_VIRT_DIRS', (dir_id, parent_id)).fetchone()
 
-    def _is_parent_virtual(self, index):
-        parent = self.ui.dirTree.model().parent(index)
-        return self.ui.dirTree.model().is_virtual(parent)
-
     def _rename_folder(self):
         cur_idx = self.ui.dirTree.currentIndex()
         u_data = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole)

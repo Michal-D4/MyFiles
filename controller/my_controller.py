@@ -768,6 +768,7 @@ class MyController():
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
             row = settings.value('FILE_IDX', 0)
         else:
+            # TODO move self.ui.dirTree.model().is_virtual(curr_dir_idx) outside this method 
             if self.ui.dirTree.model().is_virtual(curr_dir_idx):
                 self.file_list_source = MyController.VIRTUAL
             else:
