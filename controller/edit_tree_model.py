@@ -11,7 +11,7 @@ from model.helper import (real_folder, virtual_folder,
                           DropCopyFile, DropMoveFile, Shared)
 from collections import namedtuple, defaultdict
 
-DirData = namedtuple('DirData', 'dir_id parent_id is_virtual path')
+DirData = namedtuple('DirData', 'dir_id parent_id is_virtual is_link path')
 ALL_ITEMS = defaultdict(list)
 
 class EditTreeItem(object):
