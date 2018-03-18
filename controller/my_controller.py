@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
 from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
-from controller.edit_tree_model import EditTreeModel, EditTreeItem
 from model.file_info import FileInfo, LoadFiles
 from model.helper import (EXT_ID_INCREMENT, Fields, Shared, show_message)
 from model.utilities import DBUtils
@@ -278,7 +277,7 @@ class MyController():
             QApplication.clipboard().setText(txt)
 
     def _copy_path(self):
-        path, _, _, _, _ = self._file_path()
+        path = self._file_path()[0]
         QApplication.clipboard().setText(path)
 
     def get_places_view(self):
@@ -631,7 +630,7 @@ class MyController():
             show_message('File "{}" is inaccessible'.format(full_file_name))
 
     def _file_path(self):
-        # todo   is it exist currentRow() method ?
+        # TODO   is it exist currentRow() method ?
         f_idx = self.ui.filesList.currentIndex()
         if f_idx.isValid():
             model = self.ui.filesList.model()
@@ -1040,55 +1039,6 @@ class MyController():
                 idx = model.index(ss[0], 0, parent)
 
                 self.ui.extList.selectionModel().select(idx, QItemSelectionModel.Select)
-
-    def _get_dirs(self, place_id):
-        """
-        Returns directory tree for current place
-        :param place_id:
-        :return: list of tuples (Dir name, DirID, ParentID, isVirtual, Full path of dir)
-        """
-        dirs = []
-        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
-
-        if self._cb_places.get_disk_state() == Places.MOUNTED:
-            # bind dirs with mount point
-            root = self._cb_places.get_mount_point()
-            for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1],
-                             os.altsep.join((root, rr[0]))))
-        else:
-            for rr in dir_tree:
-                print('** ', rr)
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
-        return dirs
-
-    def _insert_virt_dirs(self, dir_tree: list):
-        virt_dirs = self._dbu.select_other('VIRT_DIRS', (self._cb_places.get_curr_place().id_,))
-        id_list = [x[1] for x in dir_tree]
-
-        if self._cb_places.get_disk_state() == Places.MOUNTED:
-            # bind dirs with mount point
-            root = self._cb_places.get_mount_point()
-            for vd in virt_dirs:
-                if vd[-1] == 1:
-                    vd = (*vd[:-1], 2)
-                try:
-                    idx = id_list.index(vd[2])
-                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], 
-                                          os.altsep.join((root, vd[0]))))
-                    id_list.insert(idx, vd[1])
-                except ValueError:
-                    pass
-        else:
-            for vd in virt_dirs:
-                if vd[-1] == 1:
-                    vd = (*vd[:-1], 2)
-                try:
-                    idx = id_list.index(vd[2])
-                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], vd[0]))
-                    id_list.insert(idx, vd[1])
-                except ValueError:
-                    pass
 
     def on_scan_files(self):
         """
