@@ -1,3 +1,4 @@
+# controller/dir_tree.py
 
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
                           QVariant, QPersistentModelIndex)
@@ -115,11 +116,11 @@ class DirTree():
             self.dbu.update_other('DIR_NAME', (new_name, u_data.dir_id))
             self.dirTree.model().update_folder_name(cur_idx, new_name)
 
-    def _is_virtual_dir(self):
-        cur_idx = self.dirTree.currentIndex()
-        return self.dirTree.model().is_virtual(cur_idx)
+    # def _is_virtual_dir(self):
+    #     cur_idx = self.dirTree.currentIndex()
+    #     return self.dirTree.model().is_virtual(cur_idx)
 
-    def _populate_directory_tree(self):
+    def populate_directory_tree(self):
         # TODO - do not correctly restore when reopen from toolbar button
         print('====> _populate_directory_tree')
         dirs = self._get_dirs(self.places.get_curr_place().id_)
@@ -139,13 +140,7 @@ class DirTree():
         self.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
         cur_dir_idx = self._restore_path()
 
-        # TODO remove _restore_file_list and below from this method
-        self._restore_file_list(cur_dir_idx)
-
-        if dirs:
-            if self.places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
-                show_message('Files are in an inaccessible place')
-            self._resize_columns()
+        return cur_dir_idx
 
     def _cur_dir_changed(self, curr_idx):
         """
@@ -158,10 +153,12 @@ class DirTree():
             DirTree._save_path(curr_idx)
             dir_idx = self.dirTree.model().data(curr_idx, Qt.UserRole)
             print('--> _cur_dir_changed', self.dirTree.model().rowCount(curr_idx), dir_idx)
-            if self.dirTree.model().is_virtual(curr_idx):
-                self._populate_virtual(dir_idx.dir_id)
-            else:
-                self._populate_file_list(dir_idx)
+            return self.dirTree.model().is_virtual(curr_idx), dir_idx
+            # TODO need call filesList methods: _populate_virtual or _populate_file_list
+            # if self.dirTree.model().is_virtual(curr_idx):
+            #     self._populate_virtual(dir_idx.dir_id)
+            # else:
+            #     self._populate_file_list(dir_idx)
 
     @staticmethod
     def _save_path(index):
@@ -211,7 +208,7 @@ class DirTree():
 
     def del_empty_dirs(self):
         self.dbu.delete_other('EMPTY_DIRS', ())
-        self._populate_directory_tree()
+        self.populate_directory_tree()
 
     def rescan_dir(self):
         idx = self.dirTree.currentIndex()

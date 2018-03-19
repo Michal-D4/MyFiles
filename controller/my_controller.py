@@ -64,7 +64,7 @@ class MyController():
                 'Dirs Group': self.dir_tree.add_group_folder,
                 'Dirs Rename folder': self.dir_tree.rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
-                'dirTree': self._populate_directory_tree,  # emit from Places
+                'dirTree': self.dir_tree.populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
                 'Edit key words': self._edit_key_words,
@@ -177,10 +177,19 @@ class MyController():
                 place_id = self.copy_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().id_:
-                    self._populate_directory_tree()
+                    curr_dir_idx = self.dir_tree.populate_directory_tree()
+                    self._file_list_restore(curr_dir_idx)
         else:
             param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
+
+    def _file_list_restore(self, dir_idx)
+        self._restore_file_list(dir_idx)
+
+        if dirs:
+            if self.places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
+                show_message('Files are in an inaccessible place')
+            self._resize_columns()
 
     def copy_files_to(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
@@ -215,7 +224,8 @@ class MyController():
                 place_id = self.move_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().id_:
-                    self._populate_directory_tree()
+                    curr_dir_idx = self.dir_tree.populate_directory_tree()
+                    self._file_list_restore(curr_dir_idx)
         else:
             param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
@@ -451,7 +461,8 @@ class MyController():
 
     def _dir_update(self):
         updated_dirs = self.obj_thread.get_updated_dirs()
-        self._populate_directory_tree()
+        curr_dir_idx = self.dir_tree.populate_directory_tree()
+        self._file_list_restore(curr_dir_idx)
         self._populate_ext_list()
 
         self.obj_thread = FileInfo(self._cb_places, updated_dirs)
@@ -1024,7 +1035,8 @@ class MyController():
         self._restore_tag_selection()
         self._populate_author_list()
         self._restore_author_selection()
-        self._populate_directory_tree()
+        curr_dir_idx = self.dir_tree.populate_directory_tree()
+        self._file_list_restore(curr_dir_idx)
 
     def _restore_ext_selection(self):
         if self.same_db:
