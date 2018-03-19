@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QInputDialog, QLineEdit, QTreeView
 
 from controller.places import Places
 from controller.edit_tree_model import EditTreeModel, EditTreeItem
+from model.helper import Shared, show_message
 
 
 class DirTree():
@@ -22,7 +23,7 @@ class DirTree():
         self.places = places
         self.dbu = db_utils
 
-    def _add_group_folder(self):
+    def add_group_folder(self):
         """
         group of real folders - organise for better vision
         """
@@ -34,24 +35,24 @@ class DirTree():
         if ok_:
             curr_idx = self.dirTree.currentIndex()
             idx_list = self._curr_selected_dirs(curr_idx)
-            
+
             d_dat = self.dirTree.model().data(curr_idx, Qt.UserRole)
             new_parent = (new_name, d_dat.parent_id, self.places.get_curr_place().id_, 3)
             new_parent_id = self.dbu.insert_other('DIR', new_parent)
             self.dirTree.model().create_new_parent(curr_idx, (new_parent_id, *new_parent), idx_list)
-    
+
     def _curr_selected_dirs(self, curr_idx):
         if not self.dirTree.selectionModel().isSelected(curr_idx):
             self.dirTree.selectionModel().select(curr_idx, QItemSelectionModel.SelectCurrent)
         selected_indexes = self.dirTree.selectionModel().selectedRows()
-        
+
         idx_list = []
         for idx in selected_indexes:
             idx_list.append(QPersistentModelIndex(idx))
-        
+
         return idx_list
 
-    def _create_virtual_child(self):
+    def create_virtual_child(self):
         folder_name = 'New folder'
         new_name, ok_ = QInputDialog.getText(self.dirTree,
                                              'Input folder name', '',
@@ -60,7 +61,7 @@ class DirTree():
             cur_idx = self.dirTree.currentIndex()
             self._create_virtual_folder(new_name, cur_idx)
 
-    def _create_virtual(self):
+    def create_virtual(self):
         folder_name = 'New folder'
         new_name, ok_ = QInputDialog.getText(self.dirTree,
                                              'Input folder name', '',
@@ -82,13 +83,13 @@ class DirTree():
 
         self.dirTree.model().append_child(item, parent)
 
-    def _delete_virtual(self):
+    def delete_virtual(self):
         cur_idx = self.dirTree.currentIndex()
         parent = self.dirTree.model().parent(cur_idx)
         parent_id = 0 if not parent.isValid() else \
                     self.dirTree.model().data(parent, role=Qt.UserRole).dir_id
         dir_id = self.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
-        print('--> _delete_virtual: parent_id {}, dir_id {}'.format(parent_id, dir_id))
+        print('--> delete_virtual: parent_id {}, dir_id {}'.format(parent_id, dir_id))
 
         if self._exist_in_virt_dirs(dir_id, parent_id):
             self.dbu.delete_other('FROM_VIRT_DIRS', (parent_id, dir_id))
@@ -97,13 +98,13 @@ class DirTree():
         else:
             self.dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
             self.dbu.delete_other('VIRT_DIR_ID', (dir_id,))
-            self.dirTree.model().remove_all_copies(cur_idx)         
+            self.dirTree.model().remove_all_copies(cur_idx)
             print('*** not exist')
 
     def _exist_in_virt_dirs(self, dir_id, parent_id):
         return self.dbu.select_other('EXIST_IN_VIRT_DIRS', (dir_id, parent_id)).fetchone()
 
-    def _rename_folder(self):
+    def rename_folder(self):
         cur_idx = self.dirTree.currentIndex()
         u_data = self.dirTree.model().data(cur_idx, role=Qt.UserRole)
         folder_name = u_data.path
@@ -208,19 +209,18 @@ class DirTree():
         self.dirTree.setCurrentIndex(idx)
         return idx
 
-    def _del_empty_dirs(self):
+    def del_empty_dirs(self):
         self.dbu.delete_other('EMPTY_DIRS', ())
         self._populate_directory_tree()
 
-    def _rescan_dir(self):
+    def rescan_dir(self):
         idx = self.dirTree.currentIndex()
-        dir_ = self.dirTree.model().data(idx, Qt.UserRole)
+        dir_ = self.dirTree.model().data(idx, Qt.UserRole).path
         ext_ = self._get_selected_ext()
         ext_item, ok_pressed = QInputDialog.getText(self.dirTree, "Input extensions",
                                                     'Input extensions (* - all)',
                                                     QLineEdit.Normal, ext_)
-        if ok_pressed:
-            self._load_files(dir_.path, ext_item.strip())
+        return ok_pressed, dir_, ext_item.strip()
 
     def _insert_virt_dirs(self, dir_tree: list):
         virt_dirs = self.dbu.select_other('VIRT_DIRS', (self.places.get_curr_place().id_,))
@@ -234,7 +234,7 @@ class DirTree():
                     vd = (*vd[:-1], 2)
                 try:
                     idx = id_list.index(vd[2])
-                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], 
+                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:],
                                           1, os.altsep.join((root, vd[0]))))
                     id_list.insert(idx, vd[1])
                 except ValueError:
@@ -270,4 +270,3 @@ class DirTree():
                 print('** ', rr)
                 dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], 0, rr[0]))
         return dirs
-

@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
                              QFontDialog, QApplication, QMessageBox)
 
 from controller.places import Places
+from controller.dir_tree import DirTree
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from model.file_info import FileInfo, LoadFiles
@@ -47,6 +48,7 @@ class MyController():
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
         self._cb_places = Places(self)
+        self.dir_tree = DirTree(self.ui.dirTree, self._cb_places, self._dbu)
         self._opt = SelOpt(self)
         self._restore_font()
         self._restore_fields()
@@ -55,12 +57,12 @@ class MyController():
         return {'Author Remove unused': self._author_remove_unused,
                 'Change place': self._cb_places.about_change_place,
                 'change_font': self._ask_for_change_font,
-                'Dirs Create virtual folder as child': self._create_virtual_child,
-                'Dirs Create virtual folder': self._create_virtual,
-                'Dirs Delete folder': self._delete_virtual,
-                'Dirs Remove empty folders': self._del_empty_dirs,
-                'Dirs Group': self._add_group_folder,
-                'Dirs Rename folder': self._rename_folder,
+                'Dirs Create virtual folder as child': self.dir_tree.create_virtual_child,
+                'Dirs Create virtual folder': self.dir_tree.create_virtual,
+                'Dirs Delete folder': self.dir_tree.delete_virtual,
+                'Dirs Remove empty folders': self.dir_tree.del_empty_dirs,
+                'Dirs Group': self.dir_tree.add_group_folder,
+                'Dirs Rename folder': self.dir_tree.rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
                 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
@@ -1052,6 +1054,11 @@ class MyController():
             self._load_files(path_, ext_)
         else:
             show_message("Can't scan disk for files. Disk is not accessible.")
+
+    def _rescan_dir(self):
+        ok_pressed, path, ext_list = self.dir_tree.rescan_dir()
+        if ok_pressed:
+            self._load_files(path, ext_list)
 
     def _load_files(self, path_, ext_):
         curr_place = self._cb_places.get_curr_place()
