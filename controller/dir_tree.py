@@ -1,5 +1,7 @@
 # controller/dir_tree.py
 
+import os
+
 from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings,
                           QVariant, QPersistentModelIndex)
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QTreeView
@@ -120,7 +122,7 @@ class DirTree():
     #     cur_idx = self.dirTree.currentIndex()
     #     return self.dirTree.model().is_virtual(cur_idx)
 
-    def populate_directory_tree(self):
+    def populate_directory_tree(self, same_db):
         # TODO - do not correctly restore when reopen from toolbar button
         print('====> _populate_directory_tree')
         dirs = self._get_dirs(self.places.get_curr_place().id_)
@@ -138,7 +140,7 @@ class DirTree():
         self.dirTree.setModel(model)
 
         self.dirTree.selectionModel().currentRowChanged.connect(self._cur_dir_changed)
-        cur_dir_idx = self._restore_path()
+        cur_dir_idx = self._restore_path(same_db)
 
         return cur_dir_idx
 
@@ -177,15 +179,15 @@ class DirTree():
         path.reverse()
         return path
 
-    def _restore_path(self):
+    def _restore_path(self, same_db: bool):
         """
         restore expand state and current index of dirTree
         :return: current index
         """
-        print('--> _restore_path: same_db=', self.same_db)
+        print('--> _restore_path: same_db=', same_db)
         model = self.dirTree.model()
         parent = QModelIndex()
-        if self.same_db:
+        if same_db:
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
             for id_ in aux:
@@ -206,9 +208,9 @@ class DirTree():
         self.dirTree.setCurrentIndex(idx)
         return idx
 
-    def del_empty_dirs(self):
+    def del_empty_dirs(self, same_db):
         self.dbu.delete_other('EMPTY_DIRS', ())
-        self.populate_directory_tree()
+        self.populate_directory_tree(same_db)
 
     def rescan_dir(self):
         idx = self.dirTree.currentIndex()

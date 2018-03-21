@@ -60,7 +60,7 @@ class MyController():
                 'Dirs Create virtual folder as child': self.dir_tree.create_virtual_child,
                 'Dirs Create virtual folder': self.dir_tree.create_virtual,
                 'Dirs Delete folder': self.dir_tree.delete_virtual,
-                'Dirs Remove empty folders': self.dir_tree.del_empty_dirs,
+                'Dirs Remove empty folders': self._del_empty_dirs,
                 'Dirs Group': self.dir_tree.add_group_folder,
                 'Dirs Rename folder': self.dir_tree.rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
@@ -92,6 +92,9 @@ class MyController():
                 'Tag Rename': self._tag_rename,
                 'Tag Scan in names': self._scan_for_tags
                }
+    
+    def _del_empty_dirs(self):
+        self.dir_tree.del_empty_dirs(self.same_db)
 
     def _selected_files(self):
         """
@@ -177,19 +180,20 @@ class MyController():
                 place_id = self.copy_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().id_:
-                    curr_dir_idx = self.dir_tree.populate_directory_tree()
+                    curr_dir_idx = self.dir_tree.populate_directory_tree(self.same_db)
                     self._file_list_restore(curr_dir_idx)
         else:
             param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
 
-    def _file_list_restore(self, dir_idx)
+    def _file_list_restore(self, dir_idx):
         self._restore_file_list(dir_idx)
 
-        if dirs:
-            if self.places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
+        if dir_idx.isValid():
+            if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
                 show_message('Files are in an inaccessible place')
-            self._resize_columns()
+            else:
+                self._resize_columns()
 
     def copy_files_to(self, to_path):
         dir_id, place_id = self._get_dir_id(to_path)
@@ -224,7 +228,7 @@ class MyController():
                 place_id = self.move_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().id_:
-                    curr_dir_idx = self.dir_tree.populate_directory_tree()
+                    curr_dir_idx = self.dir_tree.populate_directory_tree(self.same_db)
                     self._file_list_restore(curr_dir_idx)
         else:
             param = self._cb_places.get_curr_place().title
@@ -461,7 +465,7 @@ class MyController():
 
     def _dir_update(self):
         updated_dirs = self.obj_thread.get_updated_dirs()
-        curr_dir_idx = self.dir_tree.populate_directory_tree()
+        curr_dir_idx = self.dir_tree.populate_directory_tree(self.same_db)
         self._file_list_restore(curr_dir_idx)
         self._populate_ext_list()
 
@@ -770,7 +774,7 @@ class MyController():
         return res
 
     def _restore_file_list(self, curr_dir_idx):
-        print('--> _restore_file_list', self.file_list_source)
+        print('--> _restore_file_list', self.file_list_source, curr_dir_idx.isValid())
         # FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
         # TODO check curr_dir_idx before call _restore_file_list ???
         if not curr_dir_idx.isValid():
@@ -788,7 +792,7 @@ class MyController():
             row = 0
 
         dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
-        print('  dir_idx', dir_idx)
+        print('###  dir_idx', dir_idx)
         if self.file_list_source == MyController.VIRTUAL:
             self._populate_virtual(dir_idx.dir_id)
         elif self.file_list_source == MyController.FOLDER:
@@ -1035,7 +1039,7 @@ class MyController():
         self._restore_tag_selection()
         self._populate_author_list()
         self._restore_author_selection()
-        curr_dir_idx = self.dir_tree.populate_directory_tree()
+        curr_dir_idx = self.dir_tree.populate_directory_tree(self.same_db)
         self._file_list_restore(curr_dir_idx)
 
     def _restore_ext_selection(self):

@@ -110,7 +110,7 @@ class EditTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
         super(EditTreeModel, self).__init__(parent)
 
-        self.rootItem = EditTreeItem(data_=('',), user_data=(0, 0, 0, "Root"))
+        self.rootItem = EditTreeItem(data_=('',), user_data=(0, 0, 0, 0, "Root"))
         ALL_ITEMS.clear()
 
     @staticmethod
