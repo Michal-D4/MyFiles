@@ -776,8 +776,8 @@ class MyController():
         print('--> _restore_file_list', self.file_list_source, curr_dir_idx.isValid())
         # FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
         # TODO check curr_dir_idx before call _restore_file_list ???
-        if not curr_dir_idx.isValid():
-            curr_dir_idx = self.ui.dirTree.model().index(0, 0)
+        # if not curr_dir_idx.isValid():
+        #     curr_dir_idx = self.ui.dirTree.model().index(0, 0)
         if self.same_db:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
@@ -810,7 +810,6 @@ class MyController():
             self._populate_file_list(dir_data)
         else:                       # MyController.ADVANCE
             self._list_of_selected_files()
-
 
     def _edit_title(self):
         checked = self._check_existence()

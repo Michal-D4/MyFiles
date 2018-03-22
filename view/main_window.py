@@ -220,7 +220,7 @@ class AppWindow(QMainWindow):
                 if not self.ui.dirTree.model().is_favorites(idx):
                     menu.addSeparator()
                     menu.addAction('Rename folder')
-                    if not self.ui.dirTree.model().is_group():
+                    if not self.ui.dirTree.model().is_group(idx):
                         menu.addAction('Delete folder')
             else:
                 if self._can_be_deleted(idx):

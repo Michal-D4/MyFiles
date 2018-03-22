@@ -125,6 +125,12 @@ class EditTreeModel(QAbstractItemModel):
             return index.internalPointer().is_favorites()
         return False
 
+    @staticmethod
+    def is_group(index):
+        if index.isValid():
+            return index.internalPointer().is_group()
+        return False
+
     def columnCount(self, parent):
         return self.rootItem.columnCount()
 

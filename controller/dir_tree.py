@@ -82,7 +82,7 @@ class DirTree():
         place_id = self.places.get_curr_place().id_
         dir_id = self.dbu.insert_other('DIR', (folder_name, parent_id, place_id, 2))
 
-        item = EditTreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
+        item = EditTreeItem((folder_name, ), (dir_id, parent_id, 2, 0, folder_name))
 
         self.dirTree.model().append_child(item, parent)
 
