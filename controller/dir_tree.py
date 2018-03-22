@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QInputDialog, QLineEdit, QTreeView
 
 from controller.places import Places
 from controller.edit_tree_model import EditTreeModel, EditTreeItem
-from model.helper import Shared, show_message
+from model.helper import Shared
 
 
 class DirTree():
@@ -155,12 +155,12 @@ class DirTree():
             DirTree._save_path(curr_idx)
             dir_idx = self.dirTree.model().data(curr_idx, Qt.UserRole)
             print('--> _cur_dir_changed', self.dirTree.model().rowCount(curr_idx), dir_idx)
-            return self.dirTree.model().is_virtual(curr_idx), dir_idx
+            # return self.dirTree.model().is_virtual(curr_idx), dir_idx
             # TODO need call filesList methods: _populate_virtual or _populate_file_list
-            # if self.dirTree.model().is_virtual(curr_idx):
-            #     self._populate_virtual(dir_idx.dir_id)
-            # else:
-            #     self._populate_file_list(dir_idx)
+            if self.dirTree.model().is_virtual(curr_idx):
+                Shared['Controller']._populate_virtual(dir_idx.dir_id)
+            else:
+                Shared['Controller']._populate_file_list(dir_idx)
 
     @staticmethod
     def _save_path(index):
