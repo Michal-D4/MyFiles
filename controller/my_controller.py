@@ -790,14 +790,7 @@ class MyController():
                 self.file_list_source = MyController.FOLDER
             row = 0
 
-        dir_idx = self.ui.dirTree.model().data(curr_dir_idx, Qt.UserRole)
-        print('###  dir_idx', dir_idx)
-        if self.file_list_source == MyController.VIRTUAL:
-            self._populate_virtual(dir_idx.dir_id)
-        elif self.file_list_source == MyController.FOLDER:
-            self._populate_file_list(dir_idx)
-        else:                       # MyController.ADVANCE
-            self._list_of_selected_files()
+        self._restore_method(curr_dir_idx)
 
         if self.ui.filesList.model().rowCount() == 0:
             idx = QModelIndex()
@@ -807,6 +800,17 @@ class MyController():
         if idx.isValid():
             self.ui.filesList.setCurrentIndex(idx)
             self.ui.filesList.selectionModel().select(idx, QItemSelectionModel.Select)
+
+    def _restore_method(self, dir_idx):
+        dir_data = self.ui.dirTree.model().data(dir_idx, Qt.UserRole)
+        print('###  dir_data', dir_data)
+        if self.file_list_source == MyController.VIRTUAL:
+            self._populate_virtual(dir_data.dir_id)
+        elif self.file_list_source == MyController.FOLDER:
+            self._populate_file_list(dir_data)
+        else:                       # MyController.ADVANCE
+            self._list_of_selected_files()
+
 
     def _edit_title(self):
         checked = self._check_existence()
