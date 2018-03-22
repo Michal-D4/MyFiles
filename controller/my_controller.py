@@ -180,8 +180,7 @@ class MyController():
                 place_id = self.copy_files_to(to_path)
 
                 if place_id == self._cb_places.get_curr_place().id_:
-                    curr_dir_idx = self.dir_tree.populate_directory_tree(self.same_db)
-                    self._file_list_restore(curr_dir_idx)
+                    self.dir_tree.populate_directory_tree(self.same_db)
         else:
             param = self._cb_places.get_curr_place().title
             show_message('File(s) inaccessible on "{}"'.format(param))
@@ -828,7 +827,6 @@ class MyController():
         if ok_pressed:
             self._dbu.update_other('COMMENT', (data_, checked.comment_id))
             self._populate_comment_field(checked, edit=True)
-
 
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
