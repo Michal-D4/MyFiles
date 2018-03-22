@@ -215,7 +215,7 @@ class DirTree():
     def rescan_dir(self):
         idx = self.dirTree.currentIndex()
         dir_ = self.dirTree.model().data(idx, Qt.UserRole).path
-        ext_ = self._get_selected_ext()
+        ext_ = Shared['Controller']._get_selected_ext()
         ext_item, ok_pressed = QInputDialog.getText(self.dirTree, "Input extensions",
                                                     'Input extensions (* - all)',
                                                     QLineEdit.Normal, ext_)

@@ -1088,6 +1088,7 @@ class MyController():
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
+            print('--> _scan_file_system', root)
             if root:
                 place_name, _ = self._cb_places.get_place_name(root)
                 cur_place = self._cb_places.get_curr_place()

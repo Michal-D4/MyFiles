@@ -82,8 +82,13 @@ class Places:
         :return: bool
         """
         parts = psutil.disk_partitions()
-        removable = next(x.opts for x in parts if x.device == device)
-        return removable == 'rw,removable'
+        try:
+            removable = next(x.opts for x in parts if x.device == device)
+        except StopIteration:
+            show_message('The program can not determine the location of the folder')
+        else:
+            return removable == 'rw,removable'
+        return None
 
     def populate_cb_places(self):
         self._view.blockSignals(True)
@@ -172,6 +177,7 @@ class Places:
         :return: place_name, state
         """
         disk = psutil.os.path._getvolumepathname(root)
+        print('--> get_place_name: disk', disk)
 
         if self.is_removable(disk):
             place_name, state = (self._get_vol_name(disk), self.MOUNTED)    # disk label
