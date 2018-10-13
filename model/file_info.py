@@ -8,7 +8,6 @@ import re
 from PyPDF2 import PdfFileReader, utils
 from PyQt5.QtCore import pyqtSignal, QObject, pyqtSlot
 
-from controller.places import Places
 from model.helper import Shared, get_file_extension
 from model.load_db_data import LoadDBData
 
@@ -40,10 +39,9 @@ UPDATE_FILE = ' '.join(('update Files set',
 class LoadFiles(QObject):
     finished = pyqtSignal()
 
-    def __init__(self, cur_place, path_, ext_):
+    def __init__(self, path_, ext_):
         super().__init__()
         print('--> LoadFiles.__init__')
-        self.cur_place = cur_place
         self.conn = Shared['DB connection']
         self.path_ = path_
         self.ext_ = ext_
@@ -52,7 +50,7 @@ class LoadFiles(QObject):
     @pyqtSlot()
     def run(self):
         print('--> LoadFiles.run')
-        files = LoadDBData(self.cur_place)
+        files = LoadDBData()
         files.load_data(self.path_, self.ext_)
         self.updated_dirs = files.get_updated_dirs()
         self.finished.emit()
@@ -70,11 +68,10 @@ class FileInfo(QObject):
         self._update_files()
         self.finished.emit()           # 'Updating of files is finished'
 
-    def __init__(self, place_inst, updated_dirs):
+    def __init__(self, updated_dirs):
         super().__init__()
         print('--> FileInfo.__init__')
         self.upd_dirs = updated_dirs
-        self.places = place_inst
         self.conn = Shared['DB connection']
         self.cursor = self.conn.cursor()
         self.file_info = []
@@ -185,13 +182,6 @@ class FileInfo(QObject):
             self._insert_author(file_.file_id)
 
     def _update_files(self):
-        cur_place = self.places.get_curr_place()
-        if cur_place[2] == Places.MOUNTED:
-            root = self.places.get_mount_point()
-            full_path = lambda x: os.altsep.join((root, x))
-        else:
-            full_path = lambda x: x
-
         db_file_info = namedtuple('db_file_info',
                                   'file_id full_name comment_id issue_date pages')
 
@@ -199,6 +189,6 @@ class FileInfo(QObject):
         file_list = self.cursor.execute(FILES_IN_LOAD.format(dir_ids)).fetchall()
         # not iterate all rows in cursor - so used fetchall(), why ???
         for it in file_list:
-            file_name = os.path.join(full_path(it[2]), it[1])
+            file_name = os.path.join(it[2], it[1])
             file_ = db_file_info._make((it[0], file_name) + it[-3:])
             self._update_file(file_)

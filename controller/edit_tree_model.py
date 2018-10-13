@@ -191,8 +191,7 @@ class EditTreeModel(QAbstractItemModel):
            0 - dir_id of new_parent_item,
            1 - path,
            2 - parent_id for new_parent,
-           3 - place_id,
-           4 - is_virtual = 3
+           3 - is_virtual = 3
         :param: idx_list - indexes of items to change parent = new_parent
         """
         new_parent_item = EditTreeItem((new_parent_data[1],),
@@ -422,8 +421,7 @@ class EditTreeModel(QAbstractItemModel):
         item_id = self.data(index, role=Qt.UserRole).dir_id
         Shared['DB utility'].insert_other('VIRTUAL_DIR', 
                                             (parent_id, 
-                                            item_id,
-                                            Shared['Places'].get_curr_place().id_))
+                                            item_id))
 
     def _restore_index(self, path):
         parent = QModelIndex()

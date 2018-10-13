@@ -12,7 +12,6 @@ from PyQt5.QtCore import (Qt, QModelIndex, QItemSelectionModel, QSettings, QDate
 from PyQt5.QtWidgets import (QInputDialog, QLineEdit, QFileDialog, QLabel,
                              QFontDialog, QApplication, QMessageBox)
 
-from controller.places import Places
 from controller.table_model import TableModel, ProxyModel2
 from controller.tree_model import TreeModel
 from controller.edit_tree_model import EditTreeModel, EditTreeItem
@@ -27,11 +26,12 @@ from view.sel_opt import SelOpt
 from view.set_fields import SetFields
 
 DETECT_TYPES = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-FileData = namedtuple('FileData', 'file_id dir_id comment_id ext_id place_id source')
+FileData = namedtuple('FileData', 'file_id dir_id comment_id ext_id source')
 
 
 class MyController():
     FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
+
 
     def __init__(self):
         view = Shared['AppWindow']
@@ -47,14 +47,13 @@ class MyController():
         self.in_thread = None
         self.file_list_source = MyController.FOLDER
         self._dbu = DBUtils()
-        self._cb_places = Places(self)
         self._opt = SelOpt(self)
         self._restore_font()
         self._restore_fields()
+        self._methods = self._on_data_methods()
 
     def _on_data_methods(self):
         return {'Author Remove unused': self._author_remove_unused,
-                'Change place': self._cb_places.about_change_place,
                 'change_font': self._ask_for_change_font,
                 'Dirs Create virtual folder as child': self._create_virtual_child,
                 'Dirs Create virtual folder': self._create_virtual,
@@ -63,7 +62,7 @@ class MyController():
                 'Dirs Group': self._add_group_folder,
                 'Dirs Rename folder': self._rename_folder,
                 'Dirs Rescan dir': self._rescan_dir,
-                'dirTree': self._populate_directory_tree,  # emit from Places
+                # 'dirTree': self._populate_directory_tree,  # emit from Places
                 'Edit authors': self._edit_authors,
                 'Edit comment': self._edit_comment,
                 'Edit key words': self._edit_key_words,
@@ -106,7 +105,7 @@ class MyController():
             idx_list = self._curr_selected_dirs(curr_idx)
             
             d_dat = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
-            new_parent = (new_name, d_dat.parent_id, self._cb_places.get_curr_place().id_, 3)
+            new_parent = (new_name, d_dat.parent_id, 3)
             new_parent_id = self._dbu.insert_other('DIR', new_parent)
             self.ui.dirTree.model().create_new_parent(curr_idx, (new_parent_id, *new_parent), idx_list)
     
@@ -145,8 +144,7 @@ class MyController():
             parent_id = self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
         else:
             parent_id = 0
-        place_id = self._cb_places.get_curr_place().id_
-        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, place_id, 2))
+        dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, 2))
 
         item = EditTreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
 
@@ -173,6 +171,7 @@ class MyController():
     def _exist_in_virt_dirs(self, dir_id, parent_id):
         return self._dbu.select_other('EXIST_IN_VIRT_DIRS', (dir_id, parent_id)).fetchone()
 
+    # not used now ???
     def _is_parent_virtual(self, index):
         parent = self.ui.dirTree.model().parent(index)
         return self.ui.dirTree.model().is_virtual(parent)
@@ -192,7 +191,7 @@ class MyController():
         """
         used while copying, moving, deleting files
         :return:  list of (model index, full path, user data, file name)
-                  where user data = (FileID, DirID, CommentID, ExtID, PlaceId, Source)
+                  where user data = (FileID, DirID, CommentID, ExtID, Source)
                   if Source > 0 then it is dir_id of virtual folder,
                   if Source ==0 then it is real folder,
                   if Source == -1 then it is advanced selection
@@ -201,29 +200,26 @@ class MyController():
         files = []
         indexes = self._persistent_row_indexes(self.ui.filesList)
         model = self.ui.filesList.model().sourceModel()
-        disk_letter = self._cb_places.get_mount_point()
         for idx in indexes:
             if idx.column() == 0:
                 file_name = model.data(idx)
                 u_dat = model.data(idx, Qt.UserRole)
                 file_path, _ = self._dbu.select_other('PATH', (u_dat.dir_id,)).fetchone()
-                if disk_letter:
-                    file_path = os.altsep.join((disk_letter, file_path))
                 file_data = file_._make((idx, os.path.join(file_path, file_name), u_dat, file_name))
                 files.append(file_data)
         return files
 
-    def _move_file_to(self, dir_id, place_id, to_path, file):
+    def _move_file_to(self, dir_id, to_path, file):
         import shutil
         try:
             shutil.move(file[1], to_path)
-            self._dbu.update_other('FILE_DIR_PLACE', (dir_id, place_id, file[2][0]))
+            self._dbu.update_other('FILE_DIR_ID', (dir_id, file[2][0]))
             self.ui.filesList.model().sourceModel().delete_row(file[0])
         except IOError:
             show_message("Can't move file \"{}\" into folder \"{}\"".
                          format(file[3], to_path), 5000)
 
-    def _copy_file_to(self, dir_id, place_id, to_path, file_):
+    def _copy_file_to(self, dir_id, to_path, file_):
         # file_ = namedtuple('file_', 'index name_with_path user_data name')
         import shutil
         try:
@@ -233,8 +229,7 @@ class MyController():
                 new_file_id = file_id[0]
             else:
                 new_file_id = self._dbu.insert_other2('COPY_FILE',
-                                                      (dir_id, place_id,
-                                                       file_.user_data[0]))
+                                                      (dir_id, file_.user_data[0]))
 
             self._dbu.insert_other2('COPY_TAGS', (new_file_id, file_.user_data[0]))
             self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file_.user_data[0]))
@@ -242,48 +237,33 @@ class MyController():
             show_message("Can't copy file \"{}\" into folder \"{}\"".
                          format(file_[3], to_path), 5000)
 
-    def _get_dir_id(self, to_path):
-        place_name, state = self._cb_places.get_place_name(to_path)
-        registered_place = self._cb_places.get_place_by_name(place_name)
-        if not registered_place:
-            QMessageBox.critical(self.ui.filesList, 'Path problem',
-                                 'Please create place before copy to {}'.format(to_path))
-            return 0, 0
-
-        tmp_place = Places.CurrPlace._make(0, state, *registered_place)
-
-        return MyController._find_or_create_dir_id(tmp_place, to_path), tmp_place.id_
-
-    @staticmethod
-    def _find_or_create_dir_id(tmp_place, to_path):
-        trantab = str.maketrans(os.sep, os.altsep)
-        path = to_path.translate(trantab)
-        if tmp_place.disk_state == Places.MOUNTED:
-            path = path.partition(os.altsep)[2]
-
-        ld = LoadDBData(tmp_place)
-        return ld.insert_dir(path)
+    def _get_dir_id(self, to_path: str) -> (int, bool):
+        '''
+        _get_dir_id - auxilary method for copying files to to_path dirrectory
+        to_path  target directory
+        returns (DirId: int, isNewDirID: bool) for target directory
+        '''
+        ld = LoadDBData()
+        return ld.insert_dir(to_path)
 
     def _copy_files(self):
-        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
-                                                         'Select the folder to copy')
-            if to_path:
-                place_id = self.copy_files_to(to_path)
+        '''
+        _copy_files - select directory to copy selected files
+        and copy them to this directory
+        '''
+        to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
+                                                     'Select the folder to copy')
+        if to_path:
+            if self.copy_files_to(to_path):
+                self._populate_directory_tree()
 
-                if place_id == self._cb_places.get_curr_place().id_:
-                    self._populate_directory_tree()
-        else:
-            param = self._cb_places.get_curr_place().title
-            show_message('File(s) inaccessible on "{}"'.format(param))
-
-    def copy_files_to(self, to_path):
-        dir_id, place_id = self._get_dir_id(to_path)
+    def copy_files_to(self, to_path: str) -> bool:
+        dir_id, is_new_dir_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
             for file in selected_files:
-                self._copy_file_to(dir_id, place_id, to_path, file)
-        return place_id
+                self._copy_file_to(dir_id, to_path, file)
+        return is_new_dir_id
 
     def _remove_file(self, file_):
         try:
@@ -294,48 +274,34 @@ class MyController():
             show_message('File "{}" not found'.format(file_[1]))
 
     def _remove_files(self):
-        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            selected_files = self._selected_files()
-            for file in selected_files:
-                self._remove_file(file)
-        else:
-            param = self._cb_places.get_curr_place().title
-            show_message('File(s) inaccessible on "{}"'.format(param))
+        selected_files = self._selected_files()
+        for file in selected_files:
+            self._remove_file(file)
 
     def _move_files(self):
-        if self._cb_places.get_disk_state() & (Places.MOUNTED | Places.NOT_REMOVAL):
-            to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
-                                                         'Select the folder to move')
-            if to_path:
-                place_id = self.move_files_to(to_path)
-
-                if place_id == self._cb_places.get_curr_place().id_:
-                    self._populate_directory_tree()
-        else:
-            param = self._cb_places.get_curr_place().title
-            show_message('File(s) inaccessible on "{}"'.format(param))
+        to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
+                                                        'Select the folder to move')
+        if to_path:
+            if self.move_files_to(to_path):
+                self._populate_directory_tree()
 
     def move_files_to(self, to_path):
-        dir_id, place_id = self._get_dir_id(to_path)
+        dir_id, is_new_id = self._get_dir_id(to_path)
         if dir_id > 0:
             selected_files = self._selected_files()
             for file in selected_files:
-                self._move_file_to(dir_id, place_id, to_path, file)
-        return place_id
+                self._move_file_to(dir_id, to_path, file)
+        return is_new_id
 
     def _rename_file(self):
-        path, file_name, status, file_id, idx = self._file_path()
-        if status & (Places.MOUNTED | Places.NOT_REMOVAL):
-            new_name, ok_ = QInputDialog.getText(self.ui.filesList,
-                                                 'Input new name', '',
-                                                 QLineEdit.Normal, file_name)
-            if ok_:
-                self.ui.filesList.model().sourceModel().update(idx, new_name)
-                os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
-                self._dbu.update_other('FILE_NAME', (new_name, file_id))
-        else:
-            param = self._cb_places.get_curr_place().title
-            show_message('File(s) inaccessible on "{}"'.format(param))
+        path, file_name, file_id, idx = self._file_path()
+        new_name, ok_ = QInputDialog.getText(self.ui.filesList,
+                                             'Input new name', '',
+                                             QLineEdit.Normal, file_name)
+        if ok_:
+            self.ui.filesList.model().sourceModel().update(idx, new_name)
+            os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
+            self._dbu.update_other('FILE_NAME', (new_name, file_id))
 
     def _restore_fields(self):
         settings = QSettings()
@@ -374,17 +340,11 @@ class MyController():
             QApplication.clipboard().setText(txt)
 
     def _copy_path(self):
-        path, _, _, _, _ = self._file_path()
+        path, *_ = self._file_path()
         QApplication.clipboard().setText(path)
-
-    def get_places_view(self):
-        return self.ui.cb_places
 
     def get_db_utils(self):
         return self._dbu
-
-    def get_place_instance(self):
-        return self._cb_places
 
     def on_open_db(self, file_name, create, the_same):
         """
@@ -394,6 +354,7 @@ class MyController():
         :param the_same: bool if the same db is opened
         :return: None
         """
+        # breakpoint()
         self.same_db = the_same
         if create:
             _connection = sqlite3.connect(file_name, check_same_thread=False,
@@ -407,9 +368,10 @@ class MyController():
                 show_message("Data base does not exist")
                 return
 
-        parts = file_name.rpartition(os.altsep)
-        Shared['AppWindow'].setWindowTitle('I manage the files you select. DB:{},  '
-                                           'In {}'.format(parts[2], parts[0]))
+        path = os.path.dirname(file_name)
+        f_name = os.path.basename(file_name)
+        Shared['AppWindow'].setWindowTitle('Current DB:{}, located in {}'.
+                            format(f_name, path))
         self._dbu.set_connection(_connection)
         self._dbu.select_other('PRAGMA', ())
         self._populate_all_widgets()
@@ -423,9 +385,9 @@ class MyController():
         try:
             act = action.split('/')
             if len(act) == 1:
-                self._on_data_methods()[action]()
+                self._methods[action]()
             else:
-                self._on_data_methods()[act[0]](act[1:])
+                self._methods[act[0]](act[1:])
         except KeyError:
             show_message('Action "{}" not implemented'.format(action), 5000)
 
@@ -483,7 +445,6 @@ class MyController():
         self.ui.tagsList.setFont(Shared['AppFont'])
         self.ui.authorsList.setFont(Shared['AppFont'])
         self.ui.commentField.setFont(Shared['AppFont'])
-        self.ui.cb_places.setFont(Shared['AppFont'])
 
     def _author_remove_unused(self):
         self._dbu.delete_other('UNUSED_AUTHORS', ())
@@ -549,7 +510,7 @@ class MyController():
         self._populate_directory_tree()
         self._populate_ext_list()
 
-        self.obj_thread = FileInfo(self._cb_places, updated_dirs)
+        self.obj_thread = FileInfo(updated_dirs)
         self._run_in_qthread(MyController._finish_thread)
 
     def _run_in_qthread(self, finish):
@@ -565,8 +526,8 @@ class MyController():
         show_message('Updating of files is finished', 5000)
 
     def _favorite_file_list(self):
-        place_id = self._cb_places.get_curr_place().id_
-        fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
+        # 
+        fav_id = self._dbu.select_other('FAV_ID', ()).fetchone()
 
         self._populate_virtual(fav_id[0])
 
@@ -612,7 +573,7 @@ class MyController():
         res = self._opt.get_result()
         model = self._set_file_model()
 
-        curs = self._dbu.advanced_selection(res, self._cb_places.get_curr_place().id_)
+        curs = self._dbu.advanced_selection(res)
         if curs:
             self._show_files(curs, model, -1)
             self.file_list_source = MyController.ADVANCE
@@ -624,8 +585,7 @@ class MyController():
     def _add_file_to_favorites(self):
         f_idx = self.ui.filesList.currentIndex()
         file_id = self.ui.filesList.model().data(f_idx, Qt.UserRole).file_id
-        place_id = self._cb_places.get_curr_place().id_
-        fav_id = self._dbu.select_other('FAV_ID', (place_id,)).fetchone()
+        fav_id = self._dbu.select_other('FAV_ID', ()).fetchone()
 
         self._dbu.insert_other('VIRTUAL_FILE', (fav_id[0], file_id))
 
@@ -644,6 +604,7 @@ class MyController():
 
                 model.delete_row(f_idx)
 
+    # not used now ???
     def _is_virtual_dir(self):
         cur_idx = self.ui.dirTree.currentIndex()
         return self.ui.dirTree.model().is_virtual(cur_idx)
@@ -666,12 +627,13 @@ class MyController():
         self._dbu.delete_other2('COMMENT', (file_ids[2], file_ids[2]))
 
     def _open_folder(self):
-        path, _, state, _, _ = self._file_path()
-        if state & (Places.MOUNTED | Places.NOT_REMOVAL):
+        path, _, _, _ = self._file_path()
+        try:
             webbrowser.open(''.join(('file://', path)))
+        except webbrowser.Error as folder_error:
+            show_message('File(s) inaccessible on "{}"'.format(path))
         else:
-            param = self._cb_places.get_curr_place().title
-            show_message('File(s) inaccessible on "{}"'.format(param))
+            pass
 
     def _double_click_file(self):
         f_idx = self.ui.filesList.currentIndex()
@@ -709,28 +671,25 @@ class MyController():
             self.ui.filesList.model().update(f_idx, pages)
 
     def _open_file(self):
-        path, file_name, status, file_id, idx = self._file_path()
-        full_file_name = os.altsep.join((path, file_name))
-        if status & (Places.MOUNTED | Places.NOT_REMOVAL):
-            if os.path.isfile(full_file_name):
-                try:
-                    os.startfile(full_file_name)
-                    cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[:16]
-                    cur_date = cur_date.replace('T', ' ')
-                    self._dbu.update_other('OPEN_DATE', (cur_date, file_id))
-                    model = self.ui.filesList.model()
-                    heads = model.get_headers()
-                    if 'Opened' in heads:
-                        idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
-                        model.sourceModel().update(idx_s, cur_date)
-                except OSError:
-                    show_message('Can\'t open file "{}"'.format(full_file_name))
-            else:
-                show_message("Can't find file \"{}\"".format(full_file_name))
+        path, file_name, file_id, idx = self._file_path()
+        full_file_name = os.path.join(path, file_name)
+        if os.path.isfile(full_file_name):
+            try:
+                os.startfile(full_file_name)
+                cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[:16]
+                cur_date = cur_date.replace('T', ' ')
+                self._dbu.update_other('OPEN_DATE', (cur_date, file_id))
+                model = self.ui.filesList.model()
+                heads = model.get_headers()
+                if 'Opened' in heads:
+                    idx_s = model.sourceModel().createIndex(idx.row(), heads.index('Opened'))
+                    model.sourceModel().update(idx_s, cur_date)
+            except OSError:
+                show_message('Can\'t open file "{}"'.format(full_file_name))
         else:
-            show_message('File "{}" is inaccessible'.format(full_file_name))
+            show_message("Can't find file \"{}\"".format(full_file_name))
 
-    def _file_path(self):
+    def _file_path(self) -> (str, str, int, int):
         # todo   is it exist currentRow() method ?
         f_idx = self.ui.filesList.currentIndex()
         if f_idx.isValid():
@@ -740,13 +699,9 @@ class MyController():
                 f_idx = model.sourceModel().createIndex(f_idx.row(), 0)
             file_name = model.sourceModel().data(f_idx)
             file_id, dir_id, *_ = model.sourceModel().data(f_idx, role=Qt.UserRole)
-            path, place_id = self._dbu.select_other('PATH', (dir_id,)).fetchone()
-            state = self._cb_places.get_state(place_id)
-            if state == Places.MOUNTED:
-                root = self._cb_places.get_mount_point()
-                path = os.altsep.join((root, path))
-            return path, file_name, state, file_id, f_idx
-        return '', '', Places.NOT_DEFINED, 0, f_idx
+            path = self._dbu.select_other('PATH', (dir_id,)).fetchone()
+            return path, file_name, file_id, f_idx
+        return '', '', 0, f_idx
 
     def _edit_key_words(self):
         curr_idx = self.ui.filesList.currentIndex()
@@ -808,7 +763,7 @@ class MyController():
 
     def _edit_authors(self):
         """
-        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, ExtID, PlaceId)
+        model().data(curr_idx, Qt.UserRole) = (FileID, DirID, CommentID, ExtID)
         """
         curr_idx = self.ui.filesList.currentIndex()
         u_data = self.ui.filesList.model().data(curr_idx, Qt.UserRole)
@@ -838,7 +793,7 @@ class MyController():
     def _check_existence(self):
         """
         Check if comment record already created for file
-        Note: user_data = (FileID, DirID, CommentID, ExtID, PlaceId, Source)
+        Note: user_data = (FileID, DirID, CommentID, ExtID, Source)
         :return: (file_id, dir_id, comment_id, comment, book_title)
         """
         file_comment = namedtuple('file_comment',
@@ -1026,7 +981,7 @@ class MyController():
         settings.setValue('FILE_LIST_SOURCE', self.file_list_source)
         model = self._set_file_model()
         if dir_idx:
-            files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0], self._cb_places.get_curr_place().id_))
+            files = self._dbu.select_other('FILES_CURR_DIR', (dir_idx[0],))
             self._show_files(files, model, 0)
 
             self.status_label.setText('{} ({})'.format(dir_idx[-1],
@@ -1115,7 +1070,6 @@ class MyController():
             model.update(idx, cur_date)
 
     def _populate_all_widgets(self):
-        self._cb_places.populate_cb_places()
         self._populate_ext_list()
         self._restore_ext_selection()
         self._populate_tag_list()
@@ -1143,7 +1097,7 @@ class MyController():
     def _populate_directory_tree(self):
         # todo - do not correctly restore when reopen from toolbar button
         print('====> _populate_directory_tree')
-        dirs = self._get_dirs(self._cb_places.get_curr_place().id_)
+        dirs = self._get_dirs()
         self._insert_virt_dirs(dirs)
 
         for dir_ in dirs:
@@ -1162,59 +1116,34 @@ class MyController():
 
         self._restore_file_list(cur_dir_idx)
 
-        if dirs:
-            if self._cb_places.get_disk_state() & (Places.NOT_DEFINED | Places.NOT_MOUNTED):
-                show_message('Files are in an inaccessible place')
-            self._resize_columns()
+        self._resize_columns()
 
-    def _get_dirs(self, place_id):
+    def _get_dirs(self):
         """
-        Returns directory tree for current place
-        :param place_id:
+        Returns directory tree 
         :return: list of tuples (Dir name, DirID, ParentID, isVirtual, Full path of dir)
         """
         dirs = []
-        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0, place_id=place_id)
+        dir_tree = self._dbu.dir_tree_select(dir_id=0, level=0)
 
-        if self._cb_places.get_disk_state() == Places.MOUNTED:
-            # bind dirs with mount point
-            root = self._cb_places.get_mount_point()
-            for rr in dir_tree:
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1],
-                             os.altsep.join((root, rr[0]))))
-        else:
-            for rr in dir_tree:
-                print('** ', rr)
-                dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
+        for rr in dir_tree:
+            print('** ', rr)
+            dirs.append((os.path.split(rr[0])[1], *rr[1:len(rr)-1], rr[0]))
         return dirs
 
     def _insert_virt_dirs(self, dir_tree: list):
-        virt_dirs = self._dbu.select_other('VIRT_DIRS', (self._cb_places.get_curr_place().id_,))
+        virt_dirs = self._dbu.select_other('VIRT_DIRS', ())
         id_list = [x[1] for x in dir_tree]
 
-        if self._cb_places.get_disk_state() == Places.MOUNTED:
-            # bind dirs with mount point
-            root = self._cb_places.get_mount_point()
-            for vd in virt_dirs:
-                if vd[-1] == 1:
-                    vd = (*vd[:-1], 2)
-                try:
-                    idx = id_list.index(vd[2])
-                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], 
-                                          os.altsep.join((root, vd[0]))))
-                    id_list.insert(idx, vd[1])
-                except ValueError:
-                    pass
-        else:
-            for vd in virt_dirs:
-                if vd[-1] == 1:
-                    vd = (*vd[:-1], 2)
-                try:
-                    idx = id_list.index(vd[2])
-                    dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], vd[0]))
-                    id_list.insert(idx, vd[1])
-                except ValueError:
-                    pass
+        for vd in virt_dirs:
+            if vd[-1] == 1:
+                vd = (*vd[:-1], 2)
+            try:
+                idx = id_list.index(vd[2])
+                dir_tree.insert(idx, (os.path.split(vd[0])[1], *vd[1:], vd[0]))
+                id_list.insert(idx, vd[1])
+            except ValueError:
+                pass
 
     def _cur_dir_changed(self, curr_idx):
         """
@@ -1297,16 +1226,11 @@ class MyController():
         scanning the file system
         :return: None
         """
-        if (self._cb_places.get_disk_state()
-                & (Places.MOUNTED | Places.NOT_REMOVAL | Places.NOT_DEFINED)):
-            path_, ext_ = self._scan_file_system()
-            self._load_files(path_, ext_)
-        else:
-            show_message("Can't scan disk for files. Disk is not accessible.")
+        path_, ext_ = self._scan_file_system()
+        self._load_files(path_, ext_)
 
     def _load_files(self, path_, ext_):
-        curr_place = self._cb_places.get_curr_place()
-        self.obj_thread = LoadFiles(curr_place, path_, ext_)
+        self.obj_thread = LoadFiles(path_, ext_)
         self._run_in_qthread(self._dir_update)
 
     def _scan_file_system(self):
@@ -1316,13 +1240,8 @@ class MyController():
         if ok_pressed:
             root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
             if root:
-                place_name, _ = self._cb_places.get_place_name(root)
-                cur_place = self._cb_places.get_curr_place()
-                if place_name == cur_place.place:
-                    return root, ext_item
-                show_message('Folder "{}" not in the place "{}"'.
-                             format(root, cur_place.title), 5000)
-        return ('', '')  # not ok_pressed or root is empty or root is not in current place
+                return root, ext_item
+        return ('', '')  # not ok_pressed or root is empty
 
     @staticmethod
     def get_selected_items(view):

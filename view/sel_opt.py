@@ -130,10 +130,9 @@ class SelOpt(QDialog):
             lvl = 0
             idx = self.ctrl.ui.dirTree.currentIndex()
             root_id = int(self.ctrl.ui.dirTree.model().data(idx, Qt.UserRole)[0])
-            place_id = self.ctrl.get_place_instance().get_curr_place()[1][0]
 
             ids = ','.join([str(id_[0]) for id_ in
-                            self.ctrl.get_db_utils().dir_ids_select(root_id, lvl, place_id)])
+                            self.ctrl.get_db_utils().dir_ids_select(root_id, lvl)])
             return ids
         return None
 

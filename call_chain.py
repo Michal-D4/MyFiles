@@ -375,7 +375,7 @@ class MethodsTree():
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    dir_h = r'd:\Users\mihal\_vs_prjs\MyFiles'    # Home
+    dir_h = r'/home/michal/myWork/py/wfiles/MyFiles'    # Home
     dir_w = r'D:\Users\PycharmProjects\MyFiles'   # Work
 
     # todo if there are methods with the same name in different class
@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # file_ = 'TreeItem.py'
     # file_ = 'tmp.py'
 
-    dir_ = dir_h if socket.gethostname() == 'thenote' else dir_w
+    dir_ = dir_h if socket.gethostname() == 'michal-pc' else dir_w
     full_file_name = os.path.join(dir_, file_)
 
     # infinite loop

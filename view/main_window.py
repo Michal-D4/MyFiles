@@ -1,4 +1,4 @@
-# view/main_flow.py
+# view/main_window.py
 
 from PyQt5.QtCore import (pyqtSignal, QSettings, QVariant, QSize, Qt, QUrl, QEvent, QMimeData)
 from PyQt5.QtGui import QResizeEvent, QDrag, QPixmap, QDropEvent, QDragMoveEvent
@@ -40,10 +40,9 @@ class AppWindow(QMainWindow):
         """
         self.ui.actionOpenDB.triggered.connect(lambda: self.open_dialog.exec_())
         self.ui.actionScanFiles.triggered.connect(lambda: self.scan_files_signal.emit())
-        self.ui.actionGetFiles.triggered.connect(lambda: self.change_data_signal.emit('Select files'))
+        self.ui.actionFileFilter.triggered.connect(lambda: self.change_data_signal.emit('Select files'))
         self.ui.actionFavorites.triggered.connect(lambda: self.change_data_signal.emit('Favorites'))
 
-        self.ui.cb_places.currentIndexChanged.connect(lambda: self.change_data_signal.emit('Change place'))
         self.ui.commentField.anchorClicked.connect(self.ref_clicked)
         self.ui.filesList.doubleClicked.connect(lambda: self.change_data_signal.emit('File_doubleClicked'))
 
@@ -140,9 +139,11 @@ class AppWindow(QMainWindow):
         :return:
         """
         menu = QMenu(self)
+        open_db = menu.addAction('Open DB')
         change_font = menu.addAction('Change Font')
         set_fields = menu.addAction('Set fields')
         self.ui.btnOption.setMenu(menu)
+        open_db.triggered.connect(lambda: self.open_dialog.exec_())
         change_font.triggered.connect(lambda: self.change_data_signal.emit('change_font'))
         set_fields.triggered.connect(lambda: self.change_data_signal.emit('Set fields'))
 

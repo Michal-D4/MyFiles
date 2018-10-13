@@ -1,6 +1,6 @@
 # view/my_db_choice.py
 
-from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QCoreApplication
+from PyQt5.QtCore import pyqtSignal, QSettings, QVariant, QCoreApplication, Qt
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 
 from view.ui_db_choice import Ui_ChoiceDB
@@ -34,10 +34,11 @@ class DBChoice(QDialog):
 
         self.ui_db_choice.listOfBDs.setSelectionMode(1)
 
+        breakpoint()
         self.init_data = None
         self.last_db_no = -1
         self.load_init_data()
-        self.initiate_window(self.init_data)
+        self.initiate_window()
 
     def row_changed(self, curr_row):
         self.init_data[1] = curr_row
@@ -74,7 +75,7 @@ class DBChoice(QDialog):
         file_name, _ = QFileDialog.getSaveFileName(self, "Create DB", "",
                                                   options=options)
         if file_name:
-            if not (file_name in self.init_data[2]):
+            if (len(self.init_data[2])) == 0 or (file_name not in self.init_data[2]):
                 self.create_db(file_name)
                 self.open_DB_signal.emit(file_name, True, False)
                 super(DBChoice, self).accept()
@@ -101,7 +102,7 @@ class DBChoice(QDialog):
             file_name = self.ui_db_choice.listOfBDs.currentItem().text()
             self.open_DB_signal.emit(file_name, False, self.last_db_no == self.init_data[1])
 
-    def initiate_window(self, init_data):
+    def initiate_window(self):
         '''
         Initiate data in widgets
         :param init_data: list of 3 items:
@@ -110,11 +111,11 @@ class DBChoice(QDialog):
             2 - list of DBs
         :return: None
         '''
-        if init_data:
-            self.ui_db_choice.skipThisWindow.setCheckState(init_data[0])
-            db_index = init_data[1]
-            if init_data[2]:
-                for db in init_data[2]:
+        if self.init_data:
+            self.ui_db_choice.skipThisWindow.setCheckState(self.init_data[0])
+            db_index = self.init_data[1]
+            if self.init_data[2]:
+                for db in self.init_data[2]:
                     self.ui_db_choice.listOfBDs.addItem(db)
                 self.ui_db_choice.listOfBDs.setCurrentRow(db_index)
             if self.ui_db_choice.listOfBDs.count() == 0:
@@ -125,8 +126,10 @@ class DBChoice(QDialog):
 
     def load_init_data(self):
         setting = QSettings()
-        if setting.contains('DB/init_data'):
-            _data = setting.value('DB/init_data', [0, 0, []])
+        if setting.contains('DB/skip_dialog_flag'):
+            _data = [setting.value('DB/skip_dialog_flag', 0, type=int),
+                     setting.value('DB/current_index', 0, type=int), 
+                     setting.value('DB/list_of_DB', [], type=list)]
         else:
             _data = [0, 0, []]
         self.last_db_no = _data[1]
@@ -138,7 +141,9 @@ class DBChoice(QDialog):
 
     def _save_settings(self):
         setting = QSettings()
-        setting.setValue('DB/init_data', QVariant(self.init_data))
+        setting.setValue('DB/skip_dialog_flag', self.init_data[0])
+        setting.setValue('DB/current_index', self.init_data[1])
+        setting.setValue('DB/list_of_DB', self.init_data[2])
 
     def skip_open_dialog(self):
         res = self.init_data[0] == SKIP_OPEN_DIALOG

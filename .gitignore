@@ -19,5 +19,6 @@ myFiles.egg-info
 ui_*.py
 test*.py
 *_rc.py
+call_chain.py
 # setup.pcl used to pickle settings
 *.pcl
