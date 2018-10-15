@@ -22,6 +22,10 @@ sys.excepthook = my_exception_hook
 
 
 def main():
+    from PyQt5.QtCore import pyqtRemoveInputHook
+
+    pyqtRemoveInputHook()
+
     app = QApplication(sys.argv)
     dlg = DBChoice()
     main_window = AppWindow()
