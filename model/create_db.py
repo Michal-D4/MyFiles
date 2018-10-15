@@ -1,6 +1,5 @@
 # model/create_db.py
 
-import socket
 import sqlite3
 
 OBJ_DEFS = (
@@ -82,16 +81,16 @@ ActCode INTEGER
 ParentID INTEGER not null,
 DirID INTEGER not null,
 FOREIGN KEY(ParentID) REFERENCES Dirs(DirID) ON DELETE CASCADE
-)''',
+);''',
     '''CREATE TABLE IF NOT EXISTS FilesVirt (
 DirID INTEGER not null,
 FileID INTEGER not null,
 FOREIGN KEY(DirID) REFERENCES Dirs(DirID) ON DELETE CASCADE
-)''',
+);''',
 
     'CREATE INDEX IF NOT EXISTS Dirs_ParentID ON Dirs(ParentID);',
-    'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ActTime desc)',
-    'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ObjID, ActTime desc)'
+    'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ActTime desc);',
+    'CREATE INDEX IF NOT EXISTS LogIdx ON Log(ObjID, ActTime desc);',
 )
 
 
@@ -109,11 +108,10 @@ def create_all_objects(connection):
 
 def initiate_db(connection):
     cursor = connection.cursor()
-    loc = socket.gethostname()
     try:
         cursor.execute('insert into Dirs (DirID) values (0);')
         cursor.execute(' '.join(('insert into Dirs (Path, ParentID, isVirtual)',
-                                 ' values ("Favorites", 1, 0, 1);')))
+                                 ' values ("Favorites", 0, 1);')))
     except sqlite3.Error as err:
         print("An error occurred:", err.args[0])
 
