@@ -33,7 +33,8 @@ def get_file_extension(file_name):
 
 
 def get_parent_dir(path):
-    return path.rpartition(os.altsep)[0]
+    # return path.rpartition(os.altsep)[0]
+    return os.path.dirname(path)
 
 
 def show_message(message, time=3000):
