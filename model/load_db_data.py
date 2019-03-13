@@ -43,8 +43,8 @@ class LoadDBData:
         :param data: - iterable lines of file names with full path
         :return: None
         """
+        breakpoint()
         files = LoadDBData._yield_files(path_, ext_)
-        trantab = str.maketrans(os.sep, os.altsep)
         for line in files:
             path = os.path.dirname(line)
             idx = self.insert_dir(path)
@@ -63,13 +63,18 @@ class LoadDBData:
 
         item = self.cursor.execute(FIND_FILE, {'dir_id': dir_id, 'file': file_}).fetchone()
         if not item:
-            ext_id, ext = self.insert_extension(file_)
+            ext_id, _ = self.insert_extension(file_)
             if ext_id > 0:      # files with an empty extension are not handled
                 self.cursor.execute(INSERT_FILE, {'dir_id': dir_id,
                                                   'file': file_,
                                                   'ext_id': ext_id})
 
-    def insert_extension(self, file):
+    def insert_extension(self, file: str) -> (int, str):
+        '''
+        insert or find extension in DB
+        :param file - file name
+        returns (ext_id, extension_of_file)
+        '''
         ext = get_file_extension(file)
         if ext:
             item = self.cursor.execute(FIND_EXT, (ext,)).fetchone()
@@ -83,11 +88,12 @@ class LoadDBData:
             idx = 0
         return idx, ext
 
-    def insert_dir(self, path):
+    def insert_dir(self, path: str) -> (int, bool):
         '''
         Insert directory into Dirs table
         :param path:
-        :return: row ID of file dir
+        :return: (dirID, is_created)
+        "is_created = false" doesn't mean error, dirID already exists
         '''
         idx, parent_path = self.search_closest_parent(path)
         if parent_path == path:
@@ -122,11 +128,11 @@ class LoadDBData:
 
         return idx
 
-    def search_closest_parent(self, path):
+    def search_closest_parent(self, path: str) -> (int, str):
         '''
         Search parent directory
         :param path:  file path
-        :return:  tuple of ID and path of parent directory or (0, '')
+        :return:  (ID, path_to_parent_directory) or (0, '')
         '''
         res = (0, '')
         while path:
