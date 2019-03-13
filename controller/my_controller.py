@@ -42,7 +42,7 @@ class MyController():
         self.ui.statusbar.addPermanentWidget(self.status_label)
 
         self.fields = Fields._make(((), (), ()))
-        self.same_db = False
+        self.recent = False    # todo remove it? - used only for restoring setting
         self.obj_thread = None
         self.in_thread = None
         self.file_list_source = MyController.FOLDER
@@ -103,21 +103,22 @@ class MyController():
         if ok_:
             curr_idx = self.ui.dirTree.currentIndex()
             idx_list = self._curr_selected_dirs(curr_idx)
-            
+
             d_dat = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
             new_parent = (new_name, d_dat.parent_id, 3)
             new_parent_id = self._dbu.insert_other('DIR', new_parent)
-            self.ui.dirTree.model().create_new_parent(curr_idx, (new_parent_id, *new_parent), idx_list)
-    
+            self.ui.dirTree.model().create_new_parent(curr_idx, (new_parent_id,
+                *new_parent), idx_list)
+
     def _curr_selected_dirs(self, curr_idx):
         if not self.ui.dirTree.selectionModel().isSelected(curr_idx):
             self.ui.dirTree.selectionModel().select(curr_idx, QItemSelectionModel.SelectCurrent)
         selected_indexes = self.ui.dirTree.selectionModel().selectedRows()
-        
+
         idx_list = []
         for idx in selected_indexes:
             idx_list.append(QPersistentModelIndex(idx))
-        
+
         return idx_list
 
     def _create_virtual_child(self):
@@ -165,7 +166,7 @@ class MyController():
         else:
             self._dbu.delete_other('VIRT_FROM_DIRS', (dir_id,))
             self._dbu.delete_other('VIRT_DIR_ID', (dir_id,))
-            self.ui.dirTree.model().remove_all_copies(cur_idx)         
+            self.ui.dirTree.model().remove_all_copies(cur_idx)
             print('*** not exist')
 
     def _exist_in_virt_dirs(self, dir_id, parent_id):
@@ -346,19 +347,20 @@ class MyController():
     def get_db_utils(self):
         return self._dbu
 
-    def on_open_db(self, file_name, create, the_same):
+    def on_db_connection(self, file_name, create, last_used):
         """
         Open or Create DB
         :param file_name: full file name of DB
         :param create: bool, Create DB if True, otherwise - Open
-        :param the_same: bool if the same db is opened
+        :param last_used: bool if last used db is opened
         :return: None
         """
-        # breakpoint()
-        self.same_db = the_same
+        self.recent = last_used
+        # to do - extract this if? use try-else - return connection or None, move it to helper
+        #  call dirrectly without signal
         if create:
             _connection = sqlite3.connect(file_name, check_same_thread=False,
-                                          detect_types=DETECT_TYPES)
+                detect_types=DETECT_TYPES)
             create_db.create_all_objects(_connection)
         else:
             if os.path.isfile(file_name):
@@ -379,6 +381,8 @@ class MyController():
     def on_change_data(self, action):
         '''
         run methods for change_data_signal
+
+
         :param action:
         :return:
         '''
@@ -526,7 +530,7 @@ class MyController():
         show_message('Updating of files is finished', 5000)
 
     def _favorite_file_list(self):
-        # 
+
         fav_id = self._dbu.select_other('FAV_ID', ()).fetchone()
 
         self._populate_virtual(fav_id[0])
@@ -627,11 +631,14 @@ class MyController():
         self._dbu.delete_other2('COMMENT', (file_ids[2], file_ids[2]))
 
     def _open_folder(self):
-        path, _, _, _ = self._file_path()
+        path, *_ = self._file_path()
+        self._open(''.join(('file://', path)))
+
+    def _open(self, path_: str):
         try:
-            webbrowser.open(''.join(('file://', path)))
-        except webbrowser.Error as folder_error:
-            show_message('File(s) inaccessible on "{}"'.format(path))
+            webbrowser.open(path_)
+        except webbrowser.Error:
+            show_message('Folder is inaccessible on "{}"'.format(path_))
         else:
             pass
 
@@ -675,7 +682,8 @@ class MyController():
         full_file_name = os.path.join(path, file_name)
         if os.path.isfile(full_file_name):
             try:
-                os.startfile(full_file_name)
+                # os.startfile(full_file_name)    # FixMe Windows specific
+                self._open(full_file_name)
                 cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[:16]
                 cur_date = cur_date.replace('T', ' ')
                 self._dbu.update_other('OPEN_DATE', (cur_date, file_id))
@@ -818,7 +826,7 @@ class MyController():
         # TODO check curr_dir_idx before call _restore_file_list ???
         if not curr_dir_idx.isValid():
             curr_dir_idx = self.ui.dirTree.model().index(0, 0)
-        if self.same_db:
+        if self.recent:
             settings = QSettings()
             self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
             row = settings.value('FILE_IDX', 0)
@@ -926,7 +934,7 @@ class MyController():
         settings.setValue('TAG_SEL_LIST', sel)
 
     def _restore_tag_selection(self):
-        if self.same_db:
+        if self.recent:
             settings = QSettings()
             sel = settings.value('TAG_SEL_LIST', [])
             model = self.ui.tagsList.model()
@@ -953,7 +961,7 @@ class MyController():
         settings.setValue('AUTHOR_SEL_LIST', sel)
 
     def _restore_author_selection(self):
-        if self.same_db:
+        if self.recent:
             settings = QSettings()
             sel = settings.value('AUTHOR_SEL_LIST', [])
             model = self.ui.authorsList.model()
@@ -1079,7 +1087,7 @@ class MyController():
         self._populate_directory_tree()
 
     def _restore_ext_selection(self):
-        if self.same_db:
+        if self.recent:
             settings = QSettings()
             sel = settings.value('EXT_SEL_LIST', [])
             model = self.ui.extList.model()
@@ -1120,7 +1128,7 @@ class MyController():
 
     def _get_dirs(self):
         """
-        Returns directory tree 
+        Returns directory tree
         :return: list of tuples (Dir name, DirID, ParentID, isVirtual, Full path of dir)
         """
         dirs = []
@@ -1182,10 +1190,10 @@ class MyController():
         restore expand state and current index of dirTree
         :return: current index
         """
-        print('--> _restore_path: same_db=', self.same_db)
+        print('--> _restore_path: same_db=', self.recent)
         model = self.ui.dirTree.model()
         parent = QModelIndex()
-        if self.same_db:
+        if self.recent:
             settings = QSettings()
             aux = settings.value('TREE_SEL_IDX', [0])
             for id_ in aux:
