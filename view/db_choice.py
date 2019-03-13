@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QDialog, QFileDialog, QListWidgetItem
 from view.ui_db_choice import Ui_ChoiceDB
 from model.helper import Shared
 
+
 SKIP_OPEN_DIALOG = 2
 APP_NAME = 'File manager'
 ORG_DOMAIN = 'fake_domain.org'
@@ -13,7 +14,12 @@ ORG_NAME = 'Fake organization'
 
 
 class DBChoice(QDialog):
-    open_DB_signal = pyqtSignal(str, bool, bool)
+    """
+     str  - DB file_name
+     bool - Create DB if True, otherwise - Open
+     bool - True if last used db is opened
+    """
+     DB_connect_signal = pyqtSignal(str, bool, bool)
 
     def __init__(self, parent=None):
         super(DBChoice, self).__init__(parent)
@@ -34,7 +40,6 @@ class DBChoice(QDialog):
 
         self.ui_db_choice.listOfBDs.setSelectionMode(1)
 
-        breakpoint()
         self.init_data = None
         self.last_db_no = -1
         self.load_init_data()
@@ -67,7 +72,8 @@ class DBChoice(QDialog):
 
     def new_db(self):
         """
-        the program is called by click of 'New' button of this dialog
+        the program is called by click of 'New' button
+        and shows the file dialog to create new file
         :return:
         """
         options = QFileDialog.Options(QFileDialog.HideNameFilterDetails |
@@ -76,8 +82,9 @@ class DBChoice(QDialog):
                                                   options=options)
         if file_name:
             if (len(self.init_data[2])) == 0 or (file_name not in self.init_data[2]):
+                print('--> new_db', file_name)
                 self.create_db(file_name)
-                self.open_DB_signal.emit(file_name, True, False)
+                self.DB_connect_signal.emit(file_name, True, False)
                 super(DBChoice, self).accept()
             else:
                 self.ui_db_choice.listOfBDs.setCurrentRow(self.init_data[2].index(file_name))
@@ -100,7 +107,9 @@ class DBChoice(QDialog):
     def emit_open_dialog(self):
         if self.ui_db_choice.listOfBDs.currentIndex().isValid():
             file_name = self.ui_db_choice.listOfBDs.currentItem().text()
-            self.open_DB_signal.emit(file_name, False, self.last_db_no == self.init_data[1])
+            # todo - if self.last_db_no == self.init_data[1]: not create new connection -
+            # the last param not need
+            self.DB_connect_signal.emit(file_name, False, self.last_db_no == self.init_data[1])
 
     def initiate_window(self):
         '''
@@ -128,7 +137,7 @@ class DBChoice(QDialog):
         setting = QSettings()
         if setting.contains('DB/skip_dialog_flag'):
             _data = [setting.value('DB/skip_dialog_flag', 0, type=int),
-                     setting.value('DB/current_index', 0, type=int), 
+                     setting.value('DB/current_index', 0, type=int),
                      setting.value('DB/list_of_DB', [], type=list)]
         else:
             _data = [0, 0, []]
