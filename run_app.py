@@ -37,7 +37,7 @@ def main():
     main_window.change_data_signal.connect(_controller.on_change_data)
 
     # signal from open_dialog=dlg
-    main_window.open_dialog.open_DB_signal.connect(_controller.on_open_db)
+    main_window.open_dialog.DB_connect_signal.connect(_controller.on_db_connection)
 
     main_window.first_open_data_base()
 

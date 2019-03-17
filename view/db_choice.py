@@ -19,7 +19,7 @@ class DBChoice(QDialog):
      bool - Create DB if True, otherwise - Open
      bool - True if last used db is opened
     """
-     DB_connect_signal = pyqtSignal(str, bool, bool)
+    DB_connect_signal = pyqtSignal(str, bool, bool)
 
     def __init__(self, parent=None):
         super(DBChoice, self).__init__(parent)
