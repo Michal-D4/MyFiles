@@ -1,11 +1,11 @@
 # Ignore all
-*
+#*
 
 # not ignore all with extensions
-!*.*
+#!*.*
 
 # not ignore all dirs
-!*/
+#!*/
 
 .vscode
 __pycache__/
@@ -17,8 +17,9 @@ myFiles.egg-info
 .idea
 *.sqlite
 ui_*.py
-test*.py
+test_*.py
 *_rc.py
 call_chain.py
 # setup.pcl used to pickle settings
 *.pcl
+*.md
