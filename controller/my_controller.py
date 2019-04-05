@@ -32,7 +32,6 @@ FileData = namedtuple('FileData', 'file_id dir_id comment_id ext_id source')
 class MyController():
     FOLDER, VIRTUAL, ADVANCE = (1, 2, 4)
 
-
     def __init__(self):
         view = Shared['AppWindow']
         self.ui = view.ui
@@ -89,7 +88,7 @@ class MyController():
                 'Tag Remove unused': self._tag_remove_unused,
                 'Tag Rename': self._tag_rename,
                 'Tag Scan in names': self._scan_for_tags
-               }
+                }
 
     def _add_group_folder(self):
         """
@@ -108,11 +107,12 @@ class MyController():
             new_parent = (new_name, d_dat.parent_id, 3)
             new_parent_id = self._dbu.insert_other('DIR', new_parent)
             self.ui.dirTree.model().create_new_parent(curr_idx, (new_parent_id,
-                *new_parent), idx_list)
+                                                                 *new_parent), idx_list)
 
     def _curr_selected_dirs(self, curr_idx):
         if not self.ui.dirTree.selectionModel().isSelected(curr_idx):
-            self.ui.dirTree.selectionModel().select(curr_idx, QItemSelectionModel.SelectCurrent)
+            self.ui.dirTree.selectionModel().select(
+                curr_idx, QItemSelectionModel.SelectCurrent)
         selected_indexes = self.ui.dirTree.selectionModel().selectedRows()
 
         idx_list = []
@@ -147,7 +147,8 @@ class MyController():
             parent_id = 0
         dir_id = self._dbu.insert_other('DIR', (folder_name, parent_id, 2))
 
-        item = EditTreeItem((folder_name, ), (dir_id, parent_id, 2, folder_name))
+        item = EditTreeItem(
+            (folder_name, ), (dir_id, parent_id, 2, folder_name))
 
         self.ui.dirTree.model().append_child(item, parent)
 
@@ -155,7 +156,7 @@ class MyController():
         cur_idx = self.ui.dirTree.currentIndex()
         parent = self.ui.dirTree.model().parent(cur_idx)
         parent_id = 0 if not parent.isValid() else \
-                    self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
+            self.ui.dirTree.model().data(parent, role=Qt.UserRole).dir_id
         dir_id = self.ui.dirTree.model().data(cur_idx, role=Qt.UserRole).dir_id
         print('--> _delete_virtual: parent_id {}, dir_id {}'.format(parent_id, dir_id))
 
@@ -205,8 +206,10 @@ class MyController():
             if idx.column() == 0:
                 file_name = model.data(idx)
                 u_dat = model.data(idx, Qt.UserRole)
-                file_path, _ = self._dbu.select_other('PATH', (u_dat.dir_id,)).fetchone()
-                file_data = file_._make((idx, os.path.join(file_path, file_name), u_dat, file_name))
+                file_path, _ = self._dbu.select_other(
+                    'PATH', (u_dat.dir_id,)).fetchone()
+                file_data = file_._make(
+                    (idx, os.path.join(file_path, file_name), u_dat, file_name))
                 files.append(file_data)
         return files
 
@@ -225,15 +228,18 @@ class MyController():
         import shutil
         try:
             shutil.copy2(file_.name_with_path, to_path)
-            file_id = self._dbu.select_other2('FILE_IN_DIR', (dir_id, file_.name)).fetchone()
+            file_id = self._dbu.select_other2(
+                'FILE_IN_DIR', (dir_id, file_.name)).fetchone()
             if file_id:
                 new_file_id = file_id[0]
             else:
                 new_file_id = self._dbu.insert_other2('COPY_FILE',
                                                       (dir_id, file_.user_data[0]))
 
-            self._dbu.insert_other2('COPY_TAGS', (new_file_id, file_.user_data[0]))
-            self._dbu.insert_other2('COPY_AUTHORS', (new_file_id, file_.user_data[0]))
+            self._dbu.insert_other2(
+                'COPY_TAGS', (new_file_id, file_.user_data[0]))
+            self._dbu.insert_other2(
+                'COPY_AUTHORS', (new_file_id, file_.user_data[0]))
         except IOError:
             show_message("Can't copy file \"{}\" into folder \"{}\"".
                          format(file_[3], to_path), 5000)
@@ -281,7 +287,7 @@ class MyController():
 
     def _move_files(self):
         to_path = QFileDialog().getExistingDirectory(self.ui.filesList,
-                                                        'Select the folder to move')
+                                                     'Select the folder to move')
         if to_path:
             if self.move_files_to(to_path):
                 self._populate_directory_tree()
@@ -301,14 +307,16 @@ class MyController():
                                              QLineEdit.Normal, file_name)
         if ok_:
             self.ui.filesList.model().sourceModel().update(idx, new_name)
-            os.rename(os.path.join(path, file_name), os.path.join(path, new_name))
+            os.rename(os.path.join(path, file_name),
+                      os.path.join(path, new_name))
             self._dbu.update_other('FILE_NAME', (new_name, file_id))
 
     def _restore_fields(self):
         settings = QSettings()
         self.fields = Fields._make(settings.value('FIELDS',
                                                   (['FileName', 'FileDate', 'Pages', 'Size'],
-                                                   ['File', 'Date', 'Pages', 'Size'],
+                                                   ['File', 'Date',
+                                                       'Pages', 'Size'],
                                                    [0, 1, 2, 3])))
         self._set_file_model()
         self._resize_columns()
@@ -360,7 +368,7 @@ class MyController():
         #  call dirrectly without signal
         if create:
             _connection = sqlite3.connect(file_name, check_same_thread=False,
-                detect_types=DETECT_TYPES)
+                                          detect_types=DETECT_TYPES)
             create_db.create_all_objects(_connection)
         else:
             if os.path.isfile(file_name):
@@ -373,7 +381,7 @@ class MyController():
         path = os.path.dirname(file_name)
         f_name = os.path.basename(file_name)
         Shared['AppWindow'].setWindowTitle('Current DB:{}, located in {}'.
-                            format(f_name, path))
+                                           format(f_name, path))
         self._dbu.set_connection(_connection)
         self._dbu.select_other('PRAGMA', ())
         self._populate_all_widgets()
@@ -430,7 +438,8 @@ class MyController():
         return []
 
     def _ask_for_change_font(self):
-        Shared['AppFont'], ok_ = QFontDialog.getFont(self.ui.dirTree.font(), self.ui.dirTree)
+        Shared['AppFont'], ok_ = QFontDialog.getFont(
+            self.ui.dirTree.font(), self.ui.dirTree)
         if ok_:
             self._change_font()
             settings = QSettings()
@@ -600,7 +609,8 @@ class MyController():
             if f_idx.isValid():
                 u_data = model.data(f_idx, Qt.UserRole)
                 if u_data.source > 0:              # file is from virtual folder
-                    self._dbu.delete_other('FILE_VIRT', (u_data.source, u_data.file_id))
+                    self._dbu.delete_other(
+                        'FILE_VIRT', (u_data.source, u_data.file_id))
                 elif u_data.source == 0:           # file is from real folder
                     self._delete_from_db(u_data)
                 else:                           # -1   - advanced file list = do nothing
@@ -684,7 +694,8 @@ class MyController():
             try:
                 # os.startfile(full_file_name)    # FixMe Windows specific
                 self._open(full_file_name)
-                cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[:16]
+                cur_date = QDateTime.currentDateTime().toString(Qt.ISODate)[
+                    :16]
                 cur_date = cur_date.replace('T', ' ')
                 self._dbu.update_other('OPEN_DATE', (cur_date, file_id))
                 model = self.ui.filesList.model()
@@ -718,7 +729,8 @@ class MyController():
         titles = ('Enter new tags', 'Select tags from list',
                   'Apply key words / tags')
         tag_list = self._dbu.select_other('TAGS').fetchall()
-        sel_tags = self._dbu.select_other('FILE_TAGS', (u_data.file_id,)).fetchall()
+        sel_tags = self._dbu.select_other(
+            'FILE_TAGS', (u_data.file_id,)).fetchall()
 
         edit_tags = ItemEdit(titles,
                              [tag[0] for tag in tag_list],
@@ -758,7 +770,8 @@ class MyController():
                 self._dbu.delete_other(sqls[2], (item,))
 
     def _add_item_links(self, items2add, file_id, sqls):
-        add_ids = self._dbu.select_other2(sqls[0], ('","'.join(items2add),)).fetchall()
+        add_ids = self._dbu.select_other2(
+            sqls[0], ('","'.join(items2add),)).fetchall()
         sel_items = [item[0] for item in add_ids]
         not_in_ids = [item for item in items2add if not item in sel_items]
 
@@ -779,7 +792,8 @@ class MyController():
         titles = ('Enter authors separated by commas',
                   'Select authors from list', 'Apply authors')
         authors = self._dbu.select_other('AUTHORS').fetchall()
-        sel_authors = self._dbu.select_other('FILE_AUTHORS', (u_data.file_id,)).fetchall()
+        sel_authors = self._dbu.select_other(
+            'FILE_AUTHORS', (u_data.file_id,)).fetchall()
 
         edit_authors = ItemEdit(titles,
                                 [tag[0] for tag in authors],
@@ -808,8 +822,10 @@ class MyController():
                                   'file_id dir_id comment_id comment book_title')
         curr_idx = self.ui.filesList.currentIndex()
         user_data = self.ui.filesList.model().data(curr_idx, Qt.UserRole)
-        comment = self._dbu.select_other("FILE_COMMENT", (user_data.comment_id,)).fetchone()
-        res = file_comment._make(user_data[:3] + (comment if comment else ('', '')))
+        comment = self._dbu.select_other(
+            "FILE_COMMENT", (user_data.comment_id,)).fetchone()
+        res = file_comment._make(
+            user_data[:3] + (comment if comment else ('', '')))
         if not comment:
             comment = ('', '')
             comment_id = self._dbu.insert_other('COMMENT', comment)
@@ -828,7 +844,8 @@ class MyController():
             curr_dir_idx = self.ui.dirTree.model().index(0, 0)
         if self.recent:
             settings = QSettings()
-            self.file_list_source = settings.value('FILE_LIST_SOURCE', MyController.FOLDER)
+            self.file_list_source = settings.value(
+                'FILE_LIST_SOURCE', MyController.FOLDER)
             row = settings.value('FILE_IDX', 0)
         else:
             if self.ui.dirTree.model().is_virtual(curr_dir_idx):
@@ -875,7 +892,6 @@ class MyController():
             self._dbu.update_other('COMMENT', (data_, checked.comment_id))
             self._populate_comment_field(checked, edit=True)
 
-
     def _populate_ext_list(self):
         ext_list = self._dbu.select_other('EXT')
         model = TreeModel()
@@ -902,7 +918,8 @@ class MyController():
 
         for id_ in deselected.indexes():
             if id_.parent().isValid():
-                self.ui.extList.selectionModel().select(id_.parent(), QItemSelectionModel.Deselect)
+                self.ui.extList.selectionModel().select(
+                    id_.parent(), QItemSelectionModel.Deselect)
 
         self._save_ext_selection()
 
@@ -1042,13 +1059,16 @@ class MyController():
         comment_id = user_data.comment_id
         if file_id:
             assert isinstance(file_id, int), \
-                "the type of file_id is {} instead of int".format(type(file_id))
+                "the type of file_id is {} instead of int".format(
+                    type(file_id))
 
             tags = self._dbu.select_other("FILE_TAGS", (file_id,)).fetchall()
-            authors = self._dbu.select_other("FILE_AUTHORS", (file_id,)).fetchall()
+            authors = self._dbu.select_other(
+                "FILE_AUTHORS", (file_id,)).fetchall()
 
             if comment_id:
-                comment = self._dbu.select_other("FILE_COMMENT", (comment_id,)).fetchone()
+                comment = self._dbu.select_other(
+                    "FILE_COMMENT", (comment_id,)).fetchone()
             else:
                 comment = ('', '')
 
@@ -1057,11 +1077,13 @@ class MyController():
                 .format(', '.join([tag[0] for tag in tags])),
                 '<p><a href="Edit authors">Authors</a>: {}</p>'
                 .format(', '.join([author[0] for author in authors])),
-                '<p><a href="Edit title"4>Title</a>: {}</p>'.format(comment[1]),
+                '<p><a href="Edit title"4>Title</a>: {}</p>'.format(
+                    comment[1]),
                 '<p><a href="Edit comment">Comment</a> {}</p></body></html>'
                 .format(comment[0]))))
 
-            path = self._dbu.select_other('PATH', (user_data.dir_id,)).fetchone()
+            path = self._dbu.select_other(
+                'PATH', (user_data.dir_id,)).fetchone()
             self.status_label.setText(path[0])
 
             if edit:
@@ -1162,7 +1184,8 @@ class MyController():
         if curr_idx.isValid():
             MyController._save_path(curr_idx)
             dir_idx = self.ui.dirTree.model().data(curr_idx, Qt.UserRole)
-            print('--> _cur_dir_changed', self.ui.dirTree.model().rowCount(curr_idx), dir_idx)
+            print('--> _cur_dir_changed',
+                  self.ui.dirTree.model().rowCount(curr_idx), dir_idx)
             if self.ui.dirTree.model().is_virtual(curr_idx):
                 self._populate_virtual(dir_idx.dir_id)
             else:
@@ -1246,7 +1269,8 @@ class MyController():
         ext_item, ok_pressed = QInputDialog.getText(self.ui.extList, "Input extensions",
                                                     '', QLineEdit.Normal, ext_)
         if ok_pressed:
-            root = QFileDialog().getExistingDirectory(self.ui.extList, 'Select root folder')
+            root = QFileDialog().getExistingDirectory(
+                self.ui.extList, 'Select root folder')
             if root:
                 return root, ext_item
         return ('', '')  # not ok_pressed or root is empty
@@ -1271,7 +1295,8 @@ class MyController():
                 if tt[0] > EXT_ID_INCREMENT:
                     res.add(model.data(i, Qt.DisplayRole))
                 else:
-                    ext_ = self._dbu.select_other('EXT_IN_GROUP', (tt[0],)).fetchall()
+                    ext_ = self._dbu.select_other(
+                        'EXT_IN_GROUP', (tt[0],)).fetchall()
                     res.update([ee[0] for ee in ext_])
             res = list(res)
             res.sort()
@@ -1302,5 +1327,6 @@ class MyController():
         if len(heads) > 1:
             for head in heads[1:]:
                 ind = SetFields.Heads.index(head)
-                width.append(font_metrics.boundingRect(SetFields.Masks[ind]).width())
+                width.append(font_metrics.boundingRect(
+                    SetFields.Masks[ind]).width())
         return width
